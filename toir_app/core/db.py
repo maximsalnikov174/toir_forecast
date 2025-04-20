@@ -1,0 +1,41 @@
+# Здесь будет храниться код, ответственный за подключение к базе данных:
+
+from sqlalchemy import Column, Integer
+from sqlalchemy.ext.asyncio import (AsyncSession,
+                                    AsyncEngine,
+                                    async_sessionmaker,
+                                    create_async_engine)
+from sqlalchemy.orm import declared_attr, declarative_base
+
+from toir_app.core.config import settings
+
+
+class PreBase:
+
+    @declared_attr
+    def __tablename__(cls):
+        # Именем таблицы будет название модели в нижнем регистре.
+        return cls.__name__.lower()
+
+    # Во все таблицы будет добавлено поле ID.
+    id = Column(Integer, primary_key=True)
+
+
+Base = declarative_base(cls=PreBase)
+
+engine: AsyncEngine = create_async_engine(
+    settings.database_url,
+    echo=True,  # Логирование SQL-запросов (для разработки)
+
+    # Проверка соединения перед использованием
+    # для автоматического восстановления соединений
+    pool_pre_ping=True
+)
+
+# Правильная асинхронная фабрика сессий
+AsyncSessionLocal = async_sessionmaker(
+    bind=engine,
+    class_=AsyncSession,
+    expire_on_commit=False,  # Рекомендуется для асинхронных сессий
+    autoflush=False  # хз че такое
+)
