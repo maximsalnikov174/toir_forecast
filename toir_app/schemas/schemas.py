@@ -44,6 +44,25 @@ class UserRole(str, Enum):
     ADMIN = 'Полный доступ'
 
 
+class UsersServiceName(str, Enum):
+    """Приведенные виды технического обслуживания (общий список)."""
+    ANTIFREEZE = 'Замена антифриза'
+    HYDRO = 'Замена гидромасла'
+    DRIVE_AXLE = 'Замена масла ведущего моста'
+    ENGINE = 'Замена масла ДВС'
+    GEARBOX = 'Замена масла КПП'
+    STEERING_WHEEL = 'Замена масла редуктора РУ'
+    BRAKE_FLUID = 'Замена тормозной жидкости'
+    ON_BOARD_TRANSMISSION = 'Замена масла в бортовой передаче'
+    TO_250 = 'ТО-250'
+    TO_2 = 'ТО-2'
+    TO_4 = 'ТО-4'
+    TO_1000 = 'ТО-1000'
+    TO_1 = 'ТО-1'
+    TO_GAZ = 'ТО ГБО'
+    TO = 'ТО'
+
+
 # ----------------------------------МИКСИНЫ----------------------------------
 class TimestampMixin(BaseModel):
     """
@@ -83,7 +102,7 @@ class BaseModelWithTimestamps(TimestampMixin, ArchiveMixin):
     model_config = ConfigDict(from_attributes=True)  # Для работы с ORM ЧИХУА?
 
 
-# ---------------------------СХЕМЫ КОНВЕРТАЦИИ---------------------------
+# ------------------------СХЕМЫ КОНВЕРТАЦИИ RMT-321------------------------
 class BaseCarData(BaseModel):
     """Базовая схема с общими полями для всех автомобильных данных"""
     base_interval: int
