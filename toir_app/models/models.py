@@ -20,6 +20,11 @@ from toir_app.function import predict_reading_when_current_month_left
 from toir_app.schemas.schemas import BaseCarData, Status
 
 
+class Role(Base):
+    """Модель ролей пользователей."""
+    pass
+
+
 class Organization(Base):
     """
     Модель Цеха.
@@ -303,10 +308,14 @@ class ServiceWork(Base):
     @property
     def calculated_status(self) -> Status:
         """
-        Только для чтения (не сохраняется в БД - а точно это не надо?)
+        Определяет статус с учётом принимаемых параметров из csv.
 
         Returns:
             Status: Текущий статус обслуживания
+
+        Examples:
+            - Превышение
+            - Подошло
         """
         element = {
             'base_interval': self.base_interval,
@@ -335,7 +344,7 @@ class ServiceWork(Base):
             - Подошло
         """
 
-        # Величина превышения:
+        # Диапазон превышения пробега (экспертно, границы захвата данных):
         exceed_value = round(data.base_interval * EXCESS_VALUE / 100, 1)
 
         # Пробег (показания одометра) для проведения следующего обслуживания:
@@ -365,7 +374,9 @@ class ServiceWork(Base):
     def update_request_status(self):
         """Обновляет request_status на основе вычисленного статуса
 
-        Метод на перспективу, пока не надо его задействовать."""
+        Метод на перспективу, пока не надо его задействовать.
+        Как-будто его вообще надо расширить для бОльшего количества полей.
+        """
         current_status = self.calculated_status
         new_status = (
             ServiceStatus.query.filter_by(name=current_status.value).first()
