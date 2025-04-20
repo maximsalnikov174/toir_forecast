@@ -5,9 +5,12 @@ from typing import List, Optional
 from toir_app.convert_csv_to_py.convertation import normalize_service_name
 from toir_app.core.db import Base as db
 from toir_app.function import convert_date
-from toir_app.models.models import (ServiceWork, Car, CarModel, Organization,
-                                    ServiceStatus, SpecialStatus, ServiceName)
-from toir_app.schemas.schemas import CarDataPoint
+from toir_app.models.models import (ServiceWork,
+                                    Car,
+                                    CarModel,
+                                    Organization,
+                                    ServiceName)
+from toir_app.schemas.schemas import (CarDataPoint,)
 
 
 # Тестировал обработку строки:
@@ -15,7 +18,13 @@ from toir_app.schemas.schemas import CarDataPoint
 
 
 # ------------------------ПОДГОТОВИТЕЛЬНЫЕ ФУНКЦИИ:------------------------
-def base_update_model(model, check_value, element, data_field=None):
+# TODO добавить аннотацию типов:
+def base_update_model(
+    model,
+    check_value,
+    element,
+    data_field=None
+):
     """
     Универсальная функция для создания/проверки объектов моделей
 
@@ -44,20 +53,6 @@ def base_update_model(model, check_value, element, data_field=None):
         raise ValueError(
             f'Поле {check_value} не существует в модели {model.__name__}'
         ) from e
-
-
-def upload_service_status_in_db(elements):
-    """Добавляет сервисные статусы из заранее подготовленного списка."""
-    for element in elements:
-        base_update_model(ServiceStatus, 'name', element)
-    db.session.commit()
-
-
-def upload_special_status_in_db(elements):
-    """Добавляет специальные статусы ТС из заранее подготовленного списка."""
-    for element in elements:
-        base_update_model(SpecialStatus, 'name', element)
-    db.session.commit()
 
 
 def create_data_point(row: List[str]) -> Optional[CarDataPoint]:
@@ -95,6 +90,8 @@ def create_data_point(row: List[str]) -> Optional[CarDataPoint]:
 def convert_csv_to_list(filename: str) -> List[CarDataPoint]:
     """
     Конвертирует CSV файл в список словарей с записями по обслуживанию.
+
+    Выполняет подготовку для последующего выполнения update_db()
 
     Args:
         filename: Путь к CSV файлу
@@ -148,15 +145,23 @@ def convert_csv_to_list(filename: str) -> List[CarDataPoint]:
 def update_db(elements):
     """
     Проверяет (и вносит) каждую строку из файла csv в базу данных.
+
+    Сначала каждый из elements надо провалидировать через pydantic
     """
+
+    # здесь должна быть функция
+    # elements = convert_csv_to_list(блаблабла)
+
+    # ЗАКОНЧИЛ ЗДЕСЬ - ПРОДОЛЖЕНИЕ:
+
     for element in elements:
 
-        # Проверяем цех (маловероятно для повторных обработок):
+        # Проверяем Цех (маловероятно для повторных обработок):
         organization = base_update_model(
             Organization, 'name', element, 'organization'
         )
 
-        # Проверяем модель ТС (понадобится, когда появятся новые марки ТС):
+        # Проверяем Модель ТС (понадобится, когда появятся новые марки ТС):
         model = base_update_model(
             CarModel, 'name', element, 'car_model'
         )
