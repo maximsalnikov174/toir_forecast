@@ -1,9 +1,9 @@
 from fastapi import APIRouter, Body
 
+from toir_app.convert_csv_to_py.convertation import UsersServiceName
 from toir_app.schemas.schemas import (Status,
                                       SpecialStatusForCar,
                                       UserRole,
-                                      UsersServiceName,
                                       BaseCarData,
                                       CarDataPoint,
                                       OrganizationBase,

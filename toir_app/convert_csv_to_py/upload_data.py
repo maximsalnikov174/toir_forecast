@@ -1,5 +1,6 @@
 from typing import List, Tuple
 
+from toir_app.convert_csv_to_py.convertation import UsersServiceName
 from toir_app.convert_csv_to_py.parse_data import base_update_model
 from toir_app.core.db import Base as db
 from toir_app.models.models import (ServiceStatus,
@@ -8,8 +9,7 @@ from toir_app.models.models import (ServiceStatus,
                                     Role)
 from toir_app.schemas.schemas import (SpecialStatusForCar,
                                       Status,
-                                      UserRole,
-                                      UsersServiceName)
+                                      UserRole)
 
 
 # ----------ФУНКЦИИ, ВЫПОЛНЯЮЩИЕ НАПОЛНЕНИЕ ДАННЫМИ НЕ ИЗ CSV-ФАЙЛА----------
