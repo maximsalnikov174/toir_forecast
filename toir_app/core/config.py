@@ -2,6 +2,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
+    """Класс для работы с переменными окружения."""
     app_title: str = 'Приложение ТОиР'
     database_url: str  # Обязательный параметр без значения по умолчанию
 
@@ -12,6 +13,10 @@ class Settings(BaseSettings):
     )
 
 
+# Создал глобальную переменную settings с экземпляром класса Settings, чтобы
+# его можно было импортировать в любую часть приложения, где потребуется
+# доступ к настройкам.
+#
 # Явно указал тип для переменной settings и добавил type checking коммент
 settings: Settings = Settings()  # type: ignore[call-arg]
 

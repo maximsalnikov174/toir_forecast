@@ -32,6 +32,11 @@ engine: AsyncEngine = create_async_engine(
     pool_pre_ping=True
 )
 
+
+# COMMENT: Функция async_sessionmaker() возвращает класс сессии, поэтому
+# переменную, которой присвоена функция, назовите с большой буквы:
+# AsyncSessionLocal; Такое имя будет указывать, что переменной присвоен класс
+
 # Правильная асинхронная фабрика сессий
 AsyncSessionLocal = async_sessionmaker(
     bind=engine,
