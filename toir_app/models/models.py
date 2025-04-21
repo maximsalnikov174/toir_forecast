@@ -41,7 +41,7 @@ class Organization(Base):
     normal_name = Column(
         String(ORGANIZATION_NORMAL_NAME_LEN),
         nullable=True,  # заглушка на этапе создания
-        comment='Название цеха в привычном формате'
+        comment='Название цеха в привычном формате.'
     )
 
     cars = relationship(
