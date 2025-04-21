@@ -9,8 +9,7 @@ from sqlalchemy.ext.asyncio import async_engine_from_config
 
 from alembic import context
 
-# Импортируем базовый класс Base.
-from toir_app.core.db import Base
+from toir_app.core.base import Base
 
 
 load_dotenv('.env')  # Загрузка переменных окружения 
