@@ -1,6 +1,8 @@
-from collections import defaultdict
 import re
+from collections import defaultdict
 from typing import DefaultDict, Dict, List, Optional, Pattern
+
+from toir_app.schemas.schemas import UsersServiceName
 
 
 # Объявляем типы:
@@ -14,63 +16,61 @@ ReverseServiceMapping = DefaultDict[str, str]  # {вариант: нормали
 # названия видов работ.
 
 
-# FIXME ЗАТОЛКАТЬ СЮДА НАЗВАНИЯ ИЗ КЛАССА schemas.UsersServiceName
-
 convert_service_name: ServiceNameMapping = {
-    'Замена антифриза': [
+    UsersServiceName.ANTIFREEZE.value: [
         'ЗамАнтифриза',
         'ЗамОхлаждающейЖидкости'
     ],
-    'Замена гидромасла': [
+    UsersServiceName.HYDRO.value: [
         'ЗамГидроМасла'
     ],
-    'Замена масла ведущего моста': [
+    UsersServiceName.DRIVE_AXLE.value: [
         'ЗамМаслаВедущегоМоста',
         'ЗамМаслаВедущегоМоста'
     ],
-    'Замена масла ДВС': [
+    UsersServiceName.ENGINE.value: [
         'ЗамМаслаДВС',
         'ЗамМаслДВС',
         'ЗМ',
         'ЗамМасла ДВС'
     ],
-    'Замена масла КПП': [
+    UsersServiceName.GEARBOX.value: [
         'ЗамМаслаКПП',
         'ЗамМаслаТрансмиссии',
         'ЗамМаслаКППZF'
     ],
-    'Замена масла редуктора РУ': [
+    UsersServiceName.STEERING_WHEEL.value: [
         'ЗамМаслаРедукторРУ'
     ],
-    'Замена тормозной жидкости': [
+    UsersServiceName.BRAKE_FLUID.value: [
         'ЗамТормознойЖидкости'
     ],
-    'Замена масла в бортовой передаче': [
+    UsersServiceName.ON_BOARD_TRANSMISSION.value: [
         'ЗамМаслаБортовойПередачи',
         'ЗамМаслаБортПередачи'
     ],
-    'ТО-250': [
+    UsersServiceName.TO_250.value: [
         'ТО-250'
     ],
-    'ТО-2': [
+    UsersServiceName.TO_2.value: [
         'ТО-2'
     ],
-    'ТО-4': [
+    UsersServiceName.TO_4.value: [
         'ТО-4'
     ],
-    'ТО-1000': [
+    UsersServiceName.TO_1000.value: [
         'ТО-1000'
     ],
-    'ТО-1': [
+    UsersServiceName.TO_1.value: [
         'ТО-1',
         'ТО-1 (смазка)',
         'РП (смазка)',
         'РП'
     ],
-    'ТО ГБО': [
+    UsersServiceName.TO_GAZ.value: [
         'ТО ГБО'
     ],
-    'ТО': [
+    UsersServiceName.TO.value: [
         'ТО'
     ]
 }
