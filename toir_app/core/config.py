@@ -20,4 +20,4 @@ class Settings(BaseSettings):
 # Явно указал тип для переменной settings и добавил type checking коммент
 settings: Settings = Settings()  # type: ignore[call-arg]
 
-print(settings.database_url)  # Должно показать значение из .env
+# print(settings.database_url)  # Должно показать значение из .env
