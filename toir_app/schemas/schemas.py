@@ -11,6 +11,7 @@ from toir_app.convert_csv_to_py.convertation import normalize_service_name
 
 
 # -------------------------------ПЕРЕЧИСЛЕНИЯ-------------------------------
+
 class Status(str, Enum):
     """
     Расчётные статусы (для вида обслуживания) записи из OeBS.
@@ -64,6 +65,7 @@ class UsersServiceName(str, Enum):
 
 
 # ----------------------------------МИКСИНЫ----------------------------------
+
 class TimestampMixin(BaseModel):
     """
     Миксин для добавления временных меток создания и обновления.

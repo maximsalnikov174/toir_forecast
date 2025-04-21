@@ -142,17 +142,15 @@ def convert_csv_to_list(filename: str) -> List[CarDataPoint]:
 # -------------------------СОЗДАТЕЛИ ОБЪЕКТОВ БД:-------------------------
 # FIXME ЗДЕСЬ ЕЩЕ НАДО КОВЫРЯТЬСЯ, ПОТОМУ ЧТО ВЫГЛЯДИТ НЕ ОЧЕНЬ
 
-def update_db(elements):
+def update_db(filename):
     """
     Проверяет (и вносит) каждую строку из файла csv в базу данных.
 
     Сначала каждый из elements надо провалидировать через pydantic
     """
 
-    # здесь должна быть функция
-    # elements = convert_csv_to_list(блаблабла)
-
-    # ЗАКОНЧИЛ ЗДЕСЬ - ПРОДОЛЖЕНИЕ:
+    # Обработка данных из файла csv:
+    elements = convert_csv_to_list(filename=filename)
 
     for element in elements:
 
@@ -228,7 +226,7 @@ def update_db(elements):
             #     f'{car.grz} от {element["dt_now"]}'
             # )
         else:
-            # Обновляем существующую запись (если нужно)
+            # FIXME Обновляем существующую запись (если нужно, а нужно ли?!)
             service.last_service_date = element['last_service_date']
             service.last_service_reading = element['last_service_reading']
             service.base_interval = element['base_interval']
@@ -242,4 +240,4 @@ def update_db(elements):
             #     f'{car.grz} от {element["dt_now"]}'
             # )
 
-    db.session.commit()
+    db.session.commit()  # Применение всех изменений

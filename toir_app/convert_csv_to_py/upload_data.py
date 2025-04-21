@@ -24,10 +24,10 @@ def upload_users_data_in_db(elements, apps_model):
 
 # Все что нужно загрузить при СОЗДАНИИ базы:
 need_to_upload_datas = [
-    (Status, ServiceStatus),
-    (SpecialStatusForCar, SpecialStatus),
-    (UserRole, Role),
-    (UsersServiceName, ServiceName),
+    (SpecialStatusForCar, SpecialStatus),  # к выбытию, на ВР
+    (Status, ServiceStatus),  # подошло, превышение
+    (UserRole, Role),  # админ, только чтение
+    (UsersServiceName, ServiceName),  # ТО-2, замена масла ДВС
     # может что-то еще
 ]
 
@@ -35,4 +35,4 @@ need_to_upload_datas = [
 def upload_all_users_data_in_db(data_and_model_pair: List[Tuple]):
     """Дружно загружаем все данные в базу."""
     for values, need_model in data_and_model_pair:
-        upload_users_data_in_db(elements=values, apps_model=need_model)
+        upload_users_data_in_db(elements=values.value, apps_model=need_model)
