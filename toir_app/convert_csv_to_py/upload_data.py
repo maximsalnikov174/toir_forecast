@@ -1,38 +1,63 @@
-from typing import List, Tuple
-
-from toir_app.convert_csv_to_py.convertation import UsersServiceName
-from toir_app.convert_csv_to_py.parse_data import base_update_model
-from toir_app.core.db import Base as db
-from toir_app.models.models import (ServiceStatus,
-                                    SpecialStatus,
-                                    ServiceName,
-                                    Role)
-from toir_app.schemas.schemas import (SpecialStatusForCar,
-                                      Status,
-                                      UserRole)
-
-
 # ----------ФУНКЦИИ, ВЫПОЛНЯЮЩИЕ НАПОЛНЕНИЕ ДАННЫМИ НЕ ИЗ CSV-ФАЙЛА----------
 # -------------Понадобятся только на старте создания приложения-------------
 
-def upload_users_data_in_db(elements, apps_model):
-    """Добавляет сервисные статусы из заранее подготовленного списка."""
-    for element in elements:
-        base_update_model(apps_model, 'name', element)
-    db.session.commit()
+from typing import List, Tuple
+
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from toir_app.convert_csv_to_py.convertation import UsersServiceName
+from toir_app.core.db import AsyncSessionLocal, Base as db
+from toir_app.models.service_name import ServiceName
+from toir_app.models.service_status import ServiceStatus
+from toir_app.models.special_status import SpecialStatus
+from toir_app.models.static_model import SpecialStatusForCar, Status
+# from toir_app.models.role import Role
 
 
 # Все что нужно загрузить при СОЗДАНИИ базы:
 need_to_upload_datas = [
     (SpecialStatusForCar, SpecialStatus),  # к выбытию, на ВР
     (Status, ServiceStatus),  # подошло, превышение
-    (UserRole, Role),  # админ, только чтение
     (UsersServiceName, ServiceName),  # ТО-2, замена масла ДВС
-    # может что-то еще
+    # (UserRole, Role),  # админ, только чтение
+    # ...
 ]
 
 
-def upload_all_users_data_in_db(data_and_model_pair: List[Tuple]):
-    """Дружно загружаем все данные в базу."""
-    for values, need_model in data_and_model_pair:
-        upload_users_data_in_db(elements=values.value, apps_model=need_model)
+async def upload_all_users_data_in_db(
+    data_and_model_pair: List[Tuple]
+):
+    """
+    Дружно загружаем все данные в базу.
+    """
+    async with AsyncSessionLocal() as session:
+        for enum_class, need_model in data_and_model_pair:
+            enum_values = [_.value for _ in enum_class]
+            for enum_value in enum_values:
+                await upload_users_data_in_db(
+                    element=enum_value,
+                    apps_model=need_model,
+                    session=session
+                )
+
+
+async def upload_users_data_in_db(
+    element: str,
+    apps_model: type[db],
+    session: AsyncSession
+):
+    """Асинхронно наполняет БД статичными данными."""
+    # Получаем значение (работает и для Enum, и для обычных строк)
+    value = element.value if hasattr(element, 'value') else element
+
+    # Проверяем существование записи
+    stmt = select(apps_model).where(apps_model.name == value)
+    result = await session.execute(stmt)
+    existing = result.scalar_one_or_none()
+
+    if not existing:
+        new_instance = apps_model(name=value)
+        session.add(new_instance)
+
+    await session.commit()

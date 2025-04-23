@@ -1,93 +1,44 @@
 import csv
-# from pprint import pprint
+import os
 from typing import List, Optional
 
-from toir_app.convert_csv_to_py.convertation import normalize_service_name
-from toir_app.core.db import Base as db
-from toir_app.function import convert_date
-from toir_app.models.models import (ServiceWork,
-                                    Car,
-                                    CarModel,
-                                    Organization,
-                                    ServiceName)
-from toir_app.schemas.schemas import (CarDataPoint,)
+from sqlalchemy import select
+
+from toir_app.convert_csv_to_py.assistant_functions import (
+    base_update_model, create_data_point
+)
+from toir_app.core.db import AsyncSessionLocal, Base as db
+from toir_app.models.car import Car
+from toir_app.models.car_model import CarModel
+from toir_app.models.organization import Organization
+from toir_app.models.service_name import ServiceName
+from toir_app.models.service_work import ServiceWork
+from toir_app.schemas.convertation import CarDataPoint
 
 
-# Тестировал обработку строки:
-# pprint(convert_csv_to_list('database_test/rmt321.csv')[20])
+MODEL_MAPPING = {
+    'organization': {
+        'model': Organization,
+        'field': 'organization'
+    },
+    'car_model': {
+        'model': CarModel,
+        'field': 'car_model'
+    },
+    'last_service_name_view': {
+        'model': ServiceName,
+        'field': 'last_service_view'
+    },
+    'next_service_name_view': {
+        'model': ServiceName,
+        'field': 'next_service_view'
+    }
+}
 
 
-# ------------------------ПОДГОТОВИТЕЛЬНЫЕ ФУНКЦИИ:------------------------
-# TODO добавить аннотацию типов:
-def base_update_model(
-    model,
-    check_value,
-    element,
-    data_field=None
-):
-    """
-    Универсальная функция для создания/проверки объектов моделей
+# ------------------------ФУНКЦИЯ-КОНВЕРТЕР:------------------------
 
-    Args:
-        model: Класс модели SQLAlchemy
-        check_field: Поле модели для фильтрации
-        element: Данные (dict или str)
-        data_field: Ключ в element (если element - dict)
-
-    Returns:
-        Новый объект модели (+ добавляется в базу) или уже существует объект.
-    """
-    try:
-        value = element[data_field] if data_field else element
-        filter_condition = {check_value: value}
-        existing_in_db = model.query.filter_by(**filter_condition).first()
-
-        if not existing_in_db:
-            new_instance = model(**{check_value: value})
-            db.session.add(new_instance)
-            return new_instance
-        return existing_in_db
-    except KeyError as e:
-        raise ValueError(f'Ключ {e} не найден в element') from e
-    except AttributeError as e:
-        raise ValueError(
-            f'Поле {check_value} не существует в модели {model.__name__}'
-        ) from e
-
-
-def create_data_point(row: List[str]) -> Optional[CarDataPoint]:
-    """Создает объект CarDataPoint из строки данных."""
-    try:
-        return CarDataPoint(
-            # Описание ТС:
-            personal_id=int(row[4]),
-            grz=row[5],
-            car_model=row[3],
-            organization=row[1],
-
-            # Базовая настройка:
-            base_interval=int(row[9]),
-
-            # Динамические данные:
-            dt_now=convert_date(row[0]),
-            daily_distance=float(row[10].replace(',', '.')),
-            reading_now=float(row[15].replace(',', '.')),
-
-            # История:
-            last_service_date=convert_date(row[7]) if row[7].strip() else None,
-            last_service_view=normalize_service_name(row[8]),
-            last_service_reading=float(row[11].replace(',', '.')),
-
-            # Прогноз:
-            next_service_view=normalize_service_name(row[16])
-        )
-    except (ValueError, IndexError) as e:
-        print(f'Ошибка создания точки данных: {e}')
-        raise
-
-
-# ------------------------ФУНКЦИИ-КОНВЕРТЕРЫ:------------------------
-def convert_csv_to_list(filename: str) -> List[CarDataPoint]:
+async def convert_csv_to_list(filename: str) -> List[CarDataPoint]:
     """
     Конвертирует CSV файл в список словарей с записями по обслуживанию.
 
@@ -99,6 +50,14 @@ def convert_csv_to_list(filename: str) -> List[CarDataPoint]:
     Returns:
         List[CarDataPoint]: Список объектов с данными автомобилей
     """
+
+    if not os.path.exists(filename):
+        print(f"Файл не найден: {filename}")
+
+    if os.path.isdir(filename):
+        print(f"Указанный путь ведет к директории: {filename}")
+
+    # Заготовка для общего списка данных из файла rmt-321:
     total_list: List[CarDataPoint] = []
 
     with open(filename, mode='r', encoding='utf-8') as csvfile:
@@ -125,9 +84,12 @@ def convert_csv_to_list(filename: str) -> List[CarDataPoint]:
 
                     # Валидация и преобразование данных
                     try:
-                        data_point = create_data_point(rows)
+                        data_point = await create_data_point(rows)
+
                         if data_point:
                             total_list.append(data_point)
+                        else:
+                            print(data_point)
                     except ValueError as e:
                         print(f'Ошибка обработки данных: {e}')
                         continue
@@ -136,108 +98,131 @@ def convert_csv_to_list(filename: str) -> List[CarDataPoint]:
                     print(f'Ошибка разбора строки: {row}, {str(e)}')
                     continue
 
-        return total_list
+    return total_list
+
+
+async def upd_model_in_db(
+    element,
+    some_model,
+    data_field
+):
+    async with AsyncSessionLocal() as session:
+        return await base_update_model(
+            session=session,
+            model=some_model,
+            check_field='name',
+            element=element,
+            data_field=data_field
+        )
 
 
 # -------------------------СОЗДАТЕЛИ ОБЪЕКТОВ БД:-------------------------
-# FIXME ЗДЕСЬ ЕЩЕ НАДО КОВЫРЯТЬСЯ, ПОТОМУ ЧТО ВЫГЛЯДИТ НЕ ОЧЕНЬ
 
-def update_db(filename):
+async def update_db(element):
     """
     Проверяет (и вносит) каждую строку из файла csv в базу данных.
 
     Сначала каждый из elements надо провалидировать через pydantic
     """
+    async with AsyncSessionLocal() as session:
+        try:
+            element_dict = element.dict()
 
-    # Обработка данных из файла csv:
-    elements = convert_csv_to_list(filename=filename)
+            # Проверяем Цех, модель ТС и виды работ (пред и след)
+            updated_fields = {}
+            for field_name, model_data in MODEL_MAPPING.items():
+                updated_value = await upd_model_in_db(
+                    element=element,
+                    some_model=model_data['model'],
+                    data_field=model_data['field']
+                )
+                updated_fields[field_name] = updated_value
 
-    for element in elements:
-
-        # Проверяем Цех (маловероятно для повторных обработок):
-        organization = base_update_model(
-            Organization, 'name', element, 'organization'
-        )
-
-        # Проверяем Модель ТС (понадобится, когда появятся новые марки ТС):
-        model = base_update_model(
-            CarModel, 'name', element, 'car_model'
-        )
-
-        # Проверяем вид работ (понадобится, когда появятся новые вид работ):
-        for key in ['last_service_view', 'next_service_view']:
-            base_update_model(
-                ServiceName, 'name', element, key
+            # Получаем объекты ServiceName для прошлого/следующего обслуживания
+            last_service = get_id_from_service(
+                'last',
+                updated_fields=updated_fields,
+                element_dict=element_dict
+            )
+            next_service = get_id_from_service(
+                'next',
+                updated_fields=updated_fields,
+                element_dict=element_dict
             )
 
-        # TODO Это можно тоже затолкать в base_update_model:
-        # Проверяем ТС (понадобится, когда появятся новые ТС в цехе):
-        car = Car.query.filter_by(personal_id=element['personal_id']).first()
-        if not car:
-            car = Car(
-                personal_id=element['personal_id'],
-                grz=element['grz'],
-                car_model=model,
-                organization=organization
+        # Проверяем автомобиль (понадобится, когда появятся новые ТС в цехе):
+            car = await session.execute(
+                select(Car)
+                .where(Car.personal_id == element_dict['personal_id'])
             )
-            db.session.add(car)
+            if not car.scalars().first():
+                car = Car(
+                    personal_id=element_dict['personal_id'],
+                    grz=element_dict['grz'],
+                    car_model=updated_fields['car_model'],
+                    organization=updated_fields['organization']
+                )
+                session.add(car)
+                await session.flush()
 
-        # TODO ВСЁ ЭТО НАДО ТЕСТИРОВАТЬ НА МАЛЕНЬКОМ ДИАПАЗОНЕ:
-        # TODO Надо подумать, как удалить старую запись (или закинуть в архив)
-
-        # Создаём запись, если подобной нет:
-        # Получаем объекты ServiceName для прошлого и следующего обслуживания
-        last_service = ServiceName.query.filter_by(
-            name=element['last_service_view']
-        ).first() if element.get('last_service_view') else None
-
-        next_service = ServiceName.query.filter_by(
-            name=element['next_service_view']
-        ).first() if element.get('next_service_view') else None
-
+        # Машина уже должна быть сохранена!
         # Проверяем записи о прошлых обслуживаниях и создаём новые:
-        service = ServiceWork.query.filter_by(
-            car_id=car.id,
-            next_service_id=element['next_service_view'],
-            request_reading=element['reading_now']
-        ).first()
-
-        if not service:
-            # Создаем новую запись ServiceWork
-            service = ServiceWork(
-                car_id=car.id,
-                last_service_date=element['last_service_date'],
-                last_service_reading=element['last_service_reading'],
-                request_date=element['dt_now'],
-                request_reading=element['reading_now'],
-                base_interval=element['base_interval'],
-                daily_distance=element['daily_distance'],
-                last_service_id=last_service.id if last_service else None,
-                next_service_id=next_service.id if next_service else None
+            service = await session.execute(
+                select(ServiceWork).where(
+                    ServiceWork.car_id == car.id,  # это пока не работает
+                    ServiceWork.next_service_id == next_service,
+                    ServiceWork.request_reading == element_dict['reading_now']
+                )
             )
-            db.session.add(service)
+            if not service.scalars().first():
+                # Создаем новую запись ServiceWork
+                service = ServiceWork(
+                    car_id=car.id,
+                    last_service_date=element_dict['last_service_date'],
+                    last_service_reading=element_dict['last_service_reading'],
+                    request_date=element_dict['dt_now'],
+                    request_reading=element_dict['reading_now'],
+                    base_interval=element_dict['base_interval'],
+                    daily_distance=element_dict['daily_distance'],
+                    # В этих не уверен (когда вернется None):
+                    last_service_id=last_service,
+                    next_service_id=next_service
+                )
+                # Логируем создание новой записи
+                # print(
+                #     'Создана новая запись обслуживания для '
+                #     f'{car.grz} от {element["dt_now"]}'
+                # )
 
-            # Вычисляем и устанавливаем статус
-            service.update_request_status()
+        # TODO как удалить старую запись (или закинуть в архив)?
 
-            # Логируем создание новой записи
-            # print(
-            #     'Создана новая запись обслуживания для '
-            #     f'{car.grz} от {element["dt_now"]}'
-            # )
-        else:
-            # FIXME Обновляем существующую запись (если нужно, а нужно ли?!)
-            service.last_service_date = element['last_service_date']
-            service.last_service_reading = element['last_service_reading']
-            service.base_interval = element['base_interval']
-            service.daily_distance = element['daily_distance']
-            service.last_service_id = last_service.id if last_service else None
-            service.next_service_id = next_service.id if next_service else None
-            service.update_request_status()
+            # FIXME Обновляем существующую запись (если нужно, а нужно ли?)
+            service.last_service_date = element_dict['last_service_date']
+            service.last_service_reading = element_dict['last_service_reading']
+            service.base_interval = element_dict['base_interval']
+            service.daily_distance = element_dict['daily_distance']
+            # # За это подумать:
+            # service.last_service_id = last_service
+            # service.next_service_id = next_service
 
+            await service.update_request_status(session=session)
+
+            session.add(service)  # Добавляем все что сделали в сессию
             # print(
             #     'Обновлена запись обслуживания для '
             #     f'{car.grz} от {element["dt_now"]}'
             # )
+            await session.commit()  # Применение всех изменений
 
-    db.session.commit()  # Применение всех изменений
+        except Exception as e:
+            await session.rollback()
+            raise ValueError(f"Ошибка обновления БД: {str(e)}") from e
+
+
+# переделать в метод класса ServiceName
+def get_id_from_service(in_time: str, **kwargs) -> Optional[int]:
+    return (
+        kwargs['updated_fields'][in_time + '_service_name_view'].id
+        if kwargs['element_dict'].get(in_time + '_service_view')
+        else None
+    )
