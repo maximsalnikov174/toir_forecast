@@ -155,7 +155,8 @@ async def update_db(element):
                 select(Car)
                 .where(Car.personal_id == element_dict['personal_id'])
             )
-            if not car.scalars().first():
+            car = car.scalars().first()
+            if not car:
                 car = Car(
                     personal_id=element_dict['personal_id'],
                     grz=element_dict['grz'],
@@ -174,7 +175,8 @@ async def update_db(element):
                     ServiceWork.request_reading == element_dict['reading_now']
                 )
             )
-            if not service.scalars().first():
+            service = service.scalars().first()
+            if not service:
                 # Создаем новую запись ServiceWork
                 service = ServiceWork(
                     car_id=car.id,

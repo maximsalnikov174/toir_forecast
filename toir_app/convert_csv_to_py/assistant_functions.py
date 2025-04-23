@@ -81,7 +81,7 @@ async def base_update_model(
             # возможно дальше коммит не нужен!!!
             # его надо вынести в parse_data.update_db
 
-            await session.commit()  # или коммитить отдельно после всех операций
+            await session.commit()
             return new_instance  # скорее всего возвращает модель, проверить!
         return existing_in_db  # скорее всего возвращает модель, проверить!
 
