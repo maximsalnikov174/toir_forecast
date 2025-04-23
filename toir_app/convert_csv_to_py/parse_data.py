@@ -3,6 +3,7 @@ import os
 from typing import List, Optional
 
 from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from toir_app.convert_csv_to_py.assistant_functions import (
     base_update_model, create_data_point
@@ -151,69 +152,23 @@ async def update_db(element):
             )
 
         # Проверяем автомобиль (понадобится, когда появятся новые ТС в цехе):
-            car = await session.execute(
-                select(Car)
-                .where(Car.personal_id == element_dict['personal_id'])
+            car = await get_or_create_car(
+                session=session,
+                personal_id=element_dict['personal_id'],
+                grz=element_dict['grz'],
+                car_model=updated_fields['car_model'],
+                organization=updated_fields['organization']
             )
-            car = car.scalars().first()
-            if not car:
-                car = Car(
-                    personal_id=element_dict['personal_id'],
-                    grz=element_dict['grz'],
-                    car_model=updated_fields['car_model'],
-                    organization=updated_fields['organization']
-                )
-                session.add(car)
-                await session.flush()
 
-        # Машина уже должна быть сохранена!
-        # Проверяем записи о прошлых обслуживаниях и создаём новые:
-            service = await session.execute(
-                select(ServiceWork).where(
-                    ServiceWork.car_id == car.id,  # это пока не работает
-                    ServiceWork.next_service_id == next_service,
-                    ServiceWork.request_reading == element_dict['reading_now']
-                )
+            # Машина уже должна быть сохранена!
+            # Проверяем записи о прошлых обслуживаниях и создаём новые:
+            await update_or_create_service_work(
+                session=session,
+                car_id=car.id,
+                element_dict=element_dict,
+                last_service_id=last_service,
+                next_service_id=next_service
             )
-            service = service.scalars().first()
-            if not service:
-                # Создаем новую запись ServiceWork
-                service = ServiceWork(
-                    car_id=car.id,
-                    last_service_date=element_dict['last_service_date'],
-                    last_service_reading=element_dict['last_service_reading'],
-                    request_date=element_dict['dt_now'],
-                    request_reading=element_dict['reading_now'],
-                    base_interval=element_dict['base_interval'],
-                    daily_distance=element_dict['daily_distance'],
-                    # В этих не уверен (когда вернется None):
-                    last_service_id=last_service,
-                    next_service_id=next_service
-                )
-                # Логируем создание новой записи
-                # print(
-                #     'Создана новая запись обслуживания для '
-                #     f'{car.grz} от {element["dt_now"]}'
-                # )
-
-        # TODO как удалить старую запись (или закинуть в архив)?
-
-            # FIXME Обновляем существующую запись (если нужно, а нужно ли?)
-            service.last_service_date = element_dict['last_service_date']
-            service.last_service_reading = element_dict['last_service_reading']
-            service.base_interval = element_dict['base_interval']
-            service.daily_distance = element_dict['daily_distance']
-            # # За это подумать:
-            # service.last_service_id = last_service
-            # service.next_service_id = next_service
-
-            await service.update_request_status(session=session)
-
-            session.add(service)  # Добавляем все что сделали в сессию
-            # print(
-            #     'Обновлена запись обслуживания для '
-            #     f'{car.grz} от {element["dt_now"]}'
-            # )
             await session.commit()  # Применение всех изменений
 
         except Exception as e:
@@ -228,3 +183,55 @@ def get_id_from_service(in_time: str, **kwargs) -> Optional[int]:
         if kwargs['element_dict'].get(in_time + '_service_view')
         else None
     )
+
+
+async def get_or_create_car(
+    session: AsyncSession,
+    personal_id: int,
+    grz: str,
+    car_model: Optional[CarModel],
+    organization: Optional[Organization]
+) -> Car:
+    """Получает или создает автомобиль"""
+    car = await session.get(Car, personal_id)
+    if not car:
+        car = Car(
+            personal_id=personal_id,
+            grz=grz,
+            car_model=car_model,
+            organization=organization
+        )
+        session.add(car)
+        await session.flush()
+    return car
+
+
+async def update_or_create_service_work(
+    session: AsyncSession,
+    car_id: int,
+    element_dict: dict,
+    last_service_id: Optional[int],
+    next_service_id: Optional[int]
+) -> ServiceWork:
+    """Обновляет или создает запись обслуживания"""
+    # Проверяем существующую запись
+    service = await session.scalar(
+        select(ServiceWork).where(
+            ServiceWork.car_id == car_id,
+            ServiceWork.request_reading == element_dict['reading_now']
+        )
+    )
+
+    if not service:
+        service = ServiceWork(car_id=car_id)
+        session.add(service)
+
+    # Обновляем поля
+    service.update_from_dict(
+        element_dict,
+        last_service_id=last_service_id,
+        next_service_id=next_service_id
+    )
+
+    await service.update_request_status(session)
+    return service
