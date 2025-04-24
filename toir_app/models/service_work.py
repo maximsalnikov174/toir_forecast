@@ -169,16 +169,16 @@ class ServiceWork(Base):
         Как-будто его вообще надо расширить для бОльшего количества полей.
         """
         current_status = self.calculated_status
-        new_status = await session.execute(
+
+        # TODO: определить тип new_status и добавить аннотацию:
+        new_status = await session.scalar(
             select(ServiceStatus).where(
                 ServiceStatus.name == current_status.value
             )
         )
-        new_status = new_status.scalar_one_or_none()
 
         # TODO добавить еще проверку сравнения записанного с обновленным
 
-        # Обновляем только отношение (без id):
-        if new_status:
-            self.request_status = new_status
-        await session.close()
+        self.request_status = new_status
+        self.request_status_id = new_status.id
+        return self

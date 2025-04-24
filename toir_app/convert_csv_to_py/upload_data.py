@@ -7,7 +7,8 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from toir_app.convert_csv_to_py.convertation import UsersServiceName
-from toir_app.core.db import AsyncSessionLocal, Base as db
+from toir_app.core.db import AsyncSessionLocal
+from toir_app.core.db import Base as db
 from toir_app.models.service_name import ServiceName
 from toir_app.models.service_status import ServiceStatus
 from toir_app.models.special_status import SpecialStatus

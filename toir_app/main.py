@@ -6,7 +6,7 @@ from fastapi import FastAPI
 from toir_app.api.endpoints import router
 from toir_app.core.config import settings
 from toir_app.convert_csv_to_py.parse_data import (
-    convert_csv_to_list, update_db
+    convert_csv_to_list, upload_filedata_in_db
 )
 from toir_app.convert_csv_to_py.upload_data import (
     upload_all_users_data_in_db,
@@ -29,7 +29,7 @@ async def main():
     # 2. Конвертируем CSV и обновляем БД
     lst = await convert_csv_to_list(file_path)
     for element in lst:
-        await update_db(element)
+        await upload_filedata_in_db(element)
 
     # 3. Запускаем FastAPI сервер
     config = uvicorn.Config(

@@ -1,7 +1,7 @@
 from typing import List, Optional
 
 from sqlalchemy import select
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from toir_app.convert_csv_to_py.convertation import normalize_service_name
 from toir_app.function import convert_date
@@ -42,7 +42,7 @@ async def create_data_point(row: List[str]) -> Optional[CarDataPoint]:
 
 
 async def base_update_model(
-    session: Session,
+    session: AsyncSession,
     model,
     check_field: str,
     element,
@@ -70,7 +70,7 @@ async def base_update_model(
 
         # Формируем и выполняем запрос
         stmt = select(model).where(getattr(model, check_field) == value)
-        
+
         # Правильный способ выполнения асинхронного запроса
         result = await session.execute(stmt)
         existing_in_db = result.scalars().first()  # Теперь это работает
