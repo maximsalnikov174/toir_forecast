@@ -10,3 +10,11 @@ SPECIAL_STATUS_NAME_LEN = 40
 CAR_GRZ_LEN = 20  # Длина гос рег знака (У 123 АЕ 174)
 SERVICE_STATUS_NAME_LEN = 20  # Длина вида обслуживания (ТО-1, ТО ГБО и тд)
 PERSON_FULL_NAME_LEN = 40
+
+
+pattern_grz = (
+    r'^([АВЕКМНОРСТУХ]{1,2})\s'
+    r'(\d{3,4})\s'
+    r'([АВЕКМНОРСТУХ]{0,2})\s?'
+    r'([[1,7][4,7]4*)'
+)
