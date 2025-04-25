@@ -12,9 +12,13 @@ class OrganizationBase(BaseModel):
     )
 
 
-class OrganizationResponse(OrganizationBase):
-    """Модель Подразделения (цеха) для ответа API."""
+class OrganizationID(BaseModel):
+    """Базовая модель Подразделения (цеха). только ID"""
     id: int = Field(..., title='ID подразделения')
+
+
+class OrganizationResponse(OrganizationID, OrganizationBase):
+    """Модель Подразделения (цеха) для ответа API."""
     normal_name: str = Field(
         ...,
         title='Номер цеха',

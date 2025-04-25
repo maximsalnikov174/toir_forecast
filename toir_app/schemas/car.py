@@ -3,14 +3,20 @@ import re
 from pydantic import Field, field_validator, BaseModel
 
 from toir_app.constants import pattern_grz
-from toir_app.schemas.car_model import CarModelID
-from toir_app.schemas.organization import OrganizationID
+# from toir_app.schemas.car_model import CarModelID
+# from toir_app.schemas.organization import OrganizationID
 from toir_app.schemas.special_status import SpecialStatusWithTimestamp
 
 
 class CarBase(BaseModel):
     """
-    Базовая схема модели Автомобиля (ID из OeBS, ГРЗ, модель ТС, цех)
+    Базовая схема модели Автомобиля.
+
+    Используемые поля:
+    - ID из OeBS
+    - ГРЗ
+    - модель ТС
+    - цех
 
     Выполняется валидация ГРЗ по шаблонам:
     - А 123 АВ 74/174/774
@@ -26,8 +32,16 @@ class CarBase(BaseModel):
         ...,
         title='ГРЗ'
     )
-    car_model: CarModelID
-    organization: OrganizationID
+    # car_model: CarModelID
+    # organization: OrganizationID
+    car_model_id: int = Field(
+        ...,
+        title='pk из таблицы CarModel базы данных.'
+    )
+    organization_id: int = Field(
+        ...,
+        title='pk из таблицы Organization базы данных.'
+    )
 
     @field_validator('grz')
     @classmethod

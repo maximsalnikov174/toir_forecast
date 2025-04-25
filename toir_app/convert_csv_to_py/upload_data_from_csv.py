@@ -1,15 +1,16 @@
 # ----------ФУНКЦИИ, ВЫПОЛНЯЮЩИЕ НАПОЛНЕНИЕ ДАННЫМИ ИЗ CSV-ФАЙЛА----------
 
-from typing import Optional
+from typing import Any, Optional
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from toir_app.core.db import Base as db
 from toir_app.models.car import Car
-from toir_app.models.car_model import CarModel
-from toir_app.models.organization import Organization
 from toir_app.models.service_work import ServiceWork
+from toir_app.schemas.car import CarBase
+from toir_app.schemas.car_model import CarModelID
+from toir_app.schemas.organization import OrganizationID
 
 
 async def upload_users_data_in_db(
@@ -37,23 +38,30 @@ async def get_or_create_car(
     session: AsyncSession,
     personal_id: int,
     grz: str,
-    car_model: Optional[CarModel],
-    organization: Optional[Organization]
+    car_model: CarModelID,
+    organization: OrganizationID
 ) -> Car:
-    """Получает или создает автомобиль"""
-    car = await session.scalar(
+    """Получает экземпляр модели Car или создает его (автомобиль)."""
+    car_in_db = await session.scalar(
         select(Car).where(Car.personal_id == personal_id)
     )
-    if not car:
-        new_car = Car(
+
+    if not car_in_db:
+        # загоняем в pydantic-схему:
+        validated_car = CarBase(
             personal_id=personal_id,
             grz=grz,
-            car_model=car_model,
-            organization=organization
+            car_model_id=car_model.id,
+            organization_id=organization.id
         )
-        car = await session.merge(new_car)
+        new_car: dict[str, Any] = validated_car.model_dump()
+
+        # создаем экземпляр модели Car и добавляем в сессию:
+        car: Car = Car(**new_car)
+        car_in_db = await session.merge(car)
+
     await session.flush()
-    return car
+    return car_in_db
 
 
 async def create_service_work(
