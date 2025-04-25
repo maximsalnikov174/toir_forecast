@@ -11,6 +11,7 @@ from toir_app.models.service_work import ServiceWork
 from toir_app.schemas.car import CarBase
 from toir_app.schemas.car_model import CarModelID
 from toir_app.schemas.organization import OrganizationID
+from toir_app.schemas.service_work import ServiceWorkBase
 
 
 async def upload_users_data_in_db(
@@ -28,6 +29,9 @@ async def upload_users_data_in_db(
     existing = result.scalar_one_or_none()
 
     if not existing:
+
+        # TODO здесь нет валидации pydantic-схемами
+
         new_instance = apps_model(name=value)
         session.add(new_instance)
 
@@ -68,8 +72,8 @@ async def create_service_work(
     session: AsyncSession,
     car_id: int,
     element_dict: dict,
-    last_service_id: Optional[int],
-    next_service_id: Optional[int]
+    last_service_id: int,
+    next_service_id: int
 ) -> None:
     """
     Создает запись обработки строки из csv для объекта обслуживания.
@@ -95,7 +99,10 @@ async def create_service_work(
     )
 
     if not service:
-        service = ServiceWork(
+
+        # Валидация pydentic-схемой:
+        # request_status_id=оставляем пока пустым
+        validated_service_work = ServiceWorkBase(
             car_id=car_id,
             last_service_id=last_service_id,
             next_service_id=next_service_id,
@@ -104,9 +111,10 @@ async def create_service_work(
             request_date=element_dict['dt_now'],
             request_reading=element_dict['reading_now'],
             base_interval=element_dict['base_interval'],
-            daily_distance=element_dict['daily_distance'],
-            # request_status_id=оставляем пока пустым
+            daily_distance=element_dict['daily_distance']
         )
+        new_service_work: dict[str, Any] = validated_service_work.model_dump()
+        service = ServiceWork(**new_service_work)
 
         session.add(service)  # добавляем в сессию запись из csv
         # синхронизирует состояние в сессии без коммита

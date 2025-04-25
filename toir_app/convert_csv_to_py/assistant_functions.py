@@ -127,29 +127,30 @@ async def base_update_model(
         Существующий или новый объект модели
     """
     try:
-        # Получаем значение (в т.ч. обрабатывается Enum)
-        if hasattr(element, 'value'):
+        # Получаем значение:
+        if hasattr(element, 'value'):  # обработка класса Enum
             value = element.value
         else:
             value = element.dict().get(data_field) if data_field else element
-
+        #
         # Формируем и выполняем запрос
         stmt = select(model).where(getattr(model, check_field) == value)
-
+        #
         # Правильный способ выполнения асинхронного запроса
         result = await session.execute(stmt)
-        existing_in_db = result.scalars().first()  # Теперь это работает
-
+        existing_in_db = result.scalars().first()
+        #
         if not existing_in_db:
+            #
             new_instance = model(**{check_field: value})
             session.add(new_instance)
             # возможно дальше коммит не нужен!!!
             # его надо вынести в parse_data.update_db
-
+            #
             await session.commit()
             return new_instance  # скорее всего возвращает модель, проверить!
         return existing_in_db  # скорее всего возвращает модель, проверить!
-
+        #
     except AttributeError as e:
         raise ValueError(
             f'Поле {check_field} не существует в модели {model.__name__}'
