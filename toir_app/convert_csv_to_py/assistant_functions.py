@@ -8,33 +8,98 @@ from toir_app.function import convert_date
 from toir_app.schemas.convertation import CarDataPoint
 
 
-async def create_data_point(row: List[str]) -> Optional[CarDataPoint]:
+def find_element_position(
+    row: List, elem: str, mapping_name: List, type='str'
+):
+    """
+    Возвращает элемент (в обработанном виде) из поданной строки.
+
+    Args:
+    - row : список элементов из строки данных csv
+    - elem : наименование столбца в файле csv
+    - mapping_name : список заголовков (1-ая строка файла csv)
+    - type : способ преобразования [str, int, float, complex]
+    """
+    if type == 'str':
+        return row[mapping_name.index(elem)]
+    elif type == 'int':
+        return int(row[mapping_name.index(elem)])
+    elif type == 'float':
+        return float(row[mapping_name.index(elem)].replace(',', '.'))
+    elif type == 'complex':
+        return row[mapping_name.index(elem)].strip()
+    # else:
+    #     неизвестные данные
+
+
+# Как по состоянию на 25/04/2025 выглядят поля rmt321:
+# all_value = {
+#     'dt_now': 'TEK_DATE',  # 0
+#     'organization': 'ORGANIZATION_CODE',  # 1
+#     'car_model': 'GR',  # 3
+#     'personal_id': 'INSTANCE_ID',  # 4
+#     'grz': 'INSTANCE_NUMBER',  # 5
+#     'last_service_date': 'LAST_SERVICE_END_DATE',  # 7
+#     'last_service_view': 'LAST_OPER',  # 8
+#     'base_interval': 'RUNTIME_INTERVAL',  # 9
+#     'daily_distance': 'NORMA',  # 10
+#     'last_service_reading': 'LAST_SERVICE_READING',  # 11
+#     'reading_now': 'CUR_READING',  # 15
+#     'next_service_view': 'NEXT_OPER',  # 16
+# }
+
+
+async def create_data_point(
+    row: List[str], mapping_name
+) -> Optional[CarDataPoint]:
     """
     Создает схему CarDataPoint из входящей строки данных.
     """
     try:
         return CarDataPoint(
             # Описание ТС:
-            personal_id=int(row[4]),
-            grz=row[5],
-            car_model=row[3],
-            organization=row[1],
+            personal_id=find_element_position(
+                row, 'INSTANCE_ID', mapping_name, 'int'
+            ),
+            grz=find_element_position(
+                row, 'INSTANCE_NUMBER', mapping_name),
+            car_model=find_element_position(row, 'GR', mapping_name),
+            organization=find_element_position(
+                row, 'ORGANIZATION_CODE', mapping_name),
 
             # Базовая настройка:
-            base_interval=int(row[9]),
+            base_interval=find_element_position(
+                row, 'RUNTIME_INTERVAL', mapping_name, 'int'
+            ),
 
             # Динамические данные:
-            dt_now=convert_date(row[0]),
-            daily_distance=float(row[10].replace(',', '.')),
-            reading_now=float(row[15].replace(',', '.')),
+            dt_now=convert_date(find_element_position(
+                row, 'TEK_DATE', mapping_name)),
+            daily_distance=find_element_position(
+                row, 'NORMA', mapping_name, 'float'),
+            reading_now=find_element_position(
+                row, 'CUR_READING', mapping_name, 'float'),
 
             # История:
-            last_service_date=convert_date(row[7]) if row[7].strip() else None,
-            last_service_view=normalize_service_name(row[8]),
-            last_service_reading=float(row[11].replace(',', '.')),
+            last_service_date=(
+                convert_date(
+                    find_element_position(
+                        row, 'LAST_SERVICE_END_DATE', mapping_name)
+                ) if find_element_position(
+                    row, 'LAST_SERVICE_END_DATE', mapping_name, 'complex'
+                ) else None
+            ),
+            last_service_view=normalize_service_name(
+                find_element_position(row, 'LAST_OPER', mapping_name)
+            ),
+            last_service_reading=find_element_position(
+                row, 'LAST_SERVICE_READING', mapping_name, 'float'
+            ),
 
             # Прогноз:
-            next_service_view=normalize_service_name(row[16])
+            next_service_view=normalize_service_name(
+                find_element_position(row, 'NEXT_OPER', mapping_name)
+            )
         )
     except (ValueError, IndexError) as e:
         print(f'Ошибка создания точки данных: {e}')

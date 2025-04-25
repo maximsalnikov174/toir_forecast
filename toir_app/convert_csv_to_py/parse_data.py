@@ -70,7 +70,10 @@ async def convert_csv_to_list(filename: str) -> List[CarDataPoint]:
         reader = csv.reader(csvfile, quotechar='"')
 
         for row in reader:
-            if len(row) == 1:
+            # Первая строчка - заголовки:
+            if len(row) == 22:
+                mapping_name = list(row)
+            elif len(row) == 1:  # все остальные строчки
                 try:
                     # Поскольку в исходной строке csv есть запятые внутри
                     # элемента - пришлось хардкодить и собирать список заново:
@@ -90,7 +93,9 @@ async def convert_csv_to_list(filename: str) -> List[CarDataPoint]:
 
                     # Валидация и преобразование данных
                     try:
-                        data_point = await create_data_point(rows)
+                        data_point = (
+                            await create_data_point(rows, mapping_name)
+                        )
 
                         if data_point:
                             total_list.append(data_point)

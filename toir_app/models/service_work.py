@@ -1,7 +1,7 @@
 from sqlalchemy import Column, DateTime, Float, ForeignKey, Integer, select
 from sqlalchemy.orm import relationship
 from sqlalchemy.ext.asyncio import AsyncSession
-                                    
+
 from toir_app.constants import EXCESS_VALUE
 from toir_app.core.db import Base
 from toir_app.function import predict_reading_when_current_month_left
@@ -163,14 +163,10 @@ class ServiceWork(Base):
             return Status.NO_NEED
 
     async def update_request_status(self, session: AsyncSession):
-        """Обновляет request_status на основе вычисленного статуса
-
-        Метод на перспективу, пока не надо его задействовать.
-        Как-будто его вообще надо расширить для бОльшего количества полей.
+        """
+        Обновляет request_status на основе вычисленного статуса.
         """
         current_status = self.calculated_status
-
-        # TODO: определить тип new_status и добавить аннотацию:
         new_status = await session.scalar(
             select(ServiceStatus).where(
                 ServiceStatus.name == current_status.value
@@ -179,6 +175,11 @@ class ServiceWork(Base):
 
         # TODO добавить еще проверку сравнения записанного с обновленным
 
-        self.request_status = new_status
-        self.request_status_id = new_status.id
+        if new_status:
+            self.request_status = new_status
+            self.request_status_id = new_status.id
+        # TODO если не удалось получить new_status - нужна будет обработка
+        # else:
+        #     ...
+
         return self
