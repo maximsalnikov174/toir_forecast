@@ -1,8 +1,8 @@
 from datetime import datetime as dt
 from typing import Optional
 
-from pydantic import BaseModel, field_validator
-from toir_app.convert_csv_to_py.convertation import normalize_service_name
+from pydantic import BaseModel  # , field_validator
+# from toir_app.convert_csv_to_py.convertation import normalize_service_name
 
 
 class BaseCarData(BaseModel):

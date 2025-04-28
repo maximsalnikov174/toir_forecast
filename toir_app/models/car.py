@@ -3,6 +3,10 @@ from sqlalchemy.orm import relationship
 
 from toir_app.constants import CAR_GRZ_LEN
 from toir_app.core.db import Base
+# from toir_app.models.car_model import CarModel
+# from toir_app.models.organization import Organization
+# from toir_app.models.service_work import ServiceWork
+# from toir_app.models.special_status import SpecialStatus
 
 
 class Car(Base):

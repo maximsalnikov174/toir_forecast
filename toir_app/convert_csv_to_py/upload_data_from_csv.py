@@ -1,6 +1,6 @@
 # ----------ФУНКЦИИ, ВЫПОЛНЯЮЩИЕ НАПОЛНЕНИЕ ДАННЫМИ ИЗ CSV-ФАЙЛА----------
 
-from typing import Any, Optional
+from typing import Any
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -99,7 +99,6 @@ async def create_service_work(
     )
 
     if not service:
-
         # Валидация pydentic-схемой:
         # request_status_id=оставляем пока пустым
         validated_service_work = ServiceWorkBase(
