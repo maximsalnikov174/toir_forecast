@@ -44,3 +44,12 @@ AsyncSessionLocal = async_sessionmaker(
     expire_on_commit=False,  # Рекомендуется для асинхронных сессий
     autoflush=False  # хз че такое
 )
+
+
+# Асинхронный генератор сессий:
+async def get_async_session():
+    async with AsyncSessionLocal() as async_session:
+        # Генератор с сессией передается в вызывающую функцию
+        yield async_session
+        # когда http-запрос отработает - выполнение кода вернется сюда и при
+        # выходе из контекстного менеджера - сессия будет закрыта
