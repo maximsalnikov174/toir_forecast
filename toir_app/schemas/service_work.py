@@ -4,6 +4,11 @@ from pydantic import BaseModel, Field
 
 
 class ServiceWorkBase(BaseModel):
+    """
+    Базовая схема записи о Сервисном Обслуживании.
+
+    Есть все поля, кроме расчётного состояния (статуса) на текущий момент.
+    """
     car_id: int = Field(
         ...,
         title='pk из таблицы Car'
@@ -24,5 +29,14 @@ class ServiceWorkBase(BaseModel):
     daily_distance: float
 
 
-class ServiceWorkWithRequestStatus(ServiceWorkBase):
+class ServiceWorksRequestStatus(BaseModel):
+    """
+    Схема записи о Сервисном Обслуживании (только ID вычисляемого статуса).
+    """
     request_status_id: int
+
+
+class ServiceWorkWithRequestStatus(
+    ServiceWorkBase, ServiceWorksRequestStatus
+):
+    """Полная базовая схема записи о Сервисном Обслуживании."""
