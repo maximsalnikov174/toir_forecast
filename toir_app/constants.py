@@ -8,7 +8,7 @@ CAR_MODEL_NAME_LEN = 50  # Длина названия ТС (Шевроле Ни
 STATUS_NAME_LEN = 20  # Длина названия статуса (Превышение или Подошло)
 SPECIAL_STATUS_NAME_LEN = 40
 CAR_GRZ_LEN = 20  # Длина гос рег знака (У 123 АЕ 174)
-SERVICE_STATUS_NAME_LEN = 20  # Длина вида обслуживания (ТО-1, ТО ГБО и тд)
+SERVICE_STATUS_NAME_LEN = 40  # Длина вида обслуживания (ТО-1, ТО ГБО и тд)
 PERSON_FULL_NAME_LEN = 40
 
 
