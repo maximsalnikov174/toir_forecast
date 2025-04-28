@@ -1,7 +1,9 @@
 import asyncio
 import os
+
 import uvicorn
 from fastapi import FastAPI
+from dotenv import load_dotenv
 
 from toir_app.api.endpoints import router
 from toir_app.core.config import settings
@@ -13,9 +15,11 @@ from toir_app.convert_csv_to_py.upload_data import (
     need_to_upload_datas
 )
 
+load_dotenv()  # подгружаем переменные из env
+
 toir_app = FastAPI(title=settings.app_title)
 
-# Подключаем роутер к приложению.
+# Подключаем роутер к приложению:
 toir_app.include_router(router)
 script_dir = os.path.dirname(os.path.abspath(__file__))
 file_path = f'{script_dir}/dataset_from_oebs/rmt321.csv'
@@ -23,13 +27,14 @@ file_path = f'{script_dir}/dataset_from_oebs/rmt321.csv'
 
 async def main():
     """Основная асинхронная функция инициализации"""
-    # 1. Загружаем enum-значения в БД
-    await upload_all_users_data_in_db(need_to_upload_datas)
+    if os.environ['UPLOAD_DATA_FROM_CSV'].lower() == 'true':
+        # 1. Загружаем enum-значения в БД
+        await upload_all_users_data_in_db(need_to_upload_datas)
 
-    # 2. Конвертируем CSV и обновляем БД
-    lst = await convert_csv_to_list(file_path)
-    for element in lst:
-        await upload_filedata_in_db(element)
+        # 2. Конвертируем CSV и обновляем БД
+        lst = await convert_csv_to_list(file_path)
+        for element in lst:
+            await upload_filedata_in_db(element)
 
     # 3. Запускаем FastAPI сервер
     config = uvicorn.Config(
