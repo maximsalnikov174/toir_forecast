@@ -3,7 +3,7 @@ import re
 from pydantic import Field, field_validator, BaseModel
 
 from toir_app.constants import pattern_grz
-# from toir_app.schemas.car_model import CarModelID
+# from toir_app.schemas.car_model import CarModelBase
 # from toir_app.schemas.organization import OrganizationID
 from toir_app.schemas.special_status import SpecialStatusWithTimestamp
 
