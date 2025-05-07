@@ -6,7 +6,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from toir_app.core.db import Base as db
-from toir_app.crud.service_status import get_service_status
+from toir_app.crud.service_status import get_service_status_by_name
 from toir_app.crud.service_work import get_last_service_with_current_service_id
 from toir_app.models.car import Car
 from toir_app.models.service_work import ServiceWork
@@ -114,7 +114,7 @@ async def create_service_work(
 
         # Если отличаются - идём в базу:
         if old_status != upd_status:
-            upd_status_in_db = await get_service_status(
+            upd_status_in_db = await get_service_status_by_name(
                 upd_status.value, session
             )
             # ... и перезаписываем для записи поля «статус» и «id статуса»:
@@ -123,7 +123,10 @@ async def create_service_work(
                 service.request_status_id = upd_status_in_db.id
         return
 
-    if not service:
+    # Если инфы о ТС нет или появилась новая запись о сервисе:
+    if not service or service.last_service_reading != (
+        element_dict['last_service_reading']
+    ):
         # Валидация pydentic-схемой:
         # request_status_id=оставляем пока пустым
         validated_service_work = ServiceWorkBase(
@@ -141,7 +144,7 @@ async def create_service_work(
         service = ServiceWork(**new_service_work)
 
         # Рассчитываем и получаем глобальный статус для авто:
-        service_status = await get_service_status(
+        service_status = await get_service_status_by_name(
             name=service.calculated_status.value, session=session
         )
         service.request_status_id = service_status.id
