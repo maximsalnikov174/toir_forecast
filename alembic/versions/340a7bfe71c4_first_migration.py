@@ -1,8 +1,8 @@
-"""first migration
+"""first_migration
 
-Revision ID: 6a68ee694da0
+Revision ID: 340a7bfe71c4
 Revises: 
-Create Date: 2025-04-21 13:35:06.390304
+Create Date: 2025-05-07 08:54:50.803647
 
 """
 from typing import Sequence, Union
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = '6a68ee694da0'
+revision: str = '340a7bfe71c4'
 down_revision: Union[str, None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -29,7 +29,7 @@ def upgrade() -> None:
     )
     op.create_table('organization',
     sa.Column('name', sa.String(length=3), nullable=False, comment='Название подразделения в формате Ю51'),
-    sa.Column('normal_name', sa.String(length=5), nullable=True, comment='Название цеха в привычном формате'),
+    sa.Column('normal_name', sa.String(length=5), nullable=True, comment='Название цеха в привычном формате.'),
     sa.Column('id', sa.Integer(), nullable=False),
     sa.PrimaryKeyConstraint('id'),
     sa.UniqueConstraint('name')
@@ -39,7 +39,7 @@ def upgrade() -> None:
     sa.PrimaryKeyConstraint('id')
     )
     op.create_table('servicename',
-    sa.Column('name', sa.String(length=20), nullable=False),
+    sa.Column('name', sa.String(length=40), nullable=False),
     sa.Column('id', sa.Integer(), nullable=False),
     sa.PrimaryKeyConstraint('id'),
     sa.UniqueConstraint('name')
@@ -59,10 +59,10 @@ def upgrade() -> None:
     op.create_table('car',
     sa.Column('personal_id', sa.Integer(), nullable=False, comment='Уникальный ID из OeBS'),
     sa.Column('grz', sa.String(length=20), nullable=False, comment='Государственный регистрационный знак'),
-    sa.Column('in_archive', sa.Boolean(), nullable=True, comment='Флаг нахождения в архиве'),
-    sa.Column('car_model_id', sa.Integer(), nullable=False),
+    sa.Column('in_archive', sa.Boolean(), nullable=True, comment='Флаг нахождения в архиве (при списании/продаже)'),
+    sa.Column('car_model_id', sa.Integer(), nullable=True),
     sa.Column('organization_id', sa.Integer(), nullable=True),
-    sa.Column('special_status_id', sa.Integer(), nullable=True),
+    sa.Column('special_status_id', sa.Integer(), nullable=True, comment='Глобальные статусы (на ВР, к выбытию, на реализации и т.д.)'),
     sa.Column('id', sa.Integer(), nullable=False),
     sa.ForeignKeyConstraint(['car_model_id'], ['carmodel.id'], ),
     sa.ForeignKeyConstraint(['organization_id'], ['organization.id'], ),
