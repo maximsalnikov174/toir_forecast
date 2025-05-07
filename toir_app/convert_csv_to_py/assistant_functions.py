@@ -49,7 +49,7 @@ def find_element_position(
 # }
 
 
-async def create_data_point(
+def create_data_point(
     row: List[str], mapping_name
 ) -> Optional[CarDataPoint]:
     """
