@@ -71,8 +71,22 @@ async def convert_csv_to_list(filename: str) -> List[CarDataPoint]:
 
         for row in reader:
             # Первая строчка - заголовки:
-            if len(row) == 22:
+            if len(row) == 22 and reader.line_num == 1:
                 mapping_name = list(row)
+
+            # Стандартная ситуация:
+            elif len(row) == 22:
+                try:
+                    data_point = create_data_point(row, mapping_name)
+                    if data_point:
+                        total_list.append(data_point)
+                    else:
+                        print(data_point)
+                except ValueError as e:
+                    print(f'Ошибка обработки данных: {e}')
+                    continue
+
+            # Кривые данные:
             elif len(row) == 1:  # все остальные строчки
                 try:
                     # Поскольку в исходной строке csv есть запятые внутри
@@ -93,9 +107,7 @@ async def convert_csv_to_list(filename: str) -> List[CarDataPoint]:
 
                     # Валидация и преобразование данных
                     try:
-                        data_point = (
-                            await create_data_point(rows, mapping_name)
-                        )
+                        data_point = create_data_point(rows, mapping_name)
 
                         if data_point:
                             total_list.append(data_point)
@@ -173,13 +185,14 @@ async def upload_filedata_in_db(element: CarDataPoint) -> None:
 
             # Машина уже должна быть сохранена!
             # Проверяем записи о прошлых обслуживаниях и создаём новые:
-            await create_service_work(
-                session=session,
-                car_id=car.id,
-                element_dict=element_dict,
-                last_service_id=last_service,
-                next_service_id=next_service
-            )
+            if last_service and next_service:
+                await create_service_work(
+                    session=session,
+                    car_id=car.id,
+                    element_dict=element_dict,
+                    last_service_id=last_service,
+                    next_service_id=next_service
+                )
             await session.commit()
 
         except Exception as e:
