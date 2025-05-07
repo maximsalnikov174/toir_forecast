@@ -3,10 +3,6 @@ from sqlalchemy.orm import relationship
 
 from toir_app.constants import CAR_GRZ_LEN
 from toir_app.core.db import Base
-# from toir_app.models.car_model import CarModel
-# from toir_app.models.organization import Organization
-# from toir_app.models.service_work import ServiceWork
-# from toir_app.models.special_status import SpecialStatus
 
 
 class Car(Base):
@@ -27,39 +23,38 @@ class Car(Base):
     in_archive = Column(
         Boolean,
         default=False,
-        comment='Флаг нахождения в архиве'
+        comment='Флаг нахождения в архиве (при списании/продаже)'
     )
 
-    # Связи (FIXME не уверен, что back_populates='car' для всех == правильно):
+    # Связи:
     car_model_id = Column(
         Integer,
-        ForeignKey('carmodel.id'),
-        nullable=False
+        ForeignKey('carmodel.id')
     )
-    car_model = relationship(
-        'CarModel',
-        back_populates='cars'
-    )
-
     organization_id = Column(
         Integer,
         ForeignKey('organization.id')
+    )
+    special_status_id = Column(
+        Integer,
+        ForeignKey('specialstatus.id'),
+        nullable=True,
+        comment='Глобальные статусы (на ВР, к выбытию, на реализации и т.д.)'
+    )
+
+    # Обратные связи:
+    car_model = relationship(
+        'CarModel',
+        back_populates='cars'
     )
     organization = relationship(
         'Organization',
         back_populates='cars'
     )
-
-    special_status_id = Column(
-        Integer,
-        ForeignKey('specialstatus.id'),
-        nullable=True
-    )
     special_status = relationship(
         'SpecialStatus',
         back_populates='cars'
     )
-
     service_works = relationship(
         'ServiceWork',
         back_populates='car',

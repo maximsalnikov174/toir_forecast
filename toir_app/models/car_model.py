@@ -23,7 +23,7 @@ class CarModel(Base):
         'Car',
         back_populates='car_model',
         lazy='selectin',  # более эффективная загрузка связей
-        cascade='all, delete-orphan',
+        cascade='delete',
         doc='1:M Список автомобилей данной Марки.'
     )
 

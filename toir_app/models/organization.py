@@ -5,6 +5,14 @@ from toir_app.constants import (ORGANIZATION_NAME_LEN,
                                 ORGANIZATION_NORMAL_NAME_LEN)
 from toir_app.core.db import Base
 
+# Пока не работает:
+convert_oebs_to_1c = {
+    'Ю51': 'ЦП-2',
+    'Ю52': 'ЦП-3',
+    'Ю53': 'ЦП-4',
+    'Ю54': 'ЦП-5'
+}
+
 
 class Organization(Base):
     """
@@ -29,7 +37,7 @@ class Organization(Base):
         'Car',
         back_populates='organization',  # явное определение отношений
         lazy='selectin',
-        cascade='all, delete-orphan',
+        cascade='delete',
         doc='1:M Список автомобилей, числящихся в данном цехе.'
     )
 

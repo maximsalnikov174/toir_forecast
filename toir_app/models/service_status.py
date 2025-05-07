@@ -26,7 +26,7 @@ class ServiceStatus(Base):
         'ServiceWork',
         back_populates='request_status',
         lazy='selectin',  # более эффективная загрузка связей
-        cascade='all, delete-orphan',
+        cascade='delete',
         doc='1:M Список работ (записей) в данном сервисном статусе.'
     )
 
