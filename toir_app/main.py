@@ -22,15 +22,16 @@ toir_app = FastAPI(title=settings.app_title)
 # Подключаем роутер к приложению:
 toir_app.include_router(router)
 script_dir = os.path.dirname(os.path.abspath(__file__))
-file_path = f'{script_dir}/dataset_from_oebs/rmt321.csv'
+file_path = f'{script_dir}/dataset_from_oebs/rmt321_full_new_part3.csv'
 
 
 async def main():
     """Основная асинхронная функция инициализации"""
-    if os.environ['UPLOAD_DATA_FROM_CSV'].lower() == 'true':
+    if os.environ['UPLOAD_STATIC_DATA_FROM_CSV'].lower() == 'true':
         # 1. Загружаем enum-значения в БД
         await upload_all_users_data_in_db(need_to_upload_datas)
 
+    if os.environ['UPLOAD_DATA_FROM_CSV'].lower() == 'true':
         # 2. Конвертируем CSV и обновляем БД
         lst = await convert_csv_to_list(file_path)
         for element in lst:
