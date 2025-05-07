@@ -1,15 +1,11 @@
 from datetime import datetime as dt
 from calendar import monthrange
 
-from sqlalchemy import Column, DateTime, Float, ForeignKey, Integer, select
+from sqlalchemy import Column, DateTime, Float, ForeignKey, Integer
 from sqlalchemy.orm import relationship
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from toir_app.constants import EXCESS_VALUE
 from toir_app.core.db import Base
-# from toir_app.models.car import Car
-# from toir_app.models.service_name import ServiceName
-from toir_app.models.service_status import ServiceStatus
 from toir_app.models.static_model import Status
 from toir_app.schemas.convertation import BaseCarData
 
@@ -105,15 +101,6 @@ class ServiceWork(Base):
             - Превышение
             - Подошло
         """
-        # if other_dict:
-        #     element = {
-        #         'base_interval': other_dict['base_interval'],
-        #         'daily_distance': other_dict['daily_distance'],
-        #         'dt_now': other_dict['request_date'],
-        #         'last_service_reading': other_dict['last_service_reading'],
-        #         'reading_now': other_dict['request_reading']
-        #     }
-        # else:
         element = {
             'base_interval': self.base_interval,
             'daily_distance': self.daily_distance,
@@ -190,26 +177,3 @@ class ServiceWork(Base):
 
         forecast_reading = days_left * daily_distance + 1  # ожидаемый пробег
         return forecast_reading + reading_now
-
-    async def update_request_status(self, session: AsyncSession):
-        """
-        Обновляет request_status на основе вычисленного статуса.
-        """
-        current_status_now = self.request_status_id
-        calculate_status = self.calculated_status
-        new_status = await session.scalar(
-            select(ServiceStatus).where(
-                ServiceStatus.name == calculate_status.value
-            )
-        )
-
-        # TODO добавить еще проверку сравнения записанного с обновленным
-
-        if calculate_status != current_status_now:  # проверить эту строчку
-            self.request_status = new_status
-            self.request_status_id = new_status.id
-        # TODO если не удалось получить new_status - нужна будет обработка
-        # else:
-        #     ...
-
-        return self
