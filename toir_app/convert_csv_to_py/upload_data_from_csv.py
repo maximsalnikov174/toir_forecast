@@ -6,6 +6,8 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from toir_app.core.db import Base as db
+from toir_app.crud.service_status import get_service_status
+from toir_app.crud.service_work import get_last_service_with_current_service_id
 from toir_app.models.car import Car
 from toir_app.models.service_work import ServiceWork
 from toir_app.schemas.car import CarBase
@@ -79,24 +81,47 @@ async def create_service_work(
     Создает запись обработки строки из csv для объекта обслуживания.
 
     Проверяем существующую запись. Должны совпасть:
-    - id,
-    - текущие показания пробега,
-    - вид последнего обслуживания,
-    - (на всякий случай) показания последнего обслуживания
+    - id ТС,
+    - вид последнего обслуживания
+
+    Дальше смотрим показания последнего обслуживания
 
     Если нет изменений - просто пропускаем.
     """
-    service = await session.scalar(
-        select(ServiceWork)
-        .where(
-            ServiceWork.car_id == car_id,
-            ServiceWork.request_reading == element_dict['reading_now'],
-            ServiceWork.last_service_id == last_service_id,
-            ServiceWork.last_service_reading == (
-                element_dict['last_service_reading']
-            )
-        )
+    # Ищем в БД самую свежую запись для данного ТС с тем же видом обслуживания:
+    service = await get_last_service_with_current_service_id(
+        car_id=car_id,
+        last_service_id=last_service_id,
+        session=session
     )
+
+    # Когда сервис в БД совпадает с полученным (в т.ч. пробег последнего
+    # сервиса), но при этом изменился общий пробег - ОБНОВЛЕНИЕ ЗАПИСИ по сути:
+    if (
+        service
+        and service.last_service_reading == (
+            element_dict['last_service_reading']
+        )
+        and service.request_reading != element_dict['reading_now']
+    ):
+        # Переписываем суточный пробег, пробег в момент запроса и тек.дату:
+        service.daily_distance = element_dict['daily_distance']
+        service.request_reading = element_dict['reading_now']
+        service.request_date = element_dict['dt_now']
+
+        old_status = service.request_status.name  # запомнили старый статус
+        upd_status = service.calculated_status  # и пересчиталие его
+
+        # Если отличаются - идём в базу:
+        if old_status != upd_status:
+            upd_status_in_db = await get_service_status(
+                upd_status.value, session
+            )
+            # ... и перезаписываем для записи поля «статус» и «id статуса»:
+            if upd_status_in_db:
+                service.request_status = upd_status_in_db
+                service.request_status_id = upd_status_in_db.id
+        return
 
     if not service:
         # Валидация pydentic-схемой:
@@ -115,9 +140,9 @@ async def create_service_work(
         new_service_work: dict[str, Any] = validated_service_work.model_dump()
         service = ServiceWork(**new_service_work)
 
-        session.add(service)  # добавляем в сессию запись из csv
-        # синхронизирует состояние в сессии без коммита
-        # необходим для получения "service"
-        await session.flush()
-        await service.update_request_status(session)  # обновляем статус
-        await session.flush()  # необходим для добавления request_status
+        # Рассчитываем и получаем глобальный статус для авто:
+        service_status = await get_service_status(
+            name=service.calculated_status.value, session=session
+        )
+        service.request_status_id = service_status.id
+        session.add(service)
