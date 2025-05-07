@@ -19,7 +19,7 @@ async def get_last_service_with_current_service_id(
     Returns:
     - оbj(ServiceWork)
     """
-    await session.scalar(
+    return await session.scalar(
         select(ServiceWork).where(
             ServiceWork.car_id == car_id,
             ServiceWork.last_service_id == last_service_id,
