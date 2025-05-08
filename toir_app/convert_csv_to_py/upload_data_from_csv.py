@@ -78,15 +78,19 @@ async def create_service_work(
     next_service_id: int
 ) -> None:
     """
-    Создает запись обработки строки из csv для объекта обслуживания.
+    Создает или обновляет запись обслуживания для автомобиля.
 
-    Проверяем существующую запись. Должны совпасть:
-    - id ТС,
-    - вид последнего обслуживания
+    Параметры:
+        session: Асинхронная сессия SQLAlchemy
+        car_id: ID автомобиля
+        element_dict: Словарь с данными из CSV
+        last_service_id: ID последнего выполненного обслуживания
+        next_service_id: ID следующего запланированного обслуживания
 
-    Дальше смотрим показания последнего обслуживания
-
-    Если нет изменений - просто пропускаем.
+    Логика:
+    1. Если запись существует и данные совпадают - проверяем только статус;
+    2. Если запись существует, но данные изменились - обновляем;
+    3. Если записи нет - создаем новую запись.
     """
     # Ищем в БД самую свежую запись для данного ТС с тем же видом обслуживания:
     service = await get_last_service_with_current_service_id(
@@ -94,58 +98,57 @@ async def create_service_work(
         last_service_id=last_service_id,
         session=session
     )
+    # Валидация pydentic-схемой:
+    validated_service_work = ServiceWorkBase(
+        car_id=car_id,
+        last_service_id=last_service_id,
+        next_service_id=next_service_id,
+        last_service_date=element_dict['last_service_date'],
+        last_service_reading=element_dict['last_service_reading'],
+        request_date=element_dict['dt_now'],
+        request_reading=element_dict['reading_now'],
+        base_interval=element_dict['base_interval'],
+        daily_distance=element_dict['daily_distance']
+    )
 
-    # Когда сервис в БД совпадает с полученным (в т.ч. пробег последнего
-    # сервиса), но при этом изменился общий пробег - ОБНОВЛЕНИЕ ЗАПИСИ по сути:
+    old_request_status_id = None  # Переменная для старого статуса
+    need_to_update = False  # Переменная для срабатывания обновления
+
+    # Если сервис в БД совпадает с полученным (в т.ч. пробег посл. сервиса):
     if (
         service
         and service.last_service_reading == (
-            element_dict['last_service_reading']
+            validated_service_work.last_service_reading
         )
-        and service.request_reading != element_dict['reading_now']
     ):
-        # Переписываем суточный пробег, пробег в момент запроса и тек.дату:
-        service.daily_distance = element_dict['daily_distance']
-        service.request_reading = element_dict['reading_now']
-        service.request_date = element_dict['dt_now']
+        # ... но при этом изменился общий пробег - ОБНОВЛЕНИЕ ЗАПИСИ по сути
+        if service.request_reading != validated_service_work.request_reading:
+            need_to_update = True
+            # Обновляем суточный и общий пробег:
+            service.daily_distance = validated_service_work.daily_distance
+            service.request_reading = validated_service_work.request_reading
 
-        old_status = service.request_status.name  # запомнили старый статус
-        upd_status = service.calculated_status  # и пересчиталие его
+        # Записываем дату обновления (нужно для пересчёта статуса):
+        service.request_date = validated_service_work.request_date
+        # и дополнительно фиксируем старый статус экземпляра:
+        old_request_status_id = service.request_status_id
 
-        # Если отличаются - идём в базу:
-        if old_status != upd_status:
-            upd_status_in_db = await get_service_status_by_name(
-                upd_status.value, session
-            )
-            # ... и перезаписываем для записи поля «статус» и «id статуса»:
-            if upd_status_in_db:
-                service.request_status = upd_status_in_db
-                service.request_status_id = upd_status_in_db.id
-        return
-
-    # Если инфы о ТС нет или появилась новая запись о сервисе:
-    if not service or service.last_service_reading != (
-        element_dict['last_service_reading']
-    ):
-        # Валидация pydentic-схемой:
-        # request_status_id=оставляем пока пустым
-        validated_service_work = ServiceWorkBase(
-            car_id=car_id,
-            last_service_id=last_service_id,
-            next_service_id=next_service_id,
-            last_service_date=element_dict['last_service_date'],
-            last_service_reading=element_dict['last_service_reading'],
-            request_date=element_dict['dt_now'],
-            request_reading=element_dict['reading_now'],
-            base_interval=element_dict['base_interval'],
-            daily_distance=element_dict['daily_distance']
-        )
+    else:
+        # Если инфы о ТС нет или появилась новая запись о сервисе:
         new_service_work: dict[str, Any] = validated_service_work.model_dump()
         service = ServiceWork(**new_service_work)
 
-        # Рассчитываем и получаем глобальный статус для авто:
-        service_status = await get_service_status_by_name(
-            name=service.calculated_status.value, session=session
-        )
-        service.request_status_id = service_status.id
+    # Рассчитываем и получаем глобальный статус для авто:
+    # Должно гарантированно рассчитываться!
+    upd_status = service.calculated_status
+    upd_status = (
+        await get_service_status_by_name(upd_status.value, session)
+    )
+    service.request_status_id = upd_status.id
+
+    # Если глоб. статус изменился - для
+    # * обновляемой записи - откат или прогресс
+    # * новой записи - в любом случае должна быть разница
+    # или need_to_update обновилось на True:
+    if old_request_status_id != upd_status.id or need_to_update:
         session.add(service)
