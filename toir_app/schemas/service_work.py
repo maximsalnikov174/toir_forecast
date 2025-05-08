@@ -1,6 +1,6 @@
 from datetime import datetime as dt
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator, ValidationInfo
 
 
 class ServiceWorkBase(BaseModel):
@@ -21,12 +21,26 @@ class ServiceWorkBase(BaseModel):
         ...,
         title='pk из таблицы ServiceName'
     )
-    last_service_date: dt
-    last_service_reading: float
     request_date: dt
     request_reading: float
+    last_service_date: dt
+    last_service_reading: float
     base_interval: int
     daily_distance: float
+
+    @field_validator('last_service_date')
+    def last_service_date_must_be_in_past(
+        cls, value: dt, info: ValidationInfo
+    ):
+        if value > info.data['request_date']:
+            car_id = info.data['car_id']
+            last_service_id = info.data['last_service_id']
+            date = value.date().isoformat()
+            raise ValueError(
+                f'Прошлое ТО id#{last_service_id} для ТС id#{car_id} '
+                f'«выполнено» в будущем ({date}). Исправьте в OeBS!'
+            )
+        return value
 
 
 class ServiceWorksRequestStatus(BaseModel):
