@@ -186,6 +186,7 @@ async def upload_filedata_in_db(element: CarDataPoint) -> None:
             # Машина уже должна быть сохранена!
             # Проверяем записи о прошлых обслуживаниях и создаём новые:
             if last_service and next_service:
+                # может ли быть такое, что ласт и некст не будет?
                 await create_service_work(
                     session=session,
                     car_id=car.id,
