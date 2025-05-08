@@ -29,6 +29,7 @@ async def get_service_name_with_request_status(
 
 async def get_cars_with_request_status(
     request_status_id: int,
+    organization_id: int,
     session: AsyncSession
 ) -> list[Optional[Car]]:
     """
@@ -37,8 +38,10 @@ async def get_cars_with_request_status(
     cars = await session.execute(
         select(Car)
         .join(ServiceWork, Car.id == ServiceWork.car_id)
-        .where(ServiceWork.request_status_id == request_status_id)
-        .distinct()  # distinct - дедупликация.
+        .where(
+            ServiceWork.request_status_id == request_status_id,
+            Car.organization_id == organization_id
+        ).distinct()  # distinct - дедупликация.
         .order_by(Car.grz)
     )
     return list(cars.scalars().all())

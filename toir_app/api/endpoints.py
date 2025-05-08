@@ -35,18 +35,24 @@ async def get_all_service_names_with_selected_request_status(
 
 
 @router.get(
-    '/all_cars',
+    '/all_cars_in_organization',
     response_model=list[CarBase],
     name='Срез списка машин',
-    description='Получение среза списка машин для заполнения строк.',
+    description=(
+        'Получение среза списка машин цеха Х со статусом Y '
+        'для заполнения строк.'
+    ),
     tags=['cars'],
     status_code=200,
 )
 async def get_all_cars_with_selected_request_status(
     request_status_param: int,
+    organization_id: int,
     session: AsyncSession = Depends(get_async_session)
 ):
     """Возвращает список ТС с выбранным Присвоенным Статусом."""
     # Проверяем существование выбранного присвоенного статуса в БД:
     await check_service_status_by_param(session, request_status_param)
-    return await get_cars_with_request_status(request_status_param, session)
+    return await get_cars_with_request_status(
+        request_status_param, organization_id, session
+    )

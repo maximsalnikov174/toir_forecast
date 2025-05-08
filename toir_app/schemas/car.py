@@ -48,7 +48,7 @@ class CarBase(BaseModel):
     def extract_and_validate_grz(cls, value: str) -> str:
         """Валидатор для grz"""
         if not value or not isinstance(value, str):
-            raise ValueError('Неверный формат даты')
+            raise ValueError('Неверный формат ГРЗ')
         clear_grz = re.search(pattern_grz, value, flags=re.IGNORECASE)
         if not clear_grz:
             raise ValueError('Не удалось обработать ГРЗ по шаблону')

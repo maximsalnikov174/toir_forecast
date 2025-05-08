@@ -31,11 +31,18 @@ class ServiceWorkBase(BaseModel):
     @field_validator('last_service_date')
     def last_service_date_must_be_in_past(
         cls, value: dt, info: ValidationInfo
-    ):
+    ) -> dt:
+        """
+        Проверка, что дата последнего сервиса - в прошлом.
+
+        Связано с тем, что в OeBS могут сделать ошибку завершить ЗВР в будущем.
+        """
         if value > info.data['request_date']:
+            # ЧТО-ТО С ЭТИМ В ИТОГЕ НАДО СДЕЛАТЬ, ЧТОБ НЕ ПАДАЛ ТЕСТ
             car_id = info.data['car_id']
             last_service_id = info.data['last_service_id']
             date = value.date().isoformat()
+            # МОЖЕТ ЗДЕСЬ ВМЕСТО RAISE ДОЛЖНО БЫТЬ ЛОГИРОВАНИЕ И ВРЕМЕННАЯ ЗАПИСЬ ДЕФОЛТНОГО ЗНАЧЕНИЯ
             raise ValueError(
                 f'Прошлое ТО id#{last_service_id} для ТС id#{car_id} '
                 f'«выполнено» в будущем ({date}). Исправьте в OeBS!'
