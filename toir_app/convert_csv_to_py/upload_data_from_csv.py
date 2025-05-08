@@ -149,6 +149,7 @@ async def create_service_work(
     # Если глоб. статус изменился - для
     # * обновляемой записи - откат или прогресс
     # * новой записи - в любом случае должна быть разница
-    # или need_to_update обновилось на True:
+    # или глоб. статус - прежний, но поменялись (малозначимые) данные,
+    # к примеру, общий пробег - тем самым обновив need_to_update=True:
     if old_request_status_id != upd_status.id or need_to_update:
         session.add(service)

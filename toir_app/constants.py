@@ -19,4 +19,4 @@ pattern_grz = (
     r'([[1,7][4,7]4*)'
 )
 
-pattern_zvr = r'^5[0-4]-АВТ-\d{6}$'
+pattern_zvr = r'^5[0-4]-АВТ-\d{7}$'
