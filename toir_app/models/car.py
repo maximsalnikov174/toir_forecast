@@ -18,7 +18,8 @@ class Car(Base):
     grz = Column(
         String(CAR_GRZ_LEN),
         nullable=False,
-        comment='Государственный регистрационный знак'
+        unique=True,
+        comment='Государственный регистрационный знак',
     )
     in_archive = Column(
         Boolean,
