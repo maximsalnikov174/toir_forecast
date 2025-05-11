@@ -1,10 +1,15 @@
 from datetime import datetime as dt
 from calendar import monthrange
 
-from sqlalchemy import Column, DateTime, Float, ForeignKey, Integer
+from sqlalchemy import (Column,
+                        DateTime,
+                        Float,
+                        ForeignKey,
+                        Integer,
+                        String)
 from sqlalchemy.orm import relationship
 
-from toir_app.constants import EXCESS_VALUE
+from toir_app.constants import EXCESS_VALUE, LEN_ZVR
 from toir_app.core.db import Base
 from toir_app.models.static_model import Status
 from toir_app.schemas.convertation import BaseCarData
@@ -45,7 +50,13 @@ class ServiceWork(Base):
         nullable=False,
         comment='Среднесуточный пробег (получение csv)'
     )
-
+    zvr_number = Column(
+        'zrv_number',
+        String(LEN_ZVR),
+        nullable=True,
+        unique=True,
+        comment='ЗВР для данной работы'
+    )
     # Связи с другими таблицами:
     car_id = Column(
         Integer,
