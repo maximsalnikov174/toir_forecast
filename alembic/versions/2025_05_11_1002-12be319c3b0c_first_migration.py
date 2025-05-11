@@ -1,8 +1,8 @@
 """first_migration
 
-Revision ID: 340a7bfe71c4
+Revision ID: 12be319c3b0c
 Revises: 
-Create Date: 2025-05-07 08:54:50.803647
+Create Date: 2025-05-11 10:02:36.285174
 
 """
 from typing import Sequence, Union
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = '340a7bfe71c4'
+revision: str = '12be319c3b0c'
 down_revision: Union[str, None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -68,6 +68,7 @@ def upgrade() -> None:
     sa.ForeignKeyConstraint(['organization_id'], ['organization.id'], ),
     sa.ForeignKeyConstraint(['special_status_id'], ['specialstatus.id'], ),
     sa.PrimaryKeyConstraint('id'),
+    sa.UniqueConstraint('grz'),
     sa.UniqueConstraint('personal_id')
     )
     op.create_table('servicework',
@@ -77,6 +78,7 @@ def upgrade() -> None:
     sa.Column('request_reading', sa.Float(), nullable=False, comment='Показания на дату запроса (получение файла csv)'),
     sa.Column('base_interval', sa.Float(), nullable=False, comment='Базовый интервал обслуживания (получение csv)'),
     sa.Column('daily_distance', sa.Float(), nullable=False, comment='Среднесуточный пробег (получение csv)'),
+    sa.Column('zrv_number', sa.String(length=14), nullable=True, comment='ЗВР для данной работы'),
     sa.Column('car_id', sa.Integer(), nullable=False),
     sa.Column('last_service_id', sa.Integer(), nullable=True),
     sa.Column('next_service_id', sa.Integer(), nullable=True),
@@ -86,7 +88,8 @@ def upgrade() -> None:
     sa.ForeignKeyConstraint(['last_service_id'], ['servicename.id'], ),
     sa.ForeignKeyConstraint(['next_service_id'], ['servicename.id'], ),
     sa.ForeignKeyConstraint(['request_status_id'], ['servicestatus.id'], ),
-    sa.PrimaryKeyConstraint('id')
+    sa.PrimaryKeyConstraint('id'),
+    sa.UniqueConstraint('zrv_number')
     )
     # ### end Alembic commands ###
 
