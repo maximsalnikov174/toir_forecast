@@ -36,11 +36,12 @@ async def get_cars_with_request_status(
     Возврат УНИКАЛЬНЫХ машин c выбранным Присвоенным статусом.
     """
     cars = await session.execute(
-        select(Car)
+        select(Car, ServiceWork)
         .join(ServiceWork, Car.id == ServiceWork.car_id)
         .where(
             ServiceWork.request_status_id == request_status_id,
-            Car.organization_id == organization_id
+            Car.organization_id == organization_id,
+            Car.in_archive.is_(False)
         ).distinct()  # distinct - дедупликация.
         .order_by(Car.grz)
     )
