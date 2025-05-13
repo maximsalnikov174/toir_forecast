@@ -138,6 +138,8 @@ async def create_service_work(
         new_service_work: dict[str, Any] = validated_service_work.model_dump()
         service = ServiceWork(**new_service_work)
 
+        # TODO: Надо добавить перевод старой записи в архив
+
     # Рассчитываем и получаем глобальный статус для авто:
     # Должно гарантированно рассчитываться!
     upd_status = service.calculated_status
