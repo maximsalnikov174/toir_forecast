@@ -132,25 +132,23 @@ async def base_update_model(
             value = element.value
         else:
             value = element.dict().get(data_field) if data_field else element
-        #
+
         # Формируем и выполняем запрос
         stmt = select(model).where(getattr(model, check_field) == value)
-        #
-        # Правильный способ выполнения асинхронного запроса
+
+        # Поиск элемента в БД
         result = await session.execute(stmt)
-        existing_in_db = result.scalars().first()
-        #
-        if not existing_in_db:
-            #
-            new_instance = model(**{check_field: value})
-            session.add(new_instance)
-            # возможно дальше коммит не нужен!!!
-            # его надо вынести в parse_data.update_db
-            #
+        obj_in_db = result.scalars().first()
+
+        if not obj_in_db:
+            obj_in_db = model(**{check_field: value})  # TODO через schemas?
+            session.add(obj_in_db)
+
+            # возможно не так реализовать и вынести в parse_data.update_db
             await session.commit()
-            return new_instance  # скорее всего возвращает модель, проверить!
-        return existing_in_db  # скорее всего возвращает модель, проверить!
-        #
+            await session.refresh(obj_in_db)
+        return obj_in_db
+
     except AttributeError as e:
         raise ValueError(
             f'Поле {check_field} не существует в модели {model.__name__}'
