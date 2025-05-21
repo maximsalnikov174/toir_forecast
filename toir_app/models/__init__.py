@@ -5,4 +5,5 @@ from .role import Role  # noqa
 from .service_name import ServiceName  # noqa
 from .service_status import ServiceStatus  # noqa
 from .service_work import ServiceWork  # noqa
+from .special_status import SpecialStatus  # noqa
 from .static_model import Status, SpecialStatusForCar, UserRole  # noqa
