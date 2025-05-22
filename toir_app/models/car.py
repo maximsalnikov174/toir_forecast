@@ -62,8 +62,8 @@ class Car(Base):
         cascade='all, delete-orphan'
     )
 
-    def __repr__(self):
-        return (
-            f'{self.grz} <{self.personal_id}> - '
-            f'{self.car_model} [{self.organization}]'
-        )
+    # def __repr__(self):
+    #     return (
+    #         f'{self.grz} <{self.personal_id}> - '
+    #         f'{self.car_model} [{self.organization}]'
+    #     )

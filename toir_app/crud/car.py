@@ -4,6 +4,7 @@ from typing import Optional
 from fastapi import HTTPException
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import joinedload
 
 from toir_app.constants import pattern_grz_input_user
 from toir_app.models import Car, ServiceWork
@@ -43,7 +44,11 @@ async def get_car_by_full_grz(
         .where(
             # Car.grz.startswith(grz),  # ГРЗ начинается с ...
             Car.grz == clear_grz,
-            Car.in_archive.is_(False))
+            Car.in_archive.is_(False)
+        ).options(
+            joinedload(Car.organization),
+            joinedload(Car.car_model)
+        )
     )
     if not car:
         raise HTTPException(

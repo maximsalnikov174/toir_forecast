@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from toir_app.models import Car
 from toir_app.core.db import get_async_session
 from toir_app.crud.car import (
     get_car_by_full_grz,
@@ -47,6 +48,6 @@ async def get_car_in_db_by_grz(
     grz: str,
     session: AsyncSession = Depends(get_async_session)
 ):
-    car = await get_car_by_full_grz(grz, session)
+    car: Car = await get_car_by_full_grz(grz, session)
     car.indicators = await get_last_request_reading_by_car(car.id, session)
     return car

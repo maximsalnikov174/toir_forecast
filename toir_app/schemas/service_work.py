@@ -28,6 +28,9 @@ class ServiceWorkBase(BaseModel):
     base_interval: int
     daily_distance: float
 
+    class Config:
+        from_attributes = True
+
     @field_validator('last_service_date')
     def last_service_date_must_be_in_past(
         cls, value: dt, info: ValidationInfo
@@ -61,3 +64,19 @@ class ServiceWorkWithRequestStatus(
     ServiceWorkBase, ServiceWorksRequestStatus
 ):
     """Полная базовая схема записи о Сервисном Обслуживании."""
+
+
+class CarAtributesInServiceWork(BaseModel):
+    """
+    Схема ServiceWork с полями, необходимыми для Car.
+    """
+    request_reading: float
+    daily_distance: float
+
+    class Config:
+        from_attributes = True
+
+    @field_validator('daily_distance')
+    def split_value(cls, value):
+        """Округление суточного пробега до 1 знака после запятой."""
+        return round(value, 1)
