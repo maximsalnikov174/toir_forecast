@@ -29,7 +29,7 @@ async def get_car_by_full_grz(
     Прогоняем ГРЗ по паттерну А 123 АВ или АВ 1234 74/174/774, после чего
     получаем запись.
     """
-    match = re.match(pattern_grz_input_user, grz)
+    match = re.match(pattern_grz_input_user, grz.upper())
     if not match:
         raise HTTPException(
             status_code=404,
