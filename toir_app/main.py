@@ -6,7 +6,7 @@ from fastapi import FastAPI
 from dotenv import load_dotenv
 
 from toir_app.core.db import AsyncSessionLocal
-from toir_app.api.endpoints import router
+from toir_app.api.routers import main_router
 from toir_app.core.config import settings
 from toir_app.convert_csv_to_py.parse_data import (
     convert_csv_to_list,
@@ -22,7 +22,9 @@ load_dotenv()  # подгружаем переменные из env
 toir_app = FastAPI(title=settings.app_title)
 
 # Подключаем роутер к приложению:
-toir_app.include_router(router)
+toir_app.include_router(main_router)
+
+# Находим файл для загрузки данных:
 script_dir = os.path.dirname(os.path.abspath(__file__))
 file_path = f'{script_dir}/dataset_from_oebs/rmt321_full_new.csv'
 
