@@ -6,8 +6,10 @@ from toir_app.crud.car import (
     get_car_by_full_grz,
     get_cars_with_request_status
 )
-from toir_app.crud.service_work import get_last_request_reading_by_car
-from toir_app.crud.toir_app_crud import (
+from toir_app.crud.service_work import (
+    get_last_request_reading_by_car
+)
+from toir_app.crud.service_status import (
     check_service_status_by_param
 )
 from toir_app.schemas.car import CarBase
@@ -30,6 +32,7 @@ async def get_all_cars_with_selected_request_status(
     """Возвращает список ТС с выбранным Присвоенным Статусом."""
     # Проверяем существование выбранного присвоенного статуса в БД:
     await check_service_status_by_param(session, request_status_param)
+
     return await get_cars_with_request_status(
         request_status_param, organization_id, session
     )
