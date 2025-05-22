@@ -1,12 +1,14 @@
 from datetime import datetime as dt
 from calendar import monthrange
 
+from toir_app.constants import PATTERN_DATE_OEBS
+
 
 def convert_date(string: str) -> dt:
     """
     Из строки вида ДД.ММ.ГГГГ ЧЧ:ММ:СС делает объект datetime.
     """
-    return dt.strptime(string, "%d.%m.%Y %H:%M:%S")
+    return dt.strptime(string, PATTERN_DATE_OEBS)
 
 
 def predict_reading_when_current_month_left(
