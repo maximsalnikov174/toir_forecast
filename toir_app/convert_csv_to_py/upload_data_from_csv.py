@@ -6,10 +6,10 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from toir_app.core.db import Base as db
+from toir_app.crud.car import get_car_by_personal_id
 from toir_app.crud.service_status import get_service_status_by_name
 from toir_app.crud.service_work import get_last_service_with_current_service_id
-from toir_app.models.car import Car
-from toir_app.models.service_work import ServiceWork
+from toir_app.models import Car, ServiceWork
 from toir_app.schemas.car import CarBase
 from toir_app.schemas.car_model import CarModelID
 from toir_app.schemas.organization import OrganizationID
@@ -40,17 +40,17 @@ async def upload_users_data_in_db(
     await session.commit()
 
 
-async def get_or_create_car(
+async def get_or_create_car_and_return_id(
     session: AsyncSession,
     personal_id: int,
     grz: str,
     car_model: CarModelID,
     organization: OrganizationID
-) -> Car:
+) -> int:
     """Получает экземпляр модели Car или создает его (автомобиль)."""
-    car_in_db = await session.scalar(
-        select(Car).where(Car.personal_id == personal_id)
-    )
+    # Можно бы было ВЫШЕ получить все проиндексированные personal_id одним
+    # запросом и искать среди них:
+    car_in_db = await get_car_by_personal_id(personal_id, session)
 
     if not car_in_db:
         # загоняем в pydantic-схему:
@@ -64,10 +64,12 @@ async def get_or_create_car(
 
         # создаем экземпляр модели Car и добавляем в сессию:
         car: Car = Car(**new_car)
-        car_in_db = await session.merge(car)
+        session.add(car)
+        await session.commit()
+        await session.refresh(car)
+        return car.id
 
-    await session.flush()
-    return car_in_db
+    return car_in_db.id
 
 
 async def create_service_work(

@@ -2,21 +2,24 @@ import csv
 import os
 from typing import List, Optional, Type, TypedDict, Union
 
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from toir_app.constants import TOTAL_VALUES_IN_RAW_RMT_321
 from toir_app.convert_csv_to_py.assistant_functions import (
-    base_update_model, create_data_point
+    base_update_model,
+    create_data_point
 )
 from toir_app.convert_csv_to_py.upload_data_from_csv import (
-    create_service_work, get_or_create_car
+    create_service_work,
+    get_or_create_car_and_return_id
 )
-from toir_app.core.db import AsyncSessionLocal
-# from toir_app.core.base import Base as db
-from toir_app.models.car_model import CarModel
-from toir_app.models.organization import Organization
-from toir_app.models.service_name import ServiceName
+# from toir_app.core.db import get_async_session
+from toir_app.models import CarModel, Organization, ServiceName
 from toir_app.schemas.convertation import CarDataPoint
 
 
 class ModelMapping(TypedDict):
+    """Модель аннотации типов."""
     model: Type[Union[Organization, CarModel, ServiceName]]
     field: str
 
@@ -58,10 +61,10 @@ async def convert_csv_to_list(filename: str) -> List[CarDataPoint]:
     """
 
     if not os.path.exists(filename):
-        print(f"Файл не найден: {filename}")
+        print(f'Файл не найден: {filename}')
 
     if os.path.isdir(filename):
-        print(f"Указанный путь ведет к директории: {filename}")
+        print(f'Указанный путь ведет к директории: {filename}, а не к файлу.')
 
     # Заготовка для общего списка данных из файла rmt-321:
     total_list: List[CarDataPoint] = []
@@ -71,11 +74,14 @@ async def convert_csv_to_list(filename: str) -> List[CarDataPoint]:
 
         for row in reader:
             # Первая строчка - заголовки:
-            if len(row) == 22 and reader.line_num == 1:
+            if (
+                len(row) == TOTAL_VALUES_IN_RAW_RMT_321
+                and reader.line_num == 1
+            ):
                 mapping_name = list(row)
 
             # Стандартная ситуация:
-            elif len(row) == 22:
+            elif len(row) == TOTAL_VALUES_IN_RAW_RMT_321:
                 try:
                     data_point = create_data_point(row, mapping_name)
                     if data_point:
@@ -97,7 +103,7 @@ async def convert_csv_to_list(filename: str) -> List[CarDataPoint]:
 
                     # Когда в строке кривое количество элементов
                     # (последняя строка файла):
-                    if len(rows) < 22:
+                    if len(rows) < TOTAL_VALUES_IN_RAW_RMT_321:
                         print(f'Cтрока {row[0]} не соответствует нужной длине')
                         # logger.warning(f'{row[0]} не соответствует длине.')
                         continue
@@ -127,78 +133,85 @@ async def convert_csv_to_list(filename: str) -> List[CarDataPoint]:
 async def upd_light_model_in_db(
     element: CarDataPoint,
     some_model: Union[Organization, ServiceName, CarModel],  # аннотация треш
-    data_field
+    data_field,
+    session: AsyncSession
 ):
     """Загрузка простых (понятных) моделей в БД."""
-    async with AsyncSessionLocal() as session:
-        return await base_update_model(
-            session=session,
-            model=some_model,
-            check_field='name',
-            element=element,
-            data_field=data_field
-        )
+    return await base_update_model(
+        session=session,
+        model=some_model,
+        check_field='name',
+        element=element,
+        data_field=data_field
+    )
 
 
 # -------------------------СОЗДАТЕЛИ ОБЪЕКТОВ БД:-------------------------
 
-async def upload_filedata_in_db(element: CarDataPoint) -> None:
+async def upload_filedata_in_db(
+        element: CarDataPoint,
+        session: AsyncSession
+) -> None:
     """
     Проверяет (и вносит) каждую строку из файла csv в базу данных.
 
     Сначала каждый из elements надо провалидировать через pydantic
     """
-    async with AsyncSessionLocal() as session:
-        try:
-            element_dict = element.model_dump()
+    try:
+        element_dict = element.model_dump()
 
-            # Проверяем Цех, модель ТС и виды работ (пред и след)
-            updated_fields = {}
-            for field_name, model_data in MODEL_MAPPING.items():
-                updated_value = await upd_light_model_in_db(
-                    element=element,
-                    some_model=model_data['model'],
-                    data_field=model_data['field']
-                )
-                updated_fields[field_name] = updated_value
-
-            # Получаем объекты ServiceName для прошлого/следующего обслуживания
-            last_service = get_id_from_service(
-                'last',
-                updated_fields=updated_fields,
-                element_dict=element_dict
+        # Проверяем Цех, модель ТС и виды работ (предыдущую и следующую)
+        # TODO Можно накапливать в одной сессии
+        updated_fields = {}
+        for field_name, model_data in MODEL_MAPPING.items():
+            updated_value = await upd_light_model_in_db(
+                element=element,
+                some_model=model_data['model'],
+                data_field=model_data['field'],
+                session=session
             )
-            next_service = get_id_from_service(
-                'next',
-                updated_fields=updated_fields,
-                element_dict=element_dict
-            )
+            updated_fields[field_name] = updated_value
 
-        # Проверяем автомобиль (понадобится, когда появятся новые ТС в цехе):
-            car = await get_or_create_car(
+        # Получаем объекты ServiceName для прошлого/следующего обслуживания
+        last_service = get_id_from_service(
+            'last',
+            updated_fields=updated_fields,
+            element_dict=element_dict
+        )
+        next_service = get_id_from_service(
+            'next',
+            updated_fields=updated_fields,
+            element_dict=element_dict
+        )
+
+    # Проверяем автомобиль (понадобится, когда появятся новые ТС в цехе):
+        car_id = await get_or_create_car_and_return_id(
+            session=session,
+            personal_id=element_dict['personal_id'],
+            grz=element_dict['grz'],
+            car_model=updated_fields['car_model'],
+            organization=updated_fields['organization']
+        )
+
+        # Машина уже должна быть сохранена!
+        # Проверяем записи о прошлых обслуживаниях и создаём новые:
+        if last_service and next_service:
+            # TODO может ли быть такое, что last и next не будет?
+            # например у нового ТС должно ли быть только last?
+            await create_service_work(
                 session=session,
-                personal_id=element_dict['personal_id'],
-                grz=element_dict['grz'],
-                car_model=updated_fields['car_model'],
-                organization=updated_fields['organization']
+                car_id=car_id,
+                element_dict=element_dict,
+                last_service_id=last_service,
+                next_service_id=next_service
             )
 
-            # Машина уже должна быть сохранена!
-            # Проверяем записи о прошлых обслуживаниях и создаём новые:
-            if last_service and next_service:
-                # может ли быть такое, что ласт и некст не будет?
-                await create_service_work(
-                    session=session,
-                    car_id=car.id,
-                    element_dict=element_dict,
-                    last_service_id=last_service,
-                    next_service_id=next_service
-                )
-            await session.commit()
+        # Закидываем всю строчку в коммит
+        await session.commit()
 
-        except Exception as e:
-            await session.rollback()
-            raise ValueError(f'Ошибка обновления БД: {str(e)}') from e
+    except Exception as e:
+        await session.rollback()
+        raise ValueError(f'Ошибка обновления БД: {str(e)}') from e
 
 
 # переделать в метод класса ServiceName

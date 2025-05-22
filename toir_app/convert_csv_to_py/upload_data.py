@@ -7,13 +7,12 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from toir_app.convert_csv_to_py.convertation import UsersServiceName
-from toir_app.core.db import AsyncSessionLocal
 from toir_app.core.db import Base as db
-from toir_app.models.service_name import ServiceName
-from toir_app.models.service_status import ServiceStatus
-from toir_app.models.special_status import SpecialStatus
-from toir_app.models.static_model import SpecialStatusForCar, Status
-# from toir_app.models.role import Role
+from toir_app.models import (ServiceName,
+                             ServiceStatus,
+                             SpecialStatus,
+                             SpecialStatusForCar,
+                             Status)
 
 
 # Все что нужно загрузить при СОЗДАНИИ базы:
@@ -27,20 +26,21 @@ need_to_upload_datas = [
 
 
 async def upload_all_users_data_in_db(
-    data_and_model_pair: List[Tuple]
+    data_and_model_pair: List[Tuple],
+    session: AsyncSession
 ):
     """
     Дружно загружаем все данные в базу.
     """
-    async with AsyncSessionLocal() as session:
-        for enum_class, need_model in data_and_model_pair:
-            enum_values = [_.value for _ in enum_class]
-            for enum_value in enum_values:
-                await upload_users_data_in_db(
-                    element=enum_value,
-                    apps_model=need_model,
-                    session=session
-                )
+    for enum_class, need_model in data_and_model_pair:
+        enum_values = [_.value for _ in enum_class]
+        for enum_value in enum_values:
+            await upload_users_data_in_db(
+                element=enum_value,
+                apps_model=need_model,
+                session=session
+            )
+    await session.commit()
 
 
 async def upload_users_data_in_db(
@@ -60,5 +60,3 @@ async def upload_users_data_in_db(
     if not existing:
         new_instance = apps_model(name=value)
         session.add(new_instance)
-
-    await session.commit()

@@ -1,11 +1,22 @@
 import re
+from typing import Optional
 
 from fastapi import HTTPException
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from toir_app.constants import pattern_grz_input_user
-from toir_app.models.car import Car
+from toir_app.models import Car
+
+
+async def get_car_by_personal_id(
+        personal_id: int,
+        session: AsyncSession
+) -> Optional[Car]:
+    """Получаем запись о Car по OeBS personal_id."""
+    return await session.scalar(
+        select(Car).where(Car.personal_id == personal_id)
+    )
 
 
 async def get_car_by_full_grz(
