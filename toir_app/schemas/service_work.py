@@ -1,4 +1,5 @@
 from datetime import datetime as dt
+from typing import Optional
 
 from pydantic import BaseModel, Field, field_validator, ValidationInfo
 
@@ -27,6 +28,7 @@ class ServiceWorkBase(BaseModel):
     last_service_reading: float
     base_interval: int
     daily_distance: float
+    zvr_number: Optional[int]
 
     class Config:
         from_attributes = True
