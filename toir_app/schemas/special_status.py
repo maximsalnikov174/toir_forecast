@@ -1,6 +1,6 @@
 from typing import Optional
 
-from pydantic import Field
+from pydantic import Field, BaseModel
 
 from toir_app.models.static_model import SpecialStatusForCar
 from toir_app.schemas.mixins import TimestampMixin
@@ -24,3 +24,8 @@ class SpecialStatusWithTimestamp(TimestampMixin):
         None,
         title='Пользователь, присвоивший статус'
     )
+
+
+class FullSpecialStatusSchemas(BaseModel):
+    id: int
+    name: str
