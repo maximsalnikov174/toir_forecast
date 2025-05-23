@@ -1,5 +1,7 @@
 # Здесь будет храниться код, ответственный за подключение к базе данных:
 
+# from contextlib import asynccontextmanager
+
 from sqlalchemy import Column, Integer
 from sqlalchemy.ext.asyncio import (AsyncSession,
                                     AsyncEngine,
@@ -53,3 +55,25 @@ async def get_async_session():
         yield async_session
         # когда http-запрос отработает - выполнение кода вернется сюда и при
         # выходе из контекстного менеджера - сессия будет закрыта
+        #
+        # try:
+        #     yield async_session
+        # except Exception as e:
+        #     print(100 * '~')
+        #     print(e)
+
+
+# @asynccontextmanager
+# async def get_async_session():
+#     """
+#     Асинхроннный генератор сессий (коммитит и закрывает сессию).
+#     """
+#     async with AsyncSessionLocal() as async_session:
+#         try:
+#             yield async_session
+#             await async_session.commit()  # Фиксируем изменения, если нет ошибок
+#         except Exception as e:
+#             await async_session.rollback()  # Откатываем при ошибке
+#             raise  # Пробрасываем исключение дальше
+#         finally:
+#             await async_session.close()  # Явное закрытие (опционально)
