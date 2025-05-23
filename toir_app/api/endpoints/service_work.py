@@ -13,7 +13,7 @@ from toir_app.schemas.service_work import (
 router = APIRouter()
 
 
-@router.post(
+@router.patch(
     '/add_zvr',
     response_model=ServiceWorkWithZVRNumber,
     name='Добавление ЗВР к конкретному service_work',

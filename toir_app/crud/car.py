@@ -92,6 +92,10 @@ async def add_special_status_to_car(
     car = await session.get(Car, car_id)
     if not car:
         raise HTTPException(404, 'ТС не найдено')
+    elif special_status_id == car.special_status_id:
+        raise HTTPException(400, 'Выбранный статус и так равен текущему')
+    elif car.in_archive is True:
+        raise HTTPException(400, 'ТС находится в архиве, действие невозможно')
 
     try:
         # Устанавливаем статус

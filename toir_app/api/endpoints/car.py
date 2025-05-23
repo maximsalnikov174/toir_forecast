@@ -61,10 +61,16 @@ async def get_car_in_db_by_grz(
     return car
 
 
-@router.post(
+@router.patch(
     '/{car_id}/add_special_status',
     response_model=CarWithCarModelAndOrganizationIDs,
-    name='Добавление специального статуса машине.',
+    name='Добавление специального статуса ТС.',
+    description=(
+        'ТС устанавливается специальный статус, предназначенный для помощи '
+        '(в дальнейшем) сотрудникам с определением состояния ТС (примеры '
+        'статусов: на ВР, к выбытию/списанию, на реализации и т.д.)\n'
+        'Ограничения:\n - ТС не должно быть в архиве.'
+    ),
     status_code=201
 )
 async def link_special_status_and_car(
