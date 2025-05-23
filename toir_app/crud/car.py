@@ -7,7 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
 
 from toir_app.constants import pattern_grz_input_user
-from toir_app.models import Car, ServiceWork
+from toir_app.models import Car, ServiceWork, SpecialStatus
 
 
 async def get_car_by_personal_id(
@@ -77,3 +77,24 @@ async def get_cars_with_request_status(
         .order_by(Car.grz)
     )
     return list(cars.scalars().all())
+
+
+async def add_special_status_to_car(
+        special_status_id: int,
+        car_id: int,
+        session: AsyncSession
+) -> Optional[Car]:
+    """Устанавливает специальный статус для ТС."""
+    # Проверяем, существует ли car и special_status:
+    car = await session.get(Car, car_id)
+    if not car:
+        raise HTTPException(404, 'ТС не найдено')
+    if not await session.get(SpecialStatus, special_status_id):
+        raise HTTPException(404, 'Статус не найден')
+
+    # Устанавливаем специальный статус ТС:
+    car.special_status_id = special_status_id
+
+    await session.flush()
+    await session.commit()
+    return car
