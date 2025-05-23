@@ -44,8 +44,14 @@ async def add_zvr_to_service_work(
             detail=f'Указанный ЗВР #{zvr_number} не уникален, сверьте данные.'
         )
 
-    service_work.zvr_number = zvr_number
-
-    await session.flush()
-    await session.commit()
-    return service_work
+    try:
+        service_work.zvr_number = zvr_number
+        await session.commit()
+        await session.refresh(service_work)  # Опционально
+        return service_work
+    except Exception as e:
+        await session.rollback()
+        raise HTTPException(
+            500,
+            detail=f'Ошибка при сохранении ЗВР: {str(e)}'
+        )

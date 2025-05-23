@@ -86,15 +86,25 @@ async def add_special_status_to_car(
 ) -> Optional[Car]:
     """Устанавливает специальный статус для ТС."""
     # Проверяем, существует ли car и special_status:
-    car = await session.get(Car, car_id)
-    if not car:
-        raise HTTPException(404, 'ТС не найдено')
     if not await session.get(SpecialStatus, special_status_id):
         raise HTTPException(404, 'Статус не найден')
 
-    # Устанавливаем специальный статус ТС:
-    car.special_status_id = special_status_id
+    car = await session.get(Car, car_id)
+    if not car:
+        raise HTTPException(404, 'ТС не найдено')
 
-    await session.flush()
-    await session.commit()
-    return car
+    try:
+        # Устанавливаем статус
+        car.special_status_id = special_status_id
+        await session.commit()
+
+        # Обновляем объект из БД
+        await session.refresh(car)
+        return car
+
+    except Exception as e:
+        await session.rollback()
+        raise HTTPException(
+            status_code=500,
+            detail=f'Ошибка при обновлении статуса ТС: {str(e)}'
+        )

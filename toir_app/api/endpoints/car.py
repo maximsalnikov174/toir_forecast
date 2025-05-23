@@ -14,7 +14,10 @@ from toir_app.crud.service_work import (
 from toir_app.crud.service_status import (
     check_service_status_by_param
 )
-from toir_app.schemas.car import CarWithCarModelAndOrganizationIDs
+from toir_app.schemas.car import (
+    CarExpandWithIndicators,
+    CarWithCarModelAndOrganizationIDs
+)
 
 
 router = APIRouter()
@@ -45,7 +48,7 @@ async def get_all_cars_with_selected_request_status(
 
 @router.get(
     '/about_car',
-    response_model=CarWithCarModelAndOrganizationIDs,
+    response_model=CarExpandWithIndicators,
     name='Поиск машины по ГРЗ и возврат информации о ней.',
     response_model_exclude_none=True
 )
@@ -61,7 +64,8 @@ async def get_car_in_db_by_grz(
 @router.post(
     '/{car_id}/add_special_status',
     response_model=CarWithCarModelAndOrganizationIDs,
-    name='Добавление специального статуса машине.'
+    name='Добавление специального статуса машине.',
+    status_code=201
 )
 async def link_special_status_and_car(
     car_id: int,
