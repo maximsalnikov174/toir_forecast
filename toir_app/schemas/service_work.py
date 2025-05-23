@@ -11,7 +11,26 @@ class ServiceWorksRequestStatus(BaseModel):
     request_status_id: int
 
 
-class ServiceWorkBase(BaseModel):
+class CarAtributesInServiceWork(BaseModel):
+    """
+    Схема ServiceWork с полями, необходимыми для Car.
+
+    Дополнительно - округление поля daily_distance до .1 знака.
+    """
+    # используется в индикаторах (нужны только 2 этих поля)
+    request_reading: float
+    daily_distance: float
+
+    class Config:
+        from_attributes = True
+
+    @field_validator('daily_distance')
+    def split_value(cls, value):
+        """Округление суточного пробега до 1 знака после запятой."""
+        return round(value, 1)
+
+
+class ServiceWorkBase(CarAtributesInServiceWork):
     """
     Базовая схема записи о Сервисном Обслуживании.
     Дополнительное сравнение даты последнего сервиса и now()
@@ -20,14 +39,9 @@ class ServiceWorkBase(BaseModel):
     last_service_id: int = Field(..., title='pk из таблицы ServiceName')
     next_service_id: int = Field(..., title='pk из таблицы ServiceName')
     request_date: dt
-    request_reading: float
     last_service_date: dt
     last_service_reading: float
     base_interval: int
-    daily_distance: float
-
-    class Config:
-        from_attributes = True
 
     @field_validator('last_service_date')
     def last_service_date_must_be_in_past(
@@ -56,21 +70,3 @@ class ServiceWorkWithZVRNumber(ServiceWorkBase):
     Схема записи о Сервисном Обслуживании с номером ЗВР.
     """
     zvr_number: Optional[int]
-
-
-class CarAtributesInServiceWork(BaseModel):
-    """
-    Схема ServiceWork с полями, необходимыми для Car.
-
-    Дополнительно - округление поля daily_distance до .1 знака.
-    """
-    request_reading: float
-    daily_distance: float
-
-    class Config:
-        from_attributes = True
-
-    @field_validator('daily_distance')
-    def split_value(cls, value):
-        """Округление суточного пробега до 1 знака после запятой."""
-        return round(value, 1)
