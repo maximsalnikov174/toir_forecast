@@ -19,20 +19,11 @@ class CarBase(BaseModel):
     Используемые поля:
     - ID из OeBS
     - ГРЗ
-    - модель ТС
-    - цех
+    - ID специального статуса
     """
-    personal_id: int = Field(
-        ...,
-        title='Уникальный ID из OeBS'
-    )
-    grz: str = Field(
-        ...,
-        title='ГРЗ'
-    )
-    car_model: CarModelWithID
-    organization: OrganizationResponse
-    indicators: Optional[CarAtributesInServiceWork]
+    personal_id: int = Field(..., title='Уникальный ID из OeBS')
+    grz: str = Field(..., title='ГРЗ')
+    special_status_id: Optional[int] = None
 
     class Config:
         from_attributes = True
@@ -54,6 +45,52 @@ class CarBase(BaseModel):
             raise ValueError('Не удалось обработать ГРЗ по шаблону')
         else:
             return clear_grz.group()
+
+
+class CarWithCarModelAndOrganizationIDs(CarBase):
+    """
+    Расширенная схема модели Автомобиля.
+
+    Используемые поля:
+    - ID из OeBS
+    - ГРЗ
+    - ID марки ТС
+    - ID подразделения
+    - ID специального статуса
+    """
+    car_model_id: int = Field(..., title='ID модели ТС')
+    organization_id: int = Field(..., title='ID подразделения')
+
+
+class CarWithCarModelAndOrganizationFields(CarBase):
+    """
+    Расширенная схема модели Автомобиля.
+
+    Используемые поля:
+    - ID из OeBS
+    - ГРЗ
+    - Поля марки ТС
+    - Поля подразделения
+    - ID специального статуса
+    """
+    car_model: CarModelWithID
+    organization: OrganizationResponse
+
+
+class CarExpandWithIndicators(CarWithCarModelAndOrganizationFields):
+    """
+    Расширенная схема модели Автомобиля.
+
+    Используемые поля:
+    - ID из OeBS
+    - ГРЗ
+    - Поля марки ТС
+    - Поля подразделения
+    - ID специального статуса
+    - Общий пробег
+    - Среднесуточный пробег
+    """
+    indicators: Optional[CarAtributesInServiceWork]
 
 
 class CarBaseWithSpecialStatusAndTimestamp(
