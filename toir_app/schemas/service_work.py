@@ -4,31 +4,27 @@ from typing import Optional
 from pydantic import BaseModel, Field, field_validator, ValidationInfo
 
 
+class ServiceWorksRequestStatus(BaseModel):
+    """
+    Схема записи о Сервисном Обслуживании (только ID вычисляемого статуса).
+    """
+    request_status_id: int
+
+
 class ServiceWorkBase(BaseModel):
     """
     Базовая схема записи о Сервисном Обслуживании.
-
-    Есть все поля, кроме расчётного состояния (статуса) на текущий момент.
+    Дополнительное сравнение даты последнего сервиса и now()
     """
-    car_id: int = Field(
-        ...,
-        title='pk из таблицы Car'
-    )
-    last_service_id: int = Field(
-        ...,
-        title='pk из таблицы ServiceName'
-    )
-    next_service_id: int = Field(
-        ...,
-        title='pk из таблицы ServiceName'
-    )
+    car_id: int = Field(..., title='pk из таблицы Car')
+    last_service_id: int = Field(..., title='pk из таблицы ServiceName')
+    next_service_id: int = Field(..., title='pk из таблицы ServiceName')
     request_date: dt
     request_reading: float
     last_service_date: dt
     last_service_reading: float
     base_interval: int
     daily_distance: float
-    zvr_number: Optional[int]
 
     class Config:
         from_attributes = True
@@ -55,22 +51,18 @@ class ServiceWorkBase(BaseModel):
         return value
 
 
-class ServiceWorksRequestStatus(BaseModel):
+class ServiceWorkWithZVRNumber(ServiceWorkBase):
     """
-    Схема записи о Сервисном Обслуживании (только ID вычисляемого статуса).
+    Схема записи о Сервисном Обслуживании с номером ЗВР.
     """
-    request_status_id: int
-
-
-class ServiceWorkWithRequestStatus(
-    ServiceWorkBase, ServiceWorksRequestStatus
-):
-    """Полная базовая схема записи о Сервисном Обслуживании."""
+    zvr_number: Optional[int]
 
 
 class CarAtributesInServiceWork(BaseModel):
     """
     Схема ServiceWork с полями, необходимыми для Car.
+
+    Дополнительно - округление поля daily_distance до .1 знака.
     """
     request_reading: float
     daily_distance: float
