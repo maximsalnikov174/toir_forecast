@@ -17,6 +17,6 @@ async def get_service_name_with_request_status(
         .join(ServiceWork, ServiceName.id == ServiceWork.next_service_id)
         .where(ServiceWork.request_status_id == request_status_id)
         .distinct()  # distinct - дедупликация
-        .order_by(ServiceName.id)
+        .order_by(ServiceName.id)  # сортировка по ID вида работ
     )
     return list(service_names.scalars().all())
