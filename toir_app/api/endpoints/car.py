@@ -28,7 +28,7 @@ router = APIRouter()
     response_model=list[CarWithCarModelAndOrganizationIDs],
     name='Срез списка машин',
     description=(
-        'Получение среза списка машин цеха Х с расчётным статусом Y.'
+        'Получение среза списка машин цеха Х с расчётным статусом Y и строже.'
     ),
     response_model_exclude_none=True
 )

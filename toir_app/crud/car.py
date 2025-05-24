@@ -85,13 +85,13 @@ async def get_cars_with_request_status(
     session: AsyncSession
 ) -> list[Optional[Car]]:
     """
-    Возврат УНИКАЛЬНЫХ машин c выбранным Присвоенным статусом.
+    Возврат УНИКАЛЬНЫХ машин c выбранным Присвоенным статусом и строже.
     """
     cars = await session.execute(
         select(Car, ServiceWork)
         .join(ServiceWork, Car.id == ServiceWork.car_id)
         .where(
-            ServiceWork.request_status_id == request_status_id,
+            ServiceWork.request_status_id <= request_status_id,
             Car.organization_id == organization_id,
             Car.in_archive.is_(False)
         ).distinct()  # distinct - дедупликация.
