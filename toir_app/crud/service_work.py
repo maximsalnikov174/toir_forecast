@@ -2,6 +2,7 @@ from typing import Optional
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from toir_app.crud.car import get_car_by_pk
 from toir_app.models import ServiceWork
 from toir_app.schemas.service_work import CarAtributesInServiceWork
 
@@ -42,7 +43,7 @@ async def get_last_request_reading_by_car(
         car_id: int,
         session: AsyncSession
 ):
-    """Данные о машине (общий и суточный пробеги)."""
+    """Для передачи данных о машине (общий и суточный пробеги)."""
     result = await session.scalar(
         select(ServiceWork)
         .where(ServiceWork.car_id == car_id)
@@ -62,3 +63,30 @@ async def check_zvr_unique(
         .where(ServiceWork.zvr_number == zvr_number)
     )
     return True if result else False
+
+
+async def get_active_service_work_list_by_car(
+        car_id: int,
+        request_status_id: int,
+        session: AsyncSession
+) -> list[ServiceWork]:
+    """Получение списка (неархивных) сервисных обслуживаний для ТС.
+
+    Выполняется отбор для всех расчётных статусов, строже выбранного.
+    Выводятся в порядке ID service_name (идентично шапке в итоговой таблице).
+    """
+    await get_car_by_pk(car_id, session)
+
+    result = await session.scalars(
+        select(ServiceWork)
+        .where(
+            ServiceWork.car_id == car_id,
+            ServiceWork.request_status_id <= request_status_id,
+            ServiceWork.in_archive.is_(False)
+        )
+        .order_by(
+            ServiceWork.next_service_id  # сортировка по ID вида работ
+        )
+    )
+
+    return result.all()
