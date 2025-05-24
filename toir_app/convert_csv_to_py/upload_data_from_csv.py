@@ -144,7 +144,7 @@ async def create_service_work(
         # Перевод старой записи в архив:
         if service:
             service.in_archive = True
-            # TODO Проверить, применяется ли архивирование на старой записи
+            service.service_work_completed = True
 
         # Если инфы о ТС нет или появилась новая запись о сервисе:
         new_service_work: dict[str, Any] = validated_service_work.model_dump()
