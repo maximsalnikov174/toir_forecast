@@ -33,3 +33,5 @@ pattern_zvr = r'^5[0-4]-АВТ-\d{7}$'
 LEN_ZVR = 14
 
 PATTERN_DATE_OEBS = '%d.%m.%Y %H:%M:%S'
+
+TIMEZONE_AE = 'Asia/Yekaterinburg'
