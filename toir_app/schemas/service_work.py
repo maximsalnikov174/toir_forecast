@@ -70,3 +70,5 @@ class ServiceWorkWithZVRNumber(ServiceWorkBase):
     Схема записи о Сервисном Обслуживании с номером ЗВР.
     """
     zvr_number: Optional[int]
+    zvr_create_date: Optional[dt]
+    service_work_completed: Optional[bool]

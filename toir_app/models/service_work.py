@@ -58,6 +58,21 @@ class ServiceWork(Base):
         unique=True,
         comment='ЗВР для данной работы'
     )
+    zvr_create_date = Column(
+        DateTime,
+        default=None,
+        comment='Дата создания ЗВР'
+    )
+    service_work_completed = Column(
+        Boolean,
+        default=False,
+        comment='Работы завершены, но ЗВР пока не закрыт'
+    )
+    in_archive = Column(
+        Boolean,
+        default=False,
+        comment='Автоматический перевод записи в архив'
+    )
     # Связи с другими таблицами:
     car_id = Column(
         Integer,
@@ -76,11 +91,6 @@ class ServiceWork(Base):
     request_status_id = Column(
         Integer,
         ForeignKey('servicestatus.id')
-    )
-    in_archive = Column(
-        Boolean,
-        default=False,
-        comment='Автоматический перевод записи в архив'
     )
     # Обратные связи:
     car = relationship(
