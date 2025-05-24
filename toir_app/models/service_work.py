@@ -1,7 +1,8 @@
 from datetime import datetime as dt
 from calendar import monthrange
 
-from sqlalchemy import (Column,
+from sqlalchemy import (Boolean,
+                        Column,
                         DateTime,
                         Float,
                         ForeignKey,
@@ -76,7 +77,11 @@ class ServiceWork(Base):
         Integer,
         ForeignKey('servicestatus.id')
     )
-
+    in_archive = Column(
+        Boolean,
+        default=False,
+        comment='Автоматический перевод записи в архив'
+    )
     # Обратные связи:
     car = relationship(
         'Car',
