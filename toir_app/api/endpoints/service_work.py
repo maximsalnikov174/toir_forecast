@@ -1,9 +1,12 @@
+from datetime import datetime as dt
+# from datetime import tzinfo
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import Field
 from sqlalchemy.ext.asyncio import AsyncSession
 
+# from toir_app.constants import TIMEZONE_AE
 from toir_app.core.db import get_async_session
 from toir_app.crud.service_work import (
     check_zvr_unique,
@@ -21,6 +24,11 @@ router = APIRouter()
     '/add_zvr',
     response_model=ServiceWorkWithZVRNumber,
     name='Добавление ЗВР к конкретному service_work',
+    description=(
+        '* если ЗВР создан - автоматически фиксируется дата создания\n'
+        '* создать ЗВР повторно НЕЛЬЗЯ\n'
+        '* ЗВР - всегда уникальное 7-значное число'
+    ),
     response_model_exclude_none=True,
     status_code=201
 )
@@ -50,6 +58,8 @@ async def add_zvr_to_service_work(
 
     try:
         service_work.zvr_number = zvr_number
+        service_work.zvr_create_date = dt.now()
+
         await session.commit()
         await session.refresh(service_work)  # Опционально
         return service_work
@@ -58,6 +68,49 @@ async def add_zvr_to_service_work(
         raise HTTPException(
             500,
             detail=f'Ошибка при сохранении ЗВР: {str(e)}'
+        )
+
+
+@router.patch(
+    '/de_facto_completed',
+    response_model=ServiceWorkWithZVRNumber,
+    name='Работы выполнены, ждём закрытие ЗВР',
+    description='можно сделать только если указан ЗВР',
+    response_model_exclude_none=True,
+    status_code=201
+)
+async def completed_real_service_work(
+    service_work_id: int,
+    session: AsyncSession = Depends(get_async_session)
+):
+    """Добавление признака фактического завершения работ в service_work."""
+    service_work = await get_service_work(service_work_id, session)
+
+    if not service_work:
+        raise HTTPException(
+            status_code=404,
+            detail='Указанная работа не найдена.'
+        )
+    if not service_work.zvr_number:
+        raise HTTPException(
+            status_code=422,
+            detail='Сначала необходимо добавить ЗВР.'
+        )
+
+    try:
+        service_work.service_work_completed = True
+
+        await session.commit()
+        await session.refresh(service_work)  # Опционально
+        return service_work
+    except Exception as e:
+        await session.rollback()
+        raise HTTPException(
+            500,
+            detail=(
+                'Ошибка при указании информации'
+                f'о фактическом завершении работ: {str(e)}'
+            )
         )
 
 

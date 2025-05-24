@@ -1,7 +1,13 @@
 from datetime import datetime as dt
 from typing import Optional
 
-from pydantic import BaseModel, Field, field_validator, ValidationInfo
+from pydantic import (
+    BaseModel,
+    Field,
+    computed_field,
+    field_validator,
+    ValidationInfo
+)
 
 
 class ServiceWorksRequestStatus(BaseModel):
@@ -72,3 +78,14 @@ class ServiceWorkWithZVRNumber(ServiceWorkBase):
     zvr_number: Optional[int]
     zvr_create_date: Optional[dt]
     service_work_completed: Optional[bool]
+
+    @computed_field
+    def delta_between_service_work_completed_and_now(self) -> Optional[int]:
+        """Разница между сегодня и датой фактического завершения работ.
+
+        Returns:
+        - some days
+        """
+        if self.zvr_create_date:
+            return (dt.now()-self.zvr_create_date).days
+        return None
