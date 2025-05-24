@@ -20,6 +20,27 @@ async def get_car_by_personal_id(
     )
 
 
+async def get_car_by_pk(
+        car_id: int,
+        session: AsyncSession
+) -> Optional[Car]:
+    """Получаем запись о Car по PK.
+
+    Returns:
+    - объект модели Car
+    - 404 если ТС не найдено
+    - 400 если ТС находится в архиве
+    """
+    car = await session.get(Car, car_id)
+
+    if not car:
+        raise HTTPException(404, 'ТС не найдено')
+    elif car.in_archive is True:
+        raise HTTPException(400, 'ТС находится в архиве, действие невозможно')
+
+    return car
+
+
 async def get_car_by_full_grz(
         grz: str,
         session: AsyncSession
@@ -89,26 +110,24 @@ async def add_special_status_to_car(
     if not await session.get(SpecialStatus, special_status_id):
         raise HTTPException(404, 'Статус не найден')
 
-    car = await session.get(Car, car_id)
-    if not car:
-        raise HTTPException(404, 'ТС не найдено')
-    elif special_status_id == car.special_status_id:
-        raise HTTPException(400, 'Выбранный статус и так равен текущему')
-    elif car.in_archive is True:
-        raise HTTPException(400, 'ТС находится в архиве, действие невозможно')
+    car = await get_car_by_pk(car_id, session)
+    if car:
+        if special_status_id == car.special_status_id:
+            raise HTTPException(400, 'Выбранный статус и так равен текущему')
 
-    try:
-        # Устанавливаем статус
-        car.special_status_id = special_status_id
-        await session.commit()
+        try:
+            # Устанавливаем статус
+            car.special_status_id = special_status_id
+            await session.commit()
 
-        # Обновляем объект из БД
-        await session.refresh(car)
+            # Обновляем объект из БД
+            await session.refresh(car)
+        except Exception as e:
+            await session.rollback()
+            raise HTTPException(
+                status_code=500,
+                detail=f'Ошибка при обновлении статуса ТС: {str(e)}'
+            )
+
         return car
-
-    except Exception as e:
-        await session.rollback()
-        raise HTTPException(
-            status_code=500,
-            detail=f'Ошибка при обновлении статуса ТС: {str(e)}'
-        )
+    return None
