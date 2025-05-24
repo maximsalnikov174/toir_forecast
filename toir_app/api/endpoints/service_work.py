@@ -5,7 +5,11 @@ from pydantic import Field
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from toir_app.core.db import get_async_session
-from toir_app.crud.service_work import check_zvr_unique, get_service_work
+from toir_app.crud.service_work import (
+    check_zvr_unique,
+    get_service_work,
+    get_active_service_work_list_by_car
+)
 from toir_app.schemas.service_work import (
     ServiceWorkWithZVRNumber
 )
@@ -55,3 +59,19 @@ async def add_zvr_to_service_work(
             500,
             detail=f'Ошибка при сохранении ЗВР: {str(e)}'
         )
+
+
+@router.get(
+    '/get_cars_service_work',
+    response_model=list[ServiceWorkWithZVRNumber],
+    response_model_exclude_none=True,
+    name='Получение списка неархивных сервисных обслуживаний для ТС.',
+)
+async def get_all_active_service_works_list_by_current_car(
+    car_id: int,
+    request_status_id: int,
+    session: AsyncSession = Depends(get_async_session)
+):
+    return await get_active_service_work_list_by_car(
+        car_id, request_status_id, session
+    )
