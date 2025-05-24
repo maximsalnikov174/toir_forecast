@@ -137,20 +137,28 @@ async def create_service_work(
         # и дополнительно фиксируем старый статус экземпляра:
         old_request_status_id = service.request_status_id
 
+        # Создаём переменную, с которой будем работать далее:
+        processing_service = service
+
     else:
+        # Перевод старой записи в архив:
+        if service:
+            service.in_archive = True
+            # TODO Проверить, применяется ли архивирование на старой записи
+
         # Если инфы о ТС нет или появилась новая запись о сервисе:
         new_service_work: dict[str, Any] = validated_service_work.model_dump()
-        service = ServiceWork(**new_service_work)
 
-        # TODO: Надо добавить перевод старой записи в архив
+        # Создание нового экземпляра (с которым будем работать далее):
+        processing_service = ServiceWork(**new_service_work)
 
     # Рассчитываем и получаем глобальный статус для авто:
     # Должно гарантированно рассчитываться!
-    upd_status = service.calculated_status
+    upd_status = processing_service.calculated_status
     upd_status = (
         await get_service_status_by_name(upd_status.value, session)
     )
-    service.request_status_id = upd_status.id
+    processing_service.request_status_id = upd_status.id
 
     # Если глоб. статус изменился - для
     # * обновляемой записи - откат или прогресс
@@ -158,4 +166,4 @@ async def create_service_work(
     # или глоб. статус - прежний, но поменялись (малозначимые) данные,
     # к примеру, общий пробег - тем самым обновив need_to_update=True:
     if old_request_status_id != upd_status.id or need_to_update:
-        session.add(service)
+        session.add(processing_service)
