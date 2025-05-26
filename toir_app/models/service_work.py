@@ -203,3 +203,23 @@ class ServiceWork(Base):
 
         forecast_reading = days_left * daily_distance + 1  # ожидаемый пробег
         return forecast_reading + reading_now
+
+    def _calculate_divergence(self):
+        """
+        Расчитывает отклонение фактического пробега до требуемого для сервиса.
+
+        Returns:
+        - если значение (-) -> превышение
+        - если значение (+) -> недопробег
+        """
+        if (
+            self.request_reading
+            and self.last_service_reading
+            and self.base_interval
+        ):
+            return (
+                self.last_service_reading
+                + self.base_interval
+                - self.request_reading
+            )
+        return None

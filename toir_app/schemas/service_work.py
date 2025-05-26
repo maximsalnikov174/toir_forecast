@@ -70,17 +70,49 @@ class ServiceWorkBase(CarAtributesInServiceWork):
             )
         return value
 
+    @computed_field
+    def divergence(self) -> Optional[float]:
+        """Отклонение фактического пробега от норматива.
+
+        Returns:
+        - если значение (-) превышение
+        - если значение (+) недопробег
+        """
+        if (
+            self.request_reading
+            and self.last_service_reading
+            and self.base_interval
+        ):
+            return (
+                self.last_service_reading
+                + self.base_interval
+                - self.request_reading
+            )
+        return None
+
 
 class ServiceWorkWithZVRNumber(ServiceWorkBase):
     """
     Схема записи о Сервисном Обслуживании с номером ЗВР.
     """
-    zvr_number: Optional[int]
-    zvr_create_date: Optional[dt]
-    service_work_completed: Optional[bool]
+    zvr_number: Optional[int] = Field(
+        None,
+        title='Номер ЗВР',
+        description='Уникальный номер заявки на сервисное обслуживание',
+    )
+    zvr_create_date: Optional[dt] = Field(
+        None,
+        title='Дата создания ЗВР (автодата)',
+        description='Дата, когда была создана заявка (ЗВР)',
+    )
+    service_work_completed_fact: Optional[bool] = Field(
+        None,
+        title='Работы завершены по факту',
+        description='Флаг фактического завершения сервисных работ',
+    )
 
     @computed_field
-    def delta_between_service_work_completed_and_now(self) -> Optional[int]:
+    def days_between_service_work_completed_and_now(self) -> Optional[int]:
         """Разница между сегодня и датой фактического завершения работ.
 
         Returns:
