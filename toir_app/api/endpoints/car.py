@@ -17,6 +17,7 @@ from toir_app.crud.service_status import (
     check_service_status_by_param
 )
 from toir_app.schemas.car import (
+    CarOnlyIDs,
     CarExpandWithIndicators,
     CarWithCarModelAndOrganizationIDs
 )
@@ -26,12 +27,12 @@ router = APIRouter()
 
 
 @router.post(
-    '/with_status_in_organization',
-    response_model=list[CarWithCarModelAndOrganizationIDs],
+    '/with_many_statuses',
+    response_model=list[CarOnlyIDs],
     name='Срез списка машин цеха Х',
     description=(
-        'Получение среза списка машин цеха Х. Учитываются:'
-        '- расчётный статус (выводится он и всё что строже)'
+        'Получение среза списка машин цеха Х.\nУчитываются:\n'
+        '- расчётный статус (учитывается он и всё что строже)\n'
         '- выбранные статусы ТС (ТС без статуса учитываются всегда)'
     ),
     response_model_exclude_none=True

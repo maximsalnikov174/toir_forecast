@@ -84,6 +84,7 @@ async def get_cars_with_request_and_special_status(
     special_status_ids: list[Optional[int]],
     organization_id: int,
     session: AsyncSession
+    # ) -> list[Optional[CarExpandWithIndicators]]:
 ) -> list[Optional[Car]]:
     """
     Возврат УНИКАЛЬНЫХ машин c учётом выбранных пользователем фильтров.
@@ -91,7 +92,7 @@ async def get_cars_with_request_and_special_status(
     Filters:
     - расчётный статус (он и строже)
     - все ТС без статусов (FIXME пока обязательно)
-    - cписок специальных статусов (опционально)
+    - список специальных статусов (опционально)
     """
     cars = await session.execute(
         select(Car)
