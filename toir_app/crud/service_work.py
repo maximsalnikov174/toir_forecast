@@ -3,7 +3,9 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from toir_app.crud.car import get_car_by_pk
+from toir_app.crud.service_status import get_multi_service_status
 from toir_app.models import ServiceWork
+from toir_app.models.car import Car
 from toir_app.schemas.service_work import CarAtributesInServiceWork
 
 
@@ -11,6 +13,7 @@ async def get_service_work(
         service_work_id: int,
         session: AsyncSession
 ) -> Optional[ServiceWork]:
+    """Получение объекта модели ServiceWork по ID."""
     return await session.get(ServiceWork, service_work_id)
 
 
@@ -23,11 +26,11 @@ async def get_last_service_with_current_service_id(
     Возвращает последнюю (свежую) запись сервисного обслуживания.
 
     Args:
-    - car_id : ID выбранного ТС
-    - last_service_id : ID вида обслуживания, для которого выполняется поиск
+        - car_id : ID выбранного ТС
+        - last_service_id : ID вида обслуживания, для которого выполняется поиск
 
     Returns:
-    - оbj(ServiceWork)
+        - оbj(ServiceWork)
     """
     return await session.scalar(
         select(ServiceWork).where(
@@ -72,8 +75,11 @@ async def get_active_service_work_list_by_car(
 ) -> list[ServiceWork]:
     """Получение списка (неархивных) сервисных обслуживаний для ТС.
 
-    Выполняется отбор для всех расчётных статусов, строже выбранного.
-    Выводятся в порядке ID service_name (идентично шапке в итоговой таблице).
+    Filters:
+        - для всех расчётных статусов, строже выбранного.
+
+    Order_by:
+        - по возрастанию ID service_name (идентично шапке в итоговой таблице).
     """
     await get_car_by_pk(car_id, session)
 
@@ -90,3 +96,45 @@ async def get_active_service_work_list_by_car(
     )
 
     return result.all()
+
+
+async def _get_count_active_service_work_with_service_status(
+        *,
+        organization_id: int,
+        service_status_id: int,
+        session: AsyncSession
+):
+    """Получение количества активных сервисных работ с расчётным статусом."""
+    result = await session.scalars(
+        select(ServiceWork)
+        .join(Car)
+        .where(
+            Car.organization_id == organization_id,
+            ServiceWork.request_status_id == service_status_id,
+            ServiceWork.in_archive.is_(False)
+        )
+    )
+    return len(result.all())
+
+
+async def get_active_service_work_count_for_all_service_status(
+        organization_id: int,
+        session: AsyncSession
+) -> dict[str, int]:
+    """Получение сводных данных о количестве активных работ по статусам."""
+    # Получение списка сервисных статусов:
+    all_service_status = await get_multi_service_status(session=session)
+
+    # Подготовка пустого словаря:
+    summary_data = {}
+
+    # Перебор и наполнение:
+    for service_status in all_service_status:
+        value = await _get_count_active_service_work_with_service_status(
+            organization_id=organization_id,
+            service_status_id=service_status.id,
+            session=session
+        )
+        summary_data[service_status.name] = value
+
+    return summary_data
