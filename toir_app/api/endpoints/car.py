@@ -1,3 +1,5 @@
+from typing import Optional
+
 from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -5,7 +7,7 @@ from toir_app.models import Car
 from toir_app.core.db import get_async_session
 from toir_app.crud.car import (
     get_car_by_full_grz,
-    get_cars_with_request_status,
+    get_cars_with_request_and_special_status,
     add_special_status_to_car
 )
 from toir_app.crud.service_work import (
@@ -15,6 +17,7 @@ from toir_app.crud.service_status import (
     check_service_status_by_param
 )
 from toir_app.schemas.car import (
+    CarOnlyIDs,
     CarExpandWithIndicators,
     CarWithCarModelAndOrganizationIDs
 )
@@ -23,17 +26,20 @@ from toir_app.schemas.car import (
 router = APIRouter()
 
 
-@router.get(
-    '/with_status_in_organization',
-    response_model=list[CarWithCarModelAndOrganizationIDs],
-    name='Срез списка машин',
+@router.post(
+    '/with_many_statuses',
+    response_model=list[CarOnlyIDs],
+    name='Срез списка машин цеха Х',
     description=(
-        'Получение среза списка машин цеха Х с расчётным статусом Y и строже.'
+        'Получение среза списка машин цеха Х.\nУчитываются:\n'
+        '- расчётный статус (учитывается он и всё что строже)\n'
+        '- выбранные статусы ТС (ТС без статуса учитываются всегда)'
     ),
     response_model_exclude_none=True
 )
 async def get_all_cars_with_selected_request_status(
     request_status_param: int,
+    special_status_ids: list[Optional[int]],
     organization_id: int,
     session: AsyncSession = Depends(get_async_session)
 ):
@@ -41,8 +47,12 @@ async def get_all_cars_with_selected_request_status(
     # Проверяем существование выбранного присвоенного статуса в БД:
     await check_service_status_by_param(session, request_status_param)
 
-    return await get_cars_with_request_status(
-        request_status_param, organization_id, session
+    # TODO Проверяем существование выбранных статусов для ТС (на ВР и тд):
+    # FIXME Попробовать здесь реализовать отбор без None
+    pass
+
+    return await get_cars_with_request_and_special_status(
+        request_status_param, special_status_ids, organization_id, session
     )
 
 

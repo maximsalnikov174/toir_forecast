@@ -1,8 +1,9 @@
+from typing import Optional
 from pydantic import BaseModel, Field
 
 
 class OrganizationBase(BaseModel):
-    """Базовая модель Подразделения (цеха)."""
+    """Базовая (только name) схема Подразделения (цеха)."""
     name: str = Field(
         ...,
         title='Объект в OeBS',
@@ -13,14 +14,14 @@ class OrganizationBase(BaseModel):
 
 
 class OrganizationID(BaseModel):
-    """Базовая модель Подразделения (цеха). только ID"""
+    """Базовая (только ID) схема Подразделения (цеха)."""
     id: int = Field(..., title='ID подразделения')
 
 
 class OrganizationResponse(OrganizationID, OrganizationBase):
-    """Модель Подразделения (цеха) для ответа API."""
-    normal_name: str = Field(
-        ...,
+    """Схема Подразделения (цеха) для ответа API."""
+    normal_name: Optional[str] = Field(
+        None,
         title='Номер цеха',
         description='Номер цеха перевозок (привычный)',
         pattern=r'^\d-\w{1,3}$',

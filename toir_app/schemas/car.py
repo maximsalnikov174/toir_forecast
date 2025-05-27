@@ -12,16 +12,24 @@ from toir_app.schemas.service_work import CarAtributesInServiceWork
 from toir_app.schemas.special_status import SpecialStatusWithTimestamp
 
 
-class CarBase(BaseModel):
+class CarOnlyIDs(BaseModel):
+    """Перечень pk ТС (используется при построении строк главной таблицы)."""
+    id: int = Field(..., serialization_alias='car_id', description='PK aka ID')
+
+
+class CarBase(CarOnlyIDs):
     """
     Базовая схема модели Автомобиля.
 
     Используемые поля:
-    - ID из OeBS
-    - ГРЗ
-    - ID специального статуса
+    - PK aka ID
+    - (new) ID из OeBS
+    - (new) ГРЗ
+    - (new) ID специального статуса
     """
-    personal_id: int = Field(..., title='Уникальный ID из OeBS')
+    personal_id: int = Field(
+        ..., title='Уникальный ID из OeBS (не путать с PK)'
+    )
     grz: str = Field(..., title='ГРЗ')
     special_status_id: Optional[int] = None
 
@@ -47,16 +55,23 @@ class CarBase(BaseModel):
             return clear_grz.group()
 
 
+class CarBaseWithSpecialStatusAndTimestamp(
+    CarBase, SpecialStatusWithTimestamp
+):
+    """(не используется) Схема Автомобиля расширяется статусами и временем."""
+
+
 class CarWithCarModelAndOrganizationIDs(CarBase):
     """
     Расширенная схема модели Автомобиля.
 
     Используемые поля:
+    - PK aka ID
     - ID из OeBS
     - ГРЗ
-    - ID марки ТС
-    - ID подразделения
     - ID специального статуса
+    - (new) ID марки ТС
+    - (new) ID подразделения
     """
     car_model_id: int = Field(..., title='ID модели ТС')
     organization_id: int = Field(..., title='ID подразделения')
@@ -67,11 +82,12 @@ class CarWithCarModelAndOrganizationFields(CarBase):
     Расширенная схема модели Автомобиля.
 
     Используемые поля:
+    - PK aka ID
     - ID из OeBS
     - ГРЗ
-    - Поля марки ТС
-    - Поля подразделения
     - ID специального статуса
+    - (new) Поля марки ТС
+    - (new) Поля подразделения
     """
     car_model: CarModelWithID
     organization: OrganizationResponse
@@ -82,18 +98,13 @@ class CarExpandWithIndicators(CarWithCarModelAndOrganizationFields):
     Расширенная схема модели Автомобиля.
 
     Используемые поля:
+    - PK aka ID
     - ID из OeBS
     - ГРЗ
+    - ID специального статуса
     - Поля марки ТС
     - Поля подразделения
-    - ID специального статуса
-    - Общий пробег
-    - Среднесуточный пробег
+    - (new) Общий пробег
+    - (new) Среднесуточный пробег
     """
     indicators: Optional[CarAtributesInServiceWork]
-
-
-class CarBaseWithSpecialStatusAndTimestamp(
-    CarBase, SpecialStatusWithTimestamp
-):
-    """Базовая модель Автомобиля расширяется статусами и временем."""

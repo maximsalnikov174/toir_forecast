@@ -2,9 +2,9 @@ import re
 from typing import Optional
 
 from fastapi import HTTPException
-from sqlalchemy import select
+from sqlalchemy import or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import joinedload
+from sqlalchemy.orm import joinedload, contains_eager
 
 from toir_app.constants import pattern_grz_input_user
 from toir_app.models import Car, ServiceWork, SpecialStatus
@@ -79,25 +79,37 @@ async def get_car_by_full_grz(
     return car
 
 
-async def get_cars_with_request_status(
+async def get_cars_with_request_and_special_status(
     request_status_id: int,
+    special_status_ids: list[Optional[int]],
     organization_id: int,
     session: AsyncSession
+    # ) -> list[Optional[CarExpandWithIndicators]]:
 ) -> list[Optional[Car]]:
     """
-    Возврат УНИКАЛЬНЫХ машин c выбранным Присвоенным статусом и строже.
+    Возврат УНИКАЛЬНЫХ машин c учётом выбранных пользователем фильтров.
+
+    Filters:
+    - расчётный статус (он и строже)
+    - все ТС без статусов (FIXME пока обязательно)
+    - список специальных статусов (опционально)
     """
     cars = await session.execute(
-        select(Car, ServiceWork)
+        select(Car)
         .join(ServiceWork, Car.id == ServiceWork.car_id)
+        .options(contains_eager(Car.service_works))  # жадный подгруз ServWork
         .where(
             ServiceWork.request_status_id <= request_status_id,
             Car.organization_id == organization_id,
-            Car.in_archive.is_(False)
-        ).distinct()  # distinct - дедупликация.
+            Car.in_archive.is_(False),
+            or_(
+                Car.special_status_id.is_(None),
+                Car.special_status_id.in_(special_status_ids)
+            )
+        ).distinct()  # distinct - дедупликация (FIXME не уверен, что так)
         .order_by(Car.grz)
     )
-    return list(cars.scalars().all())
+    return list(cars.unique().scalars().all())  # получение уникальных cars
 
 
 async def add_special_status_to_car(
