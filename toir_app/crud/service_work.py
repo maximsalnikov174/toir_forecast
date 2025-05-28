@@ -123,13 +123,13 @@ async def get_active_service_work_count_for_all_service_status(
 ) -> dict[str, int]:
     """Получение сводных данных о количестве активных работ по статусам."""
     # Получение списка сервисных статусов:
-    all_service_status = await get_multi_service_status(session=session)
+    service_statuses = await get_multi_service_status(session=session)
 
     # Подготовка пустого словаря:
     summary_data = {}
 
     # Перебор и наполнение:
-    for service_status in all_service_status:
+    for service_status in service_statuses:
         value = await _get_count_active_service_work_with_service_status(
             organization_id=organization_id,
             service_status_id=service_status.id,
