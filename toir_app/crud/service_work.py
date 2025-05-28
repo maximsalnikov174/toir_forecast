@@ -98,13 +98,13 @@ async def get_active_service_work_list_by_car(
     return result.all()
 
 
-async def _get_count_active_service_work_with_service_status(
+async def _get_active_service_work_with_service_status(
         *,
         organization_id: int,
         service_status_id: int,
         session: AsyncSession
 ):
-    """Получение количества активных сервисных работ с расчётным статусом."""
+    """Получение активных сервисных работ с расчётным статусом."""
     result = await session.scalars(
         select(ServiceWork)
         .join(Car)
@@ -114,7 +114,7 @@ async def _get_count_active_service_work_with_service_status(
             ServiceWork.in_archive.is_(False)
         )
     )
-    return len(result.all())
+    return result.all()
 
 
 async def get_active_service_work_count_for_all_service_status(
@@ -130,12 +130,12 @@ async def get_active_service_work_count_for_all_service_status(
 
     # Перебор и наполнение:
     for service_status in service_statuses:
-        value = await _get_count_active_service_work_with_service_status(
+        value = await _get_active_service_work_with_service_status(
             organization_id=organization_id,
             service_status_id=service_status.id,
             session=session
         )
-        summary_data[service_status.name] = value
+        summary_data[service_status.name] = len(value)
 
     return summary_data
 
@@ -144,7 +144,7 @@ async def get_all_active_service_work_with_open_zvr(
         organization_id: int,
         session: AsyncSession
 ):
-    """Получение количества «зависших» активных сервисных работ."""
+    """Получение «зависших» активных сервисных работ."""
     result = await session.scalars(
         select(ServiceWork)
         .join(Car)
