@@ -3,6 +3,7 @@ from typing import List, Optional
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from toir_app.constants import LIST_ORGANIZATIONS
 from toir_app.convert_csv_to_py.convertation import normalize_service_name
 from toir_app.function import convert_date
 from toir_app.schemas.convertation import CarDataPoint
@@ -56,6 +57,13 @@ def create_data_point(
     Создает схему CarDataPoint из входящей строки данных.
     """
     try:
+        # Из всего массива данных файла rmt321...
+        if find_element_position(
+            row, 'ORGANIZATION_CODE', mapping_name
+        ) not in LIST_ORGANIZATIONS:
+            return None
+
+        # ... получаем только цеха УЭ:
         return CarDataPoint(
             # Описание ТС:
             personal_id=find_element_position(
