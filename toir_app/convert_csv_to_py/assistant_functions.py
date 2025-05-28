@@ -57,7 +57,7 @@ def create_data_point(
     Создает схему CarDataPoint из входящей строки данных.
     """
     try:
-        # Из всего массива данных файла rmt321...
+        # Из всего массива данных файла rmt321 ...
         if find_element_position(
             row, 'ORGANIZATION_CODE', mapping_name
         ) not in LIST_ORGANIZATIONS:
