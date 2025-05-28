@@ -11,7 +11,7 @@ from toir_app.crud.service_status import get_service_status_by_name
 from toir_app.crud.service_work import get_last_service_with_current_service_id
 from toir_app.models import Car, ServiceWork
 from toir_app.schemas.car import (
-    CarWithCarModelAndOrganizationIDs
+    CarToDownloadInDB
 )
 from toir_app.schemas.car_model import CarModelID
 from toir_app.schemas.organization import OrganizationID
@@ -56,7 +56,7 @@ async def get_or_create_car_and_return_id(
 
     if not car_in_db:
         # загоняем в pydantic-схему:
-        validated_car = CarWithCarModelAndOrganizationIDs(
+        validated_car = CarToDownloadInDB(
             personal_id=personal_id,
             grz=grz,
             car_model_id=car_model.id,

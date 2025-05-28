@@ -17,21 +17,19 @@ class CarOnlyIDs(BaseModel):
     id: int = Field(..., serialization_alias='car_id', description='PK aka ID')
 
 
-class CarBase(CarOnlyIDs):
+class CarStartParse(BaseModel):
     """
     Базовая схема модели Автомобиля.
 
     Используемые поля:
     - PK aka ID
-    - (new) ID из OeBS
-    - (new) ГРЗ
-    - (new) ID специального статуса
+    - (new) ID из OeBS *
+    - (new) ГРЗ *
     """
     personal_id: int = Field(
         ..., title='Уникальный ID из OeBS (не путать с PK)'
     )
     grz: str = Field(..., title='ГРЗ')
-    special_status_id: Optional[int] = None
 
     class Config:
         from_attributes = True
@@ -53,6 +51,25 @@ class CarBase(CarOnlyIDs):
             raise ValueError('Не удалось обработать ГРЗ по шаблону')
         else:
             return clear_grz.group()
+
+
+class CarToDownloadInDB(CarStartParse):
+    """Схема для загрузки данных из CSV-файла (не трогать!)."""
+    car_model_id: int = Field(..., title='ID модели ТС')
+    organization_id: int = Field(..., title='ID подразделения')
+
+
+class CarBase(CarStartParse):
+    """
+    Базовая схема #2 модели Автомобиля.
+
+    Используемые поля:
+    - PK aka ID
+    - ID из OeBS
+    - ГРЗ
+    - (new) ID специального статуса
+    """
+    special_status_id: Optional[int] = None
 
 
 class CarBaseWithSpecialStatusAndTimestamp(
