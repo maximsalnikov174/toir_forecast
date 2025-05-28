@@ -11,6 +11,7 @@ from toir_app.core.db import get_async_session
 from toir_app.crud.service_work import (
     check_zvr_unique,
     get_active_service_work_count_for_all_service_status,
+    get_all_active_service_work_with_open_zvr,
     get_service_work,
     get_active_service_work_list_by_car,
 )
@@ -151,3 +152,22 @@ async def get_count_active_service_works_blya(
     return await get_active_service_work_count_for_all_service_status(
         organization_id, session
     )
+
+
+@router.get(
+    '/get_count_all_active_service_work_with_open_zvr',
+    name=(
+        'Получение (в моменте) количества зависших сервисных обслуживаний.'
+    ),
+    description=(
+        'Выводится на экране подразделения (сверху) для понимания ситуации.'
+    )
+)
+async def get_count_all_active_service_work_with_open_zvr(
+    organization_id: int,
+    session: AsyncSession = Depends(get_async_session)
+) -> dict[str, int]:
+    result = await get_all_active_service_work_with_open_zvr(
+        organization_id, session
+    )
+    return {'active_service_work_with_open_zvr': len(result)}

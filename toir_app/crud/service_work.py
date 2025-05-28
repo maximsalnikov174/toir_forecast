@@ -138,3 +138,20 @@ async def get_active_service_work_count_for_all_service_status(
         summary_data[service_status.name] = value
 
     return summary_data
+
+
+async def get_all_active_service_work_with_open_zvr(
+        organization_id: int,
+        session: AsyncSession
+):
+    """Получение количества «зависших» активных сервисных работ."""
+    result = await session.scalars(
+        select(ServiceWork)
+        .join(Car)
+        .where(
+            Car.organization_id == organization_id,
+            ServiceWork.service_work_completed.is_(True),
+            ServiceWork.in_archive.is_(False)
+        )
+    )
+    return result.all()
