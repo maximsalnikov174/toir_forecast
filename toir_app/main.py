@@ -26,7 +26,7 @@ toir_app.include_router(main_router)
 
 # Находим файл для загрузки данных:
 script_dir = os.path.dirname(os.path.abspath(__file__))
-file_path = f'{script_dir}/dataset_from_oebs/rmt321_full_new.csv'
+file_path = f'{script_dir}/dataset_from_oebs/rmt321_ATU_full.csv'
 
 
 async def main():

@@ -27,7 +27,8 @@ async def get_last_service_with_current_service_id(
 
     Args:
         - car_id : ID выбранного ТС
-        - last_service_id : ID вида обслуживания, для которого выполняется поиск
+        - last_service_id : ID вида сервисного обслуживания, для которого
+        выполняется поиск
 
     Returns:
         - оbj(ServiceWork)
