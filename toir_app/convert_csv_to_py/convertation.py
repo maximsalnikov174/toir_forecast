@@ -19,6 +19,7 @@ class UsersServiceName(str, Enum):
     STEERING_WHEEL = 'Замена масла редуктора РУ'
     BRAKE_FLUID = 'Замена тормозной жидкости'
     ON_BOARD_TRANSMISSION = 'Замена масла в бортовой передаче'
+    TO_2000 = 'ТО-2000'
     TO_250 = 'ТО-250'
     TO_2 = 'ТО-2'
     TO_4 = 'ТО-4'
@@ -67,6 +68,9 @@ convert_service_name: ServiceNameMapping = {
     UsersServiceName.ON_BOARD_TRANSMISSION.value: [
         'ЗамМаслаБортовойПередачи',
         'ЗамМаслаБортПередачи'
+    ],
+    UsersServiceName.TO_2000.value: [
+        'ТО-2000'
     ],
     UsersServiceName.TO_250.value: [
         'ТО-250'
