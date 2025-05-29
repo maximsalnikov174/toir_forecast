@@ -189,7 +189,7 @@ async def _get_service_work_for_car_and_service_name(
             ServiceWork.next_service_id == service_name_id,
         )
     )
-    return result.id if result else None
+    return result if result else None
 
 
 async def create_main_table(

@@ -177,7 +177,9 @@ async def get_count_all_active_service_work_with_open_zvr(
 @router.post(
     '/get_table',
     name='Получение главной таблицы.',
-    description='Получение в виде списка списков.'
+    description='Получение в виде списка списков.',
+    response_model=list[list[Optional[ServiceWorkWithZVRNumber]]],
+    response_model_exclude_none=True
 )
 async def get_table(
     request_status_id: int,
