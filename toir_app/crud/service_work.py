@@ -111,14 +111,17 @@ async def _get_active_service_work_with_service_status(
         service_status_id: int,
         session: AsyncSession
 ):
-    """Получение активных сервисных работ с расчётным статусом."""
+    """
+    Получение активных сервисных работ в подразделении с расчётным статусом.
+    """
     result = await session.scalars(
         select(ServiceWork)
         .join(Car)
         .where(
-            Car.organization_id == organization_id,
             ServiceWork.request_status_id == service_status_id,
-            ServiceWork.in_archive.is_(False)
+            ServiceWork.in_archive.is_(False),
+            Car.organization_id == organization_id,
+            Car.in_archive.is_(False)
         )
     )
     return result.all()
