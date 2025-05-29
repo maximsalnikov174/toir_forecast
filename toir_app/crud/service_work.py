@@ -1,8 +1,14 @@
 from typing import Optional
-from sqlalchemy import select
+from sqlalchemy import or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from toir_app.crud.car import get_car_by_pk
+from toir_app.crud.car import (
+    get_car_by_pk,
+    get_cars_with_request_and_special_status
+)
+from toir_app.crud.service_name import (
+    get_service_name_with_request_status
+)
 from toir_app.crud.service_status import get_multi_service_status
 from toir_app.models import ServiceWork
 from toir_app.models.car import Car
@@ -156,3 +162,75 @@ async def get_all_active_service_work_with_open_zvr(
         )
     )
     return result.all()
+
+
+async def _get_service_work_for_car_and_service_name(
+        car_id: int,
+        service_name_id: int,
+        request_status_id: int,
+        special_status_ids: list[Optional[int]],
+        session: AsyncSession
+) -> Optional[int]:
+    """Получение ID записи ServiceWork если оно соответствует условиям."""
+
+    # TODO Если ТС в архиве - должен сработать pass
+
+    result = await session.scalar(
+        select(ServiceWork)
+        .join(Car)
+        .where(
+            Car.id == car_id,
+            or_(
+                Car.special_status_id.in_(special_status_ids),
+                Car.special_status_id.is_(None),
+            ),
+            ServiceWork.request_status_id <= request_status_id,
+            ServiceWork.in_archive.is_(False),
+            ServiceWork.next_service_id == service_name_id,
+        )
+    )
+    return result.id if result else None
+
+
+async def create_main_table(
+        request_status_id: int,
+        special_status_ids: list[Optional[int]],
+        organization_id: int,
+        session: AsyncSession
+):
+    """Наполнение содержимым главной таблицы."""
+    total_data = []
+    # Получение списка всех названий сервисных операций:
+    # Выстраиваем шапку
+    all_service_name = await get_service_name_with_request_status(
+        request_status_id=request_status_id,
+        special_status_ids=special_status_ids,
+        organization_id=organization_id,
+        session=session,
+        need_range=True
+    )
+
+    # Получение списка ТС (выстраиваем строки):
+    all_cars = await get_cars_with_request_and_special_status(
+        request_status_id=request_status_id,
+        special_status_ids=special_status_ids,
+        organization_id=organization_id,
+        session=session
+    )
+
+    for car in all_cars:
+        one_row = []
+        for service_name in all_service_name:
+            if car and service_name:
+                one_row.append(
+                    await _get_service_work_for_car_and_service_name(
+                        car_id=car.id,
+                        service_name_id=service_name.id,
+                        request_status_id=request_status_id,
+                        special_status_ids=special_status_ids,
+                        session=session
+                    )
+                )
+        total_data.append(one_row)
+
+    return total_data

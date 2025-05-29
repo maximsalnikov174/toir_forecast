@@ -1,6 +1,6 @@
 from datetime import datetime as dt
 # from datetime import tzinfo
-from typing import Annotated
+from typing import Annotated, Optional
 
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import Field
@@ -10,6 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from toir_app.core.db import get_async_session
 from toir_app.crud.service_work import (
     check_zvr_unique,
+    create_main_table,
     get_active_service_work_count_for_all_service_status,
     get_all_active_service_work_with_open_zvr,
     get_service_work,
@@ -171,3 +172,22 @@ async def get_count_all_active_service_work_with_open_zvr(
         organization_id, session
     )
     return {'active_service_work_with_open_zvr': len(result)}
+
+
+@router.post(
+    '/get_table',
+    name='Получение главной таблицы.',
+    description='Получение в виде списка списков.'
+)
+async def get_table(
+    request_status_id: int,
+    special_status_ids: list[Optional[int]],
+    organization_id: int,
+    session: AsyncSession = Depends(get_async_session)
+):
+    return await create_main_table(
+        request_status_id=request_status_id,
+        special_status_ids=special_status_ids,
+        organization_id=organization_id,
+        session=session
+    )
