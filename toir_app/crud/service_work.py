@@ -1,3 +1,4 @@
+from collections.abc import Sequence
 from typing import Optional
 from sqlalchemy import or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -79,7 +80,7 @@ async def get_active_service_work_list_by_car(
         car_id: int,
         request_status_id: int,
         session: AsyncSession
-) -> list[ServiceWork]:
+) -> Sequence[ServiceWork]:
     """Получение списка (неархивных) сервисных обслуживаний для ТС.
 
     Filters:

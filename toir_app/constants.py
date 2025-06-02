@@ -31,6 +31,8 @@ pattern_grz_input_user = (
 
 pattern_zvr = r'^5[0-4]-АВТ-\d{7}$'
 LEN_ZVR = 14
+ZVR_PART_MIN = 1_000_000
+ZVR_PART_MAX = 10_000_000
 
 PATTERN_DATE_OEBS = '%d.%m.%Y %H:%M:%S'
 

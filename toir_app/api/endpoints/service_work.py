@@ -1,5 +1,5 @@
-from datetime import datetime as dt
-# from datetime import tzinfo
+from datetime import datetime as dt  # , tzinfo
+from http import HTTPStatus
 from typing import Annotated, Optional
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -7,6 +7,7 @@ from pydantic import Field
 from sqlalchemy.ext.asyncio import AsyncSession
 
 # from toir_app.constants import TIMEZONE_AE
+from toir_app.constants import ZVR_PART_MAX, ZVR_PART_MIN
 from toir_app.core.db import get_async_session
 from toir_app.crud.service_work import (
     check_zvr_unique,
@@ -33,11 +34,13 @@ router = APIRouter()
         '* ЗВР - всегда уникальное 7-значное число'
     ),
     response_model_exclude_none=True,
-    status_code=201
+    status_code=HTTPStatus.CREATED
 )
 async def add_zvr_to_service_work(
     service_work_id: int,
-    zvr_number: Annotated[int, Field(ge=1_000_000, lt=10_000_000)],
+    zvr_number: Annotated[
+        int, Field(ge=ZVR_PART_MIN, lt=ZVR_PART_MAX)
+    ],
     session: AsyncSession = Depends(get_async_session)
 ):
     """Добавление 7-значного ЗВР к service_work."""
@@ -45,23 +48,23 @@ async def add_zvr_to_service_work(
 
     if not service_work:
         raise HTTPException(
-            status_code=404,
+            status_code=HTTPStatus.NOT_FOUND,
             detail='Указанная работа не найдена.'
         )
     if service_work.zvr_number:
         raise HTTPException(
-            status_code=422,
+            status_code=HTTPStatus.UNPROCESSABLE_ENTITY,
             detail='У данной работы ЗВР уже существует.'
         )
     if await check_zvr_unique(zvr_number, session):
         raise HTTPException(
-            status_code=422,
+            status_code=HTTPStatus.UNPROCESSABLE_ENTITY,
             detail=f'Указанный ЗВР #{zvr_number} не уникален, сверьте данные.'
         )
 
     try:
         service_work.zvr_number = zvr_number
-        service_work.zvr_create_date = dt.now()
+        service_work.zvr_create_date = dt.now()  # TODO надо дописать tz
 
         await session.commit()
         await session.refresh(service_work)  # Опционально
@@ -86,7 +89,7 @@ async def add_zvr_to_service_work(
         ' был указан ЗВР.'
     ),
     response_model_exclude_none=True,
-    status_code=201
+    status_code=HTTPStatus.CREATED
 )
 async def completed_real_service_work(
     service_work_id: int,
@@ -97,17 +100,17 @@ async def completed_real_service_work(
 
     if not service_work:
         raise HTTPException(
-            status_code=404,
+            status_code=HTTPStatus.NOT_FOUND,
             detail='Указанная работа не найдена.'
         )
     if not service_work.zvr_number:
         raise HTTPException(
-            status_code=422,
+            status_code=HTTPStatus.UNPROCESSABLE_ENTITY,
             detail='Сначала необходимо добавить ЗВР.'
         )
 
     try:
-        service_work.service_work_completed = True
+        service_work['service_work_completed'] = True
 
         await session.commit()
         await session.refresh(service_work)  # Опционально
