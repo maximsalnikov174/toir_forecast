@@ -2,7 +2,7 @@ from datetime import datetime as dt  # , tzinfo
 from http import HTTPStatus
 from typing import Annotated, Optional
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import Field
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -180,19 +180,29 @@ async def get_count_all_active_service_work_with_open_zvr(
 @router.post(
     '/get_table',
     name='Получение главной таблицы.',
-    description='Получение в виде списка списков.',
+    description=(
+        'Получение в виде списка списков.'
+        'Если юзер хочет скрыть сервисные операции, находящиеся в работе'
+        ' (скрыть все записи с указанным ЗВР), он указывает'
+        ' hide_service_work_with_zvr=True.'
+    ),
     response_model=list[list[Optional[ServiceWorkWithZVRNumber]]],
     response_model_exclude_none=True
 )
 async def get_table(
-    request_status_id: int,
     special_status_ids: list[Optional[int]],
-    organization_id: int,
-    session: AsyncSession = Depends(get_async_session)
+    request_status_id: int = Query(description='ID расчётного статуса'),
+    organization_id: int = Query(description='ID подразделения (цеха)'),
+    hide_service_work_with_zvr: bool = Query(
+        default=False,
+        description='True скрывает все записи с ЗВР.'
+    ),
+    session: AsyncSession = Depends(get_async_session),
 ):
     return await create_main_table(
         request_status_id=request_status_id,
         special_status_ids=special_status_ids,
         organization_id=organization_id,
-        session=session
+        session=session,
+        hide_service_work_with_zvr=hide_service_work_with_zvr
     )
