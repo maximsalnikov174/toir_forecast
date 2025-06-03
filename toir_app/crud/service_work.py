@@ -1,3 +1,4 @@
+from collections.abc import Sequence
 from typing import Optional
 from sqlalchemy import or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -79,7 +80,7 @@ async def get_active_service_work_list_by_car(
         car_id: int,
         request_status_id: int,
         session: AsyncSession
-) -> list[ServiceWork]:
+) -> Sequence[ServiceWork]:
     """Получение списка (неархивных) сервисных обслуживаний для ТС.
 
     Filters:
@@ -172,34 +173,41 @@ async def _get_service_work_for_car_and_service_name(
         service_name_id: int,
         request_status_id: int,
         special_status_ids: list[Optional[int]],
-        session: AsyncSession
+        session: AsyncSession,
+        hide_service_work_with_zvr: bool = False
 ) -> Optional[int]:
-    """Получение ID записи ServiceWork если оно соответствует условиям."""
+    """Получение ID записи ServiceWork если оно соответствует условиям.
+
+    Опция:
+        - hide_service_work_with_zvr=True (если нужно скрыть записи с ЗВР)
+    """
 
     # TODO Если ТС в архиве - должен сработать pass
 
-    result = await session.scalar(
-        select(ServiceWork)
-        .join(Car)
-        .where(
-            Car.id == car_id,
-            or_(
-                Car.special_status_id.in_(special_status_ids),
-                Car.special_status_id.is_(None),
-            ),
-            ServiceWork.request_status_id <= request_status_id,
-            ServiceWork.in_archive.is_(False),
-            ServiceWork.next_service_id == service_name_id,
-        )
+    stmt = select(ServiceWork).join(Car).where(
+        Car.id == car_id,
+        or_(
+            Car.special_status_id.in_(special_status_ids),
+            Car.special_status_id.is_(None),
+        ),
+        ServiceWork.request_status_id <= request_status_id,
+        ServiceWork.in_archive.is_(False),
+        ServiceWork.next_service_id == service_name_id,
     )
-    return result if result else None
+
+    # Скрыть записи о сервисном обслуживании, если для них уже создан ЗВР:
+    if hide_service_work_with_zvr:
+        stmt = stmt.where(ServiceWork.zvr_number.is_(None))
+
+    return result if (result := await session.scalar(stmt)) else None
 
 
 async def create_main_table(
         request_status_id: int,
         special_status_ids: list[Optional[int]],
         organization_id: int,
-        session: AsyncSession
+        session: AsyncSession,
+        hide_service_work_with_zvr: bool = False
 ):
     """Наполнение содержимым главной таблицы."""
     total_data = []
@@ -231,7 +239,8 @@ async def create_main_table(
                         service_name_id=service_name.id,
                         request_status_id=request_status_id,
                         special_status_ids=special_status_ids,
-                        session=session
+                        session=session,
+                        hide_service_work_with_zvr=hide_service_work_with_zvr
                     )
                 )
         total_data.append(one_row)
