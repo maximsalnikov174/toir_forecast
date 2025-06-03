@@ -1,11 +1,11 @@
 <template>
   <q-select
     standout
-    v-model="selectedDivId"
-    :options="divisions"
+    v-model="selectedOrgId"
+    :options="organizations"
     option-label="name"
     option-value="id"
-    label="Выберите подразделение"
+    label="Выберите минимальный статус"
     emit-value
     map-options
     clearable
@@ -17,5 +17,5 @@
 <script setup>
 import { DivisionFuctionSelect } from '../../Functions/ButtonSelectDivision.js'
 
-const { selectedDivId, divisions } = DivisionFuctionSelect()
+const { selectedOrgId, organizations } = DivisionFuctionSelect()
 </script>

@@ -1,8 +1,8 @@
 import { ref, onMounted } from 'vue'
 
 export function DivisionFuctionSelect() {
-  const selectedOrgId = ref(null)
-  const organizations = ref([])
+  const selectedDivId = ref(null)
+  const divisions = ref([])
 
   const fetchDivision = async () => {
     try {
@@ -16,7 +16,7 @@ export function DivisionFuctionSelect() {
         throw new Error('Ошибка при загрузке организаций')
       }
 
-      organizations.value = await response.json()
+      divisions.value = await response.json()
     } catch (error) {
       console.error('Ошибка:', error)
     }
@@ -27,7 +27,7 @@ export function DivisionFuctionSelect() {
   })
 
   return {
-    selectedOrgId,
-    organizations
+    selectedDivId,
+    divisions
   }
 }
