@@ -1,9 +1,9 @@
 <template>
   <q-select
     standout
-    v-model="selectedOrgId"
-    :options="organizations"
-    option-label="name"
+    v-model="selectedMinimalStatus"
+    :options="MinimalStatus"
+    option-label="status_name"
     option-value="id"
     label="Выберите минимальный статус"
     emit-value
@@ -15,7 +15,7 @@
 </template>
 
 <script setup>
-import { DivisionFuctionSelect } from '../../Functions/ButtonSelectDivision.js'
+import { MinimalStatusSelect } from '../../Functions/ButtonSelectMinimalStatus.js'
 
-const { selectedOrgId, organizations } = DivisionFuctionSelect()
+const { selectedMinimalStatus, MinimalStatus } = MinimalStatusSelect()
 </script>
