@@ -1,9 +1,9 @@
 <template>
   <div>
-    <organization-select />
+    <division-select />
   </div>
 </template>
 
 <script setup>
-import OrganizationSelect from '../components/UI/Button/DivisionSelect.vue'
+import DivisionSelect from '../components/UI/Button/DivisionSelect.vue'
 </script>
