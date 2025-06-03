@@ -1,4 +1,3 @@
-<!-- src/components/OrganizationSelect.vue -->
 <template>
   <q-select
     standout
@@ -16,7 +15,7 @@
 </template>
 
 <script setup>
-import { useOrganizationSelect } from '../../../components/Functions/ButtonSelect.js'
+import { DivisionFuctionSelect } from '../../Functions/ButtonSelectDivision.js'
 
-const { selectedOrgId, organizations } = useOrganizationSelect()
+const { selectedOrgId, organizations } = DivisionFuctionSelect()
 </script>

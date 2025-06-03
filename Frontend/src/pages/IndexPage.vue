@@ -1,4 +1,3 @@
-<!-- src/pages/SomePage.vue -->
 <template>
   <div>
     <organization-select />
@@ -6,5 +5,5 @@
 </template>
 
 <script setup>
-import OrganizationSelect from '../components/UI/Button/OrganizationSelect.vue'
+import OrganizationSelect from '../components/UI/Button/DivisionSelect.vue'
 </script>
