@@ -1,21 +1,12 @@
 const routes = [
   {
     path: '/',
-    component: () => import('layouts/MainLayout.vue'),
+    component: () => import('layouts/MainLayout.vue'), // исправлено на MainLayout
     children: [
       { path: '', component: () => import('pages/IndexPage.vue') },
+      { path: 'test-list', component: () => import('src/components/TestList.vue') } // рекомендуем использовать kebab-case для URL
     ]
   },
-  {
-    path: '/TestList',
-    component: () => import('pages/TestList.vue'),
-    children: [
-      { path: '', component: () => import('pages/TestList.vue') },
-    ]
-  },
-
-  // Always leave this as last one,
-  // but you can also remove it
   {
     path: '/:catchAll(.*)*',
     component: () => import('pages/ErrorNotFound.vue')

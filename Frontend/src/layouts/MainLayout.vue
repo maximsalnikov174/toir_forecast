@@ -27,24 +27,18 @@
 <script setup>
 import { ref } from 'vue'
 import EssentialLink from 'components/EssentialLink.vue'
-//import { route } from 'quasar/wrappers'
-import { useRouter } from 'vue-router'
-
-const router = useRouter()
 
 const linksList = [
   {
-    title: 'TestList',
-    icon: 'favorite',
-    link: '/TestList',
-    click: () => router.push('/TestList'),
-  },
-  {
     title: 'Home',
     icon: 'home',
-    link: '/IndexPage',
-    click: () => router.push('/'),
+    link: '/'
   },
+  {
+    title: 'TestList',
+    icon: 'favorite',
+    link: '/test-list' // соответствует path в routes.js
+  }
 ]
 
 const leftDrawerOpen = ref(false)
