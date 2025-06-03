@@ -2,12 +2,14 @@
   <div class="buttons-container">
     <division-select />
     <minimal-status />
+    <GroupTs/>
   </div>
 </template>
 
 <script setup>
 import  MinimalStatus  from '../components/UI/Button/MinimalStatus.vue';
-import DivisionSelect from '../components/UI/Button/DivisionSelect.vue'
+import DivisionSelect from '../components/UI/Button/DivisionSelect.vue';
+import GroupTs from '../components/UI/Button/GroupTs.vue';
 </script>
 
 
