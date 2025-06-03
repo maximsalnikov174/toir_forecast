@@ -1,0 +1,39 @@
+<template>
+  <div style="max-width: 300px">
+    <div>
+      <q-select
+        filled
+        v-model="selectedValues"
+        :options="yesNoOptions"
+        option-label="label"
+        option-value="value"
+        label="Обработанные"
+        emit-value
+        map-options
+        clearable
+      />
+    </div>
+  </div>
+</template>
+
+<script setup>
+import { ref, watch } from 'vue'
+
+// Опции для выбора Да/Нет
+const yesNoOptions = [
+  { label: 'Да', value: true },
+  { label: 'Нет', value: false }
+]
+
+// Выбранные значения (true/false)
+const selectedValues = ref(null)
+
+// Если нужно сохранять массив значений (для multiple)
+// const selectedValues = ref([])
+
+// Вотчер для отслеживания изменений
+watch(selectedValues, (newVal) => {
+  console.log('Выбрано:', newVal)
+  // Здесь можно добавить дополнительную логику обработки
+}, { immediate: true })
+</script>

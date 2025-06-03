@@ -3,6 +3,7 @@
     <division-select />
     <minimal-status />
     <GroupTs/>
+    <HideServiceWorkWithZvr/>
   </div>
 </template>
 
@@ -10,6 +11,7 @@
 import  MinimalStatus  from '../components/UI/Button/MinimalStatus.vue';
 import DivisionSelect from '../components/UI/Button/DivisionSelect.vue';
 import GroupTs from '../components/UI/Button/GroupTs.vue';
+import HideServiceWorkWithZvr from '../components/UI/Button/HideServiceWorkWithZvr.vue';
 </script>
 
 
