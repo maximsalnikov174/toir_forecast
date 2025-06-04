@@ -1,7 +1,8 @@
 import { ref, onMounted } from 'vue'
+import { useFilterStore } from '../Functions/FilterStoreAcceptButton'
 
 export function DivisionFuctionSelect() {
-  const selectedDivId = ref(null)
+  const { selectedDivId } = useFilterStore()
   const divisions = ref([])
 
   const fetchDivision = async () => {
@@ -30,4 +31,5 @@ export function DivisionFuctionSelect() {
     selectedDivId,
     divisions
   }
+
 }

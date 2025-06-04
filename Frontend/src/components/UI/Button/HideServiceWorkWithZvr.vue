@@ -17,7 +17,8 @@
 </template>
 
 <script setup>
-import { ref, watch } from 'vue'
+import { watch } from 'vue'
+import { useFilterStore } from '../../Functions/FilterStoreAcceptButton.js'
 
 // Опции для выбора Да/Нет
 const yesNoOptions = [
@@ -26,7 +27,7 @@ const yesNoOptions = [
 ]
 
 // Выбранные значения (true/false)
-const selectedValues = ref(null)
+const { selectedValues } = useFilterStore()
 
 // Если нужно сохранять массив значений (для multiple)
 // const selectedValues = ref([])

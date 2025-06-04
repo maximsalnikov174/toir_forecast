@@ -1,7 +1,8 @@
 import { ref, onMounted } from 'vue'
+import { useFilterStore } from '../Functions/FilterStoreAcceptButton.js'
 
 export function MinimalStatusSelect() {
-  const selectedMinimalStatus = ref(null)
+  const { selectedMinimalStatus } = useFilterStore()
   const MinimalStatus = ref([])
 
   const fetchMinimalStatus = async () => {

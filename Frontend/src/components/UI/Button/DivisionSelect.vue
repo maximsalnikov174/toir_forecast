@@ -18,4 +18,5 @@
 import { DivisionFuctionSelect } from '../../Functions/ButtonSelectDivision.js'
 
 const { selectedDivId, divisions } = DivisionFuctionSelect()
+console.log(selectedDivId)
 </script>
