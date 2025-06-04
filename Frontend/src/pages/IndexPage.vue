@@ -2,18 +2,19 @@
   <div class="buttons-container">
     <division-select />
     <minimal-status />
-    <GroupTs/>
-    <HideServiceWorkWithZvr/>
+    <GroupTs />
+    <HideServiceWorkWithZvr />
+    <ToAccept />
   </div>
 </template>
 
 <script setup>
-import  MinimalStatus  from '../components/UI/Button/MinimalStatus.vue';
-import DivisionSelect from '../components/UI/Button/DivisionSelect.vue';
-import GroupTs from '../components/UI/Button/GroupTs.vue';
-import HideServiceWorkWithZvr from '../components/UI/Button/HideServiceWorkWithZvr.vue';
+import MinimalStatus from '../components/UI/Button/MinimalStatus.vue'
+import DivisionSelect from '../components/UI/Button/DivisionSelect.vue'
+import GroupTs from '../components/UI/Button/GroupTs.vue'
+import HideServiceWorkWithZvr from '../components/UI/Button/HideServiceWorkWithZvr.vue'
+import ToAccept from 'src/components/UI/Button/ToAccept.vue'
 </script>
-
 
 <style scoped>
 .buttons-container {
