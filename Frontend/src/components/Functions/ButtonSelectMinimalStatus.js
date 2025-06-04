@@ -1,9 +1,14 @@
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, watch } from 'vue' // Добавляем импорт watch
 import { useFilterStore } from '../Functions/FilterStoreAcceptButton.js'
 
 export function MinimalStatusSelect() {
   const { selectedMinimalStatus } = useFilterStore()
   const MinimalStatus = ref([])
+
+  // Добавляем вотчер для отслеживания изменений selectedMinimalStatus
+  watch(selectedMinimalStatus, (newValue) => {
+    console.log('Selected Minimal Status changed:', newValue)
+  }, { immediate: true })
 
   const fetchMinimalStatus = async () => {
     try {

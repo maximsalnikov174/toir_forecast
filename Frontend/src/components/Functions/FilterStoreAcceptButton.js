@@ -1,10 +1,11 @@
 import { ref } from 'vue'
 
-export function useFilterStore() {
-  const selectedDivId = ref()
-  const selectedMinimalStatus = ref()
-  const selectedValues = ref()
+// Создаем рефы вне функции, чтобы сохранять состояние
+const selectedDivId = ref(null)
+const selectedMinimalStatus = ref(null)
+const selectedValues = ref(null)
 
+export function useFilterStore() {
   return {
     selectedDivId,
     selectedMinimalStatus,

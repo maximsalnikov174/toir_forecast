@@ -1,8 +1,14 @@
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, watch } from 'vue'
 
 export function useStatusOptions() {
   const statusOptions = ref([])
+  const selectedStatuses = ref([]) // Для хранения выбранных статусов
   const loading = ref(false)
+
+  // Вотчер для отслеживания выбранных статусов
+  watch(selectedStatuses, (newSelected) => {
+    console.log('Выбранные статусы изменились:', newSelected)
+  }, { deep: true })
 
   const fetchStatuses = async () => {
     loading.value = true
@@ -32,6 +38,7 @@ export function useStatusOptions() {
 
   return {
     statusOptions,
+    selectedStatuses, // Возвращаем для использования в компоненте
     loading
   }
 }

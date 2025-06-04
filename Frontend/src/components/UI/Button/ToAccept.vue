@@ -12,18 +12,34 @@
 <script setup>
 import { useFilterStore } from '../../Functions/FilterStoreAcceptButton'
 import axios from 'axios'
-import { ref } from 'vue'
+import { ref, watch } from 'vue'
 
 const { selectedDivId, selectedMinimalStatus, selectedValues } = useFilterStore()
 const loading = ref(false)
 
 const emit = defineEmits(['applied'])
 
+// Вотчеры для отслеживания изменений фильтров
+watch([selectedDivId, selectedMinimalStatus, selectedValues], ([divId, status, values]) => {
+  console.group('Текущие значения фильтров:')
+  console.log('selectedDivId:', divId)
+  console.log('selectedMinimalStatus:', status)
+  console.log('selectedValues:', values)
+  console.groupEnd()
+}, { immediate: true })
+
 const showAlert = (message, type = 'info') => {
   alert(`${type.toUpperCase()}: ${message}`)
 }
 
 const handleApply = async () => {
+  // Выводим текущие значения в консоль перед отправкой
+  console.group('Применение фильтров:')
+  console.log('selectedDivId:', selectedDivId.value)
+  console.log('selectedMinimalStatus:', selectedMinimalStatus.value)
+  console.log('selectedValues:', selectedValues.value)
+  console.groupEnd()
+
   // Проверка, что хотя бы один параметр задан
   if (
     selectedMinimalStatus.value === null &&
