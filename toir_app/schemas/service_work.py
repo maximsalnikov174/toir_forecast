@@ -75,7 +75,7 @@ class ServiceWorkBase(CarAtributesInServiceWork):
 class ServiceWorkWithDivergence(ServiceWorkBase):
     @computed_field
     def divergence(self) -> Optional[float]:
-        """Отклонение фактического пробега от норматива.
+        """Отклонение фактического пробега от норматива (1 знак после «,»).
 
         Returns:
         - если значение (-) превышение
@@ -86,10 +86,13 @@ class ServiceWorkWithDivergence(ServiceWorkBase):
             and self.last_service_reading
             and self.base_interval
         ):
-            return (
-                self.last_service_reading
-                + self.base_interval
-                - self.request_reading
+            return round(
+                (
+                    self.last_service_reading
+                    + self.base_interval
+                    - self.request_reading
+                ),
+                1
             )
         return None
 
