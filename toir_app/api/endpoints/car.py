@@ -29,7 +29,7 @@ router = APIRouter()
 @router.post(
     '/with_many_statuses',
     response_model=list[CarOnlyIDs],
-    name='Срез списка машин цеха Х',
+    name='Срез списка машин цеха Х (доступно всем)',
     description=(
         'Получение среза списка машин цеха Х.\nУчитываются:\n'
         '- расчётный статус (учитывается он и всё что строже)\n'
@@ -59,7 +59,7 @@ async def get_all_cars_with_selected_request_status(
 @router.get(
     '/about_car',
     response_model=CarExpandWithIndicators,
-    name='Поиск машины по ГРЗ и возврат информации о ней.',
+    name='Поиск машины по ГРЗ и возврат информации о ней (доступно всем).',
     response_model_exclude_none=True
 )
 async def get_car_in_db_by_grz(
@@ -74,7 +74,7 @@ async def get_car_in_db_by_grz(
 @router.patch(
     '/{car_id}/add_special_status',
     response_model=CarWithCarModelAndOrganizationIDs,
-    name='Добавление специального статуса ТС.',
+    name='Добавление специального статуса ТС (только сотрудник цеха).',
     description=(
         'ТС устанавливается специальный статус, предназначенный для помощи '
         '(в дальнейшем) сотрудникам с определением состояния ТС (примеры '

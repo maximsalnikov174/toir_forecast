@@ -2,7 +2,11 @@ from datetime import datetime as dt  # , tzinfo
 from http import HTTPStatus
 from typing import Annotated, Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import (APIRouter,
+                     Body,
+                     Depends,
+                     HTTPException,
+                     Query)
 from pydantic import Field
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -27,7 +31,10 @@ router = APIRouter()
 @router.patch(
     '/add_zvr',
     response_model=ServiceWorkWithZVRNumber,
-    name='Добавление ЗВР к конкретному service_work',
+    name=(
+        'Добавление ЗВР к конкретному service_work'
+        ' (доступно сотруднику подразделения).'
+    ),
     description=(
         '* если ЗВР создан - автоматически фиксируется дата создания\n'
         '* создать ЗВР повторно НЕЛЬЗЯ\n'
@@ -72,7 +79,7 @@ async def add_zvr_to_service_work(
     except Exception as e:
         await session.rollback()
         raise HTTPException(
-            500,
+            HTTPStatus.INTERNAL_SERVER_ERROR,
             detail=f'Ошибка при сохранении ЗВР: {str(e)}'
         )
 
@@ -80,7 +87,10 @@ async def add_zvr_to_service_work(
 @router.patch(
     '/de_facto_completed',
     response_model=ServiceWorkWithZVRNumber,
-    name='Работы выполнены, ждём закрытие ЗВР',
+    name=(
+        'Работы выполнены, ждём закрытие ЗВР'
+        '(доступно сотруднику подразделения)'
+    ),
     description=(
         'Когда пользователь узнал, что работы выполнены, но по какой-то'
         ' причине сроки закрытия ЗВР неизвестны - пользователь вручную'
@@ -118,7 +128,7 @@ async def completed_real_service_work(
     except Exception as e:
         await session.rollback()
         raise HTTPException(
-            500,
+            HTTPStatus.INTERNAL_SERVER_ERROR,
             detail=(
                 'Ошибка при указании информации'
                 f'о фактическом завершении работ: {str(e)}'
@@ -130,7 +140,10 @@ async def completed_real_service_work(
     '/get_cars_service_work',
     response_model=list[ServiceWorkWithZVRNumber],
     response_model_exclude_none=True,
-    name='Получение списка неархивных сервисных обслуживаний для ТС.',
+    name=(
+        'Получение списка неархивных сервисных обслуживаний для ТС'
+        ' (доступно всем).'
+    ),
 )
 async def get_all_active_service_works_list_by_current_car(
     car_id: int,
@@ -146,8 +159,9 @@ async def get_all_active_service_works_list_by_current_car(
     '/get_summary_data_with_all_service_work',
     name=(
         'Получение (в моменте) общей статистики по всем расчётным статусам в'
-        ' подразделении.'
-    )
+        ' подразделении (доступно всем).'
+    ),
+    description='Необходим для получения статистики по кнопке.'
 )
 async def get_count_active_service_works_blya(
     organization_id: int,
@@ -161,7 +175,8 @@ async def get_count_active_service_works_blya(
 @router.get(
     '/get_count_all_active_service_work_with_open_zvr',
     name=(
-        'Получение (в моменте) количества зависших сервисных обслуживаний.'
+        'Получение (в моменте) количества зависших сервисных обслуживаний'
+        ' (доступно всем).'
     ),
     description=(
         'Выводится на экране подразделения (сверху) для понимания ситуации.'
@@ -179,7 +194,7 @@ async def get_count_all_active_service_work_with_open_zvr(
 
 @router.post(
     '/get_table',
-    name='Получение главной таблицы.',
+    name='Получение главной таблицы (доступно всем).',
     description=(
         'Получение в виде списка списков.'
         'Если юзер хочет скрыть сервисные операции, находящиеся в работе'
@@ -190,12 +205,17 @@ async def get_count_all_active_service_work_with_open_zvr(
     response_model_exclude_none=True
 )
 async def get_table(
-    special_status_ids: list[Optional[int]],
+    special_status_ids: list[Optional[int]] = Body(
+        ...,
+        description=(
+            'Перечень ID специальных статусов ТС + все без статусов (None)'
+        )
+    ),
     request_status_id: int = Query(description='ID расчётного статуса'),
     organization_id: int = Query(description='ID подразделения (цеха)'),
     hide_service_work_with_zvr: bool = Query(
         default=False,
-        description='True скрывает все записи с ЗВР.'
+        description='True скрывает все записи с ЗВР'
     ),
     session: AsyncSession = Depends(get_async_session),
 ):

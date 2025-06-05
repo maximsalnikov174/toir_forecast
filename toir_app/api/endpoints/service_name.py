@@ -1,4 +1,6 @@
+from http import HTTPStatus
 from typing import Optional
+
 from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -19,9 +21,9 @@ router = APIRouter()
 @router.post(
     '/all_service_names',
     response_model=list[ServiceNameBase],
-    name='Срез видов ТО',
+    name='Срез видов ТО (доступно всем)',
     description='Получение среза видов ТО для заполнения шапки таблицы.',
-    status_code=200,
+    status_code=HTTPStatus.OK,
 )
 async def get_all_service_names_with_selected_request_status(
     *,

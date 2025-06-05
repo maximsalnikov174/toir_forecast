@@ -1,3 +1,5 @@
+from http import HTTPStatus
+
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -17,7 +19,7 @@ router = APIRouter()
     response_model=list[OrganizationResponse],
     name='Получение списка подразделений (на выбор пользователю)',
     description='Получение списка всех подразделений для отбора по цеху.',
-    status_code=200,
+    status_code=HTTPStatus.OK,
 )
 async def get_all_organization(
     session: AsyncSession = Depends(get_async_session)
@@ -31,7 +33,7 @@ async def get_all_organization(
     response_model=OrganizationResponse,
     name='Получение информации о выбранном пользователем подразделении',
     description='Получение подразделения для отбора по цеху.',
-    status_code=200,
+    status_code=HTTPStatus.OK,
 )
 async def get_organization(
     organization_id: int,
@@ -41,6 +43,7 @@ async def get_organization(
     organization = await get_current_organization(organization_id, session)
     if not organization:
         raise HTTPException(
-            404, detail=f'Подразделение с ID={organization_id} не найдено'
+            HTTPStatus.NOT_FOUND,
+            detail=f'Подразделение с ID={organization_id} не найдено'
         )
     return organization
