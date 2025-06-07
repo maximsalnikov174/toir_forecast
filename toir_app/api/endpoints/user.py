@@ -26,8 +26,16 @@ router.include_router(
 
 # Роутер пользователей предоставляет доступ к эндпоинтам:
 # управления пользователями (чтение из БД, удаление, обновление и тд).
+
+# Сохраняем роутер в переменную.
+users_router = fastapi_users.get_users_router(UserRead, UserUpdate)
+# Из списка эндпоинтов роутера исключаем ручку delete_user.
+users_router.routes = [
+    rout for rout in users_router.routes if rout.name != 'users:delete_user'
+]
+# Подключаем изменённый роутер по старому адресу.
 router.include_router(
-    fastapi_users.get_users_router(UserRead, UserUpdate),
+    users_router,
     prefix='/users',
     tags=['users'],
 )

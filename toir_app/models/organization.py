@@ -40,6 +40,11 @@ class Organization(Base):
         cascade='delete',
         doc='1:M Список автомобилей, числящихся в данном цехе.'
     )
+    employees = relationship(
+        'User',
+        back_populates='users_organization',
+        cascade='delete'
+    )
 
     def __repr__(self):
         return f'<Цех {self.name}>'

@@ -6,6 +6,8 @@ from fastapi import FastAPI
 from dotenv import load_dotenv
 
 from toir_app.core.db import AsyncSessionLocal
+# Импортируем корутину для создания первого суперюзера.
+from toir_app.core.init_db import create_first_superuser
 from toir_app.api.routers import main_router
 from toir_app.core.config import settings
 from toir_app.convert_csv_to_py.parse_data import (
@@ -16,6 +18,8 @@ from toir_app.convert_csv_to_py.upload_data import (
     upload_all_users_data_in_db,
     need_to_upload_datas
 )
+from toir_app.crud.organization import create_superuser_organization
+from toir_app.crud.role import get_superuser_role
 
 load_dotenv()  # подгружаем переменные из env
 
@@ -36,6 +40,15 @@ async def main():
             # 1. Загружаем enum-значения в БД (по итогу - коммит, он нужен)
             await upload_all_users_data_in_db(
                 need_to_upload_datas, download_session
+            )
+
+        if os.environ['CREATE_SUPERUSER'].lower() == 'true':
+            organization_id = await create_superuser_organization(
+                download_session
+            )
+            role_id = await get_superuser_role(session=download_session)
+            await create_first_superuser(
+                role_id=role_id, organization_id=organization_id
             )
 
         if os.environ['UPLOAD_DATA_FROM_CSV'].lower() == 'true':

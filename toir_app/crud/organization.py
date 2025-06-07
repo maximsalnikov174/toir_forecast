@@ -4,6 +4,20 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from toir_app.models import Organization
 
 
+async def create_superuser_organization(session: AsyncSession) -> int:
+    """Создание организации для суперпользователя.
+
+    Returns:
+    - Organization.id
+    """
+    admin_organization_data = {'name': 'Ю80'}
+    admin_organization = Organization(**admin_organization_data)
+    session.add(admin_organization)
+    await session.commit()
+    await session.refresh(admin_organization)
+    return admin_organization.id
+
+
 async def get_organization_list(session: AsyncSession) -> list[Organization]:
     """Возврат списка подразделений."""
     organization_list = await session.scalars(

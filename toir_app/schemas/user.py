@@ -15,10 +15,10 @@ class UserRead(schemas.BaseUser[int]):
         title='Фамилия',
         max_length=PERSON_FULL_NAME_LEN
     )
-    organization_id = Field(
+    organization_id: int = Field(
         ..., title='ID из таблицы подразделений.'
     )
-    role_id = Field(
+    role_id: int = Field(
         ..., title='ID из таблицы ролей в системе.'
     )
 
@@ -33,10 +33,10 @@ class UserCreate(schemas.BaseUserCreate):
         title='Фамилия',
         max_length=PERSON_FULL_NAME_LEN
     )
-    organization_id = Field(
+    organization_id: int = Field(
         ..., title='ID из таблицы подразделений.'
     )
-    role_id = Field(
+    role_id: int = Field(
         ..., title='ID из таблицы ролей в системе.'
     )
 
@@ -45,5 +45,5 @@ class UserUpdate(schemas.BaseUserUpdate):
     """Схема обновления данных пользователя.
 
     Можно изменить подразделение и/или роль(маловероятно)."""
-    organization_id = Optional[int]
-    role_id = Optional[int]
+    organization_id: Optional[int]
+    role_id: Optional[int]

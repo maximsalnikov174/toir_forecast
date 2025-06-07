@@ -37,7 +37,7 @@ PATTERN_DATE_OEBS = '%d.%m.%Y %H:%M:%S'
 
 TIMEZONE_AE = 'Asia/Yekaterinburg'
 
-LIST_ORGANIZATIONS: list[str] = ['Ю51', 'Ю52', 'Ю53', 'Ю54', 'Ю80']
+LIST_ORGANIZATIONS: list[str] = ['Ю51', 'Ю52', 'Ю53', 'Ю54']
 
 # БЛОК РЕГИСТРАЦИИ ПОЛЬЗОВАТЕЛЕЙ:
 # Максимальная длина имени или фамилии сотрудника:

@@ -33,12 +33,12 @@ class User(SQLAlchemyBaseUserTable[int], Base):
     )
 
     # Обратные связи:
-    organization = relationship(
+    users_organization = relationship(
         'Organization',
         back_populates='employees',
         cascade='delete'
     )
-    role = relationship(
+    users_role = relationship(
         'Role',
         back_populates='employees_by_role',
         cascade='delete'
