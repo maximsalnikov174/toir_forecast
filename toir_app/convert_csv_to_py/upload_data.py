@@ -12,7 +12,9 @@ from toir_app.models import (ServiceName,
                              ServiceStatus,
                              SpecialStatus,
                              SpecialStatusForCar,
-                             Status)
+                             Status,
+                             Role,
+                             UserRole)
 
 
 # Все что нужно загрузить при СОЗДАНИИ базы:
@@ -20,7 +22,7 @@ need_to_upload_datas = [
     (SpecialStatusForCar, SpecialStatus),  # к выбытию, на ВР
     (Status, ServiceStatus),  # подошло, превышение
     (UsersServiceName, ServiceName),  # ТО-2, замена масла ДВС
-    # (UserRole, Role),  # админ, только чтение
+    (UserRole, Role),  # админ, только чтение
     # ...
 ]
 
