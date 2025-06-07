@@ -5,6 +5,7 @@ class Settings(BaseSettings):
     """Класс для работы с переменными окружения."""
     app_title: str = 'Приложение ТОиР'
     database_url: str  # Обязательный параметр без значения по умолчанию
+    secret: str = 'SECRET'
 
     model_config = SettingsConfigDict(
         env_file='.env',

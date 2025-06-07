@@ -12,7 +12,6 @@ STATUS_NAME_LEN = 20  # Длина названия статуса (Превыш
 SPECIAL_STATUS_NAME_LEN = 40
 CAR_GRZ_LEN = 20  # Длина гос рег знака (У 123 АЕ 174)
 SERVICE_STATUS_NAME_LEN = 40  # Длина вида обслуживания (ТО-1, ТО ГБО и тд)
-PERSON_FULL_NAME_LEN = 40
 
 
 pattern_grz = (
@@ -38,4 +37,16 @@ PATTERN_DATE_OEBS = '%d.%m.%Y %H:%M:%S'
 
 TIMEZONE_AE = 'Asia/Yekaterinburg'
 
-LIST_ORGANIZATIONS: list[str] = ['Ю51', 'Ю52', 'Ю53', 'Ю54']
+LIST_ORGANIZATIONS: list[str] = ['Ю51', 'Ю52', 'Ю53', 'Ю54', 'Ю80']
+
+# БЛОК РЕГИСТРАЦИИ ПОЛЬЗОВАТЕЛЕЙ:
+# Максимальная длина имени или фамилии сотрудника:
+PERSON_FULL_NAME_LEN = 40
+# Минимальная длина пароля от личного кабинета:
+MIN_PASSWORD_LEN = 5
+# Дефолтное время жизни (в секундах) токена для пользователя:
+LIFETIME_TOKEN_IN_SECONDS = 3_600
+# URL для работы с аутентификацией:
+ENDPOINT_URL_FOR_AUTH = '/auth/jwt'
+# URL для получения токена для пользователя:
+ENDPOINT_URL_FOR_GET_TOKEN = ENDPOINT_URL_FOR_AUTH + '/login'
