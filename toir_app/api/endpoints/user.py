@@ -16,7 +16,7 @@ router = APIRouter()
 router.include_router(
     fastapi_users.get_auth_router(auth_backend),
     prefix=ENDPOINT_URL_FOR_AUTH,
-    tags=['auth'],
+    tags=['user_auth'],
 )
 
 # Регистрационный роутер предоставляет доступ к эндпоинту:
@@ -24,7 +24,7 @@ router.include_router(
 router.include_router(
     fastapi_users.get_register_router(UserRead, UserCreate),
     prefix=ENDPOINT_URL_FOR_REGISTRATION,
-    tags=['registration'],
+    tags=['user_registration'],
 )
 
 # Роутер пользователей предоставляет доступ к эндпоинтам:
@@ -40,5 +40,5 @@ users_router.routes = [
 router.include_router(
     users_router,
     prefix='/users',
-    tags=['users'],
+    tags=['user_about'],
 )
