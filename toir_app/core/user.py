@@ -15,7 +15,7 @@ from toir_app.constants import (
     ENDPOINT_URL_FOR_GET_TOKEN,
     LIFETIME_TOKEN_IN_SECONDS,
     MIN_PASSWORD_LEN,
-    words_and_digits
+    WORDS_AND_DIGITS
 )
 from toir_app.core.config import settings
 from toir_app.core.db import get_async_session
@@ -65,7 +65,7 @@ class UserManager(IntegerIDMixin, BaseUserManager[User, int]):
         - При успешной валидации - ничего.
         - При ошибке валидации - вызван спецкласс InvalidPasswordException.
         """
-        if not re.search(words_and_digits, password):
+        if not re.search(WORDS_AND_DIGITS, password):
             raise InvalidPasswordException(
                 reason=(
                     'В пароле должны быть буквы (A-Z, a-z) и цифры. Это важно!'

@@ -27,8 +27,9 @@ pattern_grz_input_user = (
     r'([АВЕКМНОРСТУХ]{2})?\s?'
     r'([1,7][4,7]4*)'
 )
-
-words_and_digits = r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[a-zA-Z\d]+$'
+ORGANIZATION_BASE_NAME_PATTERN = r'^Ю\d{2}$'
+ORGANIZATION_NORMAL_NAME_PATTERN = r'^(\d-)?[А-Я]{1,3}$'
+WORDS_AND_DIGITS = r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[a-zA-Z\d]+$'
 pattern_zvr = r'^5[0-4]-АВТ-\d{7}$'
 LEN_ZVR = 14
 ZVR_PART_MIN = 1_000_000
