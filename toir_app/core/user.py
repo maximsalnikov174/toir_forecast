@@ -1,3 +1,4 @@
+import re
 from typing import Optional, Union
 
 from fastapi import Depends, Request
@@ -13,7 +14,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from toir_app.constants import (
     ENDPOINT_URL_FOR_GET_TOKEN,
     LIFETIME_TOKEN_IN_SECONDS,
-    MIN_PASSWORD_LEN
+    MIN_PASSWORD_LEN,
+    words_and_digits
 )
 from toir_app.core.config import settings
 from toir_app.core.db import get_async_session
@@ -63,6 +65,12 @@ class UserManager(IntegerIDMixin, BaseUserManager[User, int]):
         - При успешной валидации - ничего.
         - При ошибке валидации - вызван спецкласс InvalidPasswordException.
         """
+        if not re.search(words_and_digits, password):
+            raise InvalidPasswordException(
+                reason=(
+                    'В пароле должны быть буквы (A-Z, a-z) и цифры. Это важно!'
+                )
+            )
         if len(password) < MIN_PASSWORD_LEN:
             raise InvalidPasswordException(
                 reason=(

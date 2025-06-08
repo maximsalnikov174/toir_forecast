@@ -1,6 +1,9 @@
 from fastapi import APIRouter
 
-from toir_app.constants import ENDPOINT_URL_FOR_AUTH
+from toir_app.constants import (
+    ENDPOINT_URL_FOR_AUTH,
+    ENDPOINT_URL_FOR_REGISTRATION
+)
 from toir_app.core.user import auth_backend, fastapi_users
 from toir_app.schemas.user import UserCreate, UserRead, UserUpdate
 
@@ -20,20 +23,20 @@ router.include_router(
 # /register (для регистрации нового пользователя)
 router.include_router(
     fastapi_users.get_register_router(UserRead, UserCreate),
-    prefix='/auth',
-    tags=['auth'],
+    prefix=ENDPOINT_URL_FOR_REGISTRATION,
+    tags=['registration'],
 )
 
 # Роутер пользователей предоставляет доступ к эндпоинтам:
 # управления пользователями (чтение из БД, удаление, обновление и тд).
-
-# Сохраняем роутер в переменную.
+# 1. Сохраняем роутер в переменную.
 users_router = fastapi_users.get_users_router(UserRead, UserUpdate)
-# Из списка эндпоинтов роутера исключаем ручку delete_user.
+# 2. Из списка эндпоинтов роутера исключаем ручки delete и patch.
 users_router.routes = [
-    rout for rout in users_router.routes if rout.name != 'users:delete_user'
+    rout for rout in users_router.routes
+    if rout.name not in ['users:delete_user', 'users:patch_current_user']
 ]
-# Подключаем изменённый роутер по старому адресу.
+# 3. Подключаем изменённый роутер по старому адресу.
 router.include_router(
     users_router,
     prefix='/users',

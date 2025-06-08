@@ -28,6 +28,7 @@ pattern_grz_input_user = (
     r'([1,7][4,7]4*)'
 )
 
+words_and_digits = r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[a-zA-Z\d]+$'
 pattern_zvr = r'^5[0-4]-АВТ-\d{7}$'
 LEN_ZVR = 14
 ZVR_PART_MIN = 1_000_000
@@ -46,7 +47,9 @@ PERSON_FULL_NAME_LEN = 40
 MIN_PASSWORD_LEN = 5
 # Дефолтное время жизни (в секундах) токена для пользователя:
 LIFETIME_TOKEN_IN_SECONDS = 3_600
+# URL для работы с регистрацией пользователя:
+ENDPOINT_URL_FOR_REGISTRATION = '/auth'
 # URL для работы с аутентификацией:
-ENDPOINT_URL_FOR_AUTH = '/auth/jwt'
+ENDPOINT_URL_FOR_AUTH = f'{ENDPOINT_URL_FOR_REGISTRATION}/jwt'
 # URL для получения токена для пользователя:
-ENDPOINT_URL_FOR_GET_TOKEN = ENDPOINT_URL_FOR_AUTH + '/login'
+ENDPOINT_URL_FOR_GET_TOKEN = f'{ENDPOINT_URL_FOR_AUTH}/login'
