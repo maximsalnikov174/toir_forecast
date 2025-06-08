@@ -1,5 +1,6 @@
 import re
 from typing import Optional
+from http import HTTPStatus
 
 from fastapi import HTTPException
 from sqlalchemy import or_, select
@@ -7,7 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload, contains_eager
 
 from toir_app.constants import pattern_grz_input_user
-from toir_app.models import Car, ServiceWork, SpecialStatus
+from toir_app.models import Car, ServiceWork, SpecialStatus, User
 
 
 async def get_car_by_personal_id(
@@ -36,9 +37,12 @@ async def get_car_by_pk(
     car = await session.get(Car, car_id)
 
     if not car:
-        raise HTTPException(404, 'ТС не найдено')
+        raise HTTPException(HTTPStatus.NOT_FOUND, 'ТС не найдено')
     elif car.in_archive is True:
-        raise HTTPException(400, 'ТС находится в архиве, действие невозможно')
+        raise HTTPException(
+            HTTPStatus.BAD_REQUEST,
+            'ТС находится в архиве, действие невозможно'
+        )
 
     return car
 
@@ -60,7 +64,7 @@ async def get_car_by_full_grz(
     match = re.match(pattern_grz_input_user, grz.upper())
     if not match:
         raise HTTPException(
-            status_code=404,
+            status_code=HTTPStatus.NOT_FOUND,
             detail='Проверьте формат ГРЗ!'
         )
     groups_grz = match.groups()
@@ -79,7 +83,7 @@ async def get_car_by_full_grz(
     )
     if not car:
         raise HTTPException(
-            status_code=404,
+            status_code=HTTPStatus.NOT_FOUND,
             detail='ТС не найдено!'
         )
     return car
@@ -121,6 +125,7 @@ async def get_cars_with_request_and_special_status(
 async def add_special_status_to_car(
         special_status_id: int,
         car_id: int,
+        user: User,
         session: AsyncSession
 ) -> Optional[Car]:
     """Устанавливает специальный статус для ТС.
@@ -131,17 +136,31 @@ async def add_special_status_to_car(
 
     Exceptions:
         - 400 если выбранный статус и так равен текущему.
+        - 403 если у пользователя недостаточно прав.
         - 404 если ID выбранного статуса нет в списке статусов.
         - 500 если случились прочие проблемы.
     """
     # Проверяем, существует ли car и special_status:
     if not await session.get(SpecialStatus, special_status_id):
-        raise HTTPException(404, 'Статус не найден')
+        raise HTTPException(HTTPStatus.NOT_FOUND, 'Статус не найден')
 
     car = await get_car_by_pk(car_id, session)
+
     if car:
+
+        if (
+            car.organization_id != user.organization_id
+            and not user.is_superuser
+        ):
+            raise HTTPException(
+                HTTPStatus.FORBIDDEN,
+                'Только пользователь подразделения или суперпользователь'
+            )
+
         if special_status_id == car.special_status_id:
-            raise HTTPException(400, 'Выбранный статус и так равен текущему')
+            raise HTTPException(
+                HTTPStatus.BAD_REQUEST, 'Выбранный статус и так равен текущему'
+            )
 
         try:
             # Устанавливаем статус
@@ -153,7 +172,7 @@ async def add_special_status_to_car(
         except Exception as e:
             await session.rollback()
             raise HTTPException(
-                status_code=500,
+                status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
                 detail=f'Ошибка при обновлении статуса ТС: {str(e)}'
             )
 

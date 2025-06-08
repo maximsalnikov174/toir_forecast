@@ -3,8 +3,9 @@ from typing import Optional
 from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from toir_app.models import Car
+from toir_app.models import Car, User
 from toir_app.core.db import get_async_session
+from toir_app.core.user import current_user
 from toir_app.crud.car import (
     get_car_by_full_grz,
     get_cars_with_request_and_special_status,
@@ -74,6 +75,7 @@ async def get_car_in_db_by_grz(
 @router.patch(
     '/{car_id}/add_special_status',
     response_model=CarWithCarModelAndOrganizationIDs,
+    # dependencies=[Depends(current_user)],
     name='Добавление специального статуса ТС (только сотрудник цеха).',
     description=(
         'ТС устанавливается специальный статус, предназначенный для помощи '
@@ -86,11 +88,13 @@ async def get_car_in_db_by_grz(
 async def link_special_status_and_car(
     car_id: int,
     special_status_id: int,
+    user: User = Depends(current_user),
     session: AsyncSession = Depends(get_async_session)
 ):
     """Установка специального статуса для ТС."""
     return await add_special_status_to_car(
-        special_status_id,
-        car_id,
-        session
+        special_status_id=special_status_id,
+        car_id=car_id,
+        user=user,
+        session=session
     )
