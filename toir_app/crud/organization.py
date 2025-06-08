@@ -1,6 +1,7 @@
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from toir_app.constants import ADMIN_ORGANIZATION_DATA
 from toir_app.models import Organization
 
 
@@ -10,8 +11,7 @@ async def create_superuser_organization(session: AsyncSession) -> int:
     Returns:
     - Organization.id
     """
-    admin_organization_data = {'name': 'Ю80'}
-    admin_organization = Organization(**admin_organization_data)
+    admin_organization = Organization(**ADMIN_ORGANIZATION_DATA)
     session.add(admin_organization)
     await session.commit()
     await session.refresh(admin_organization)

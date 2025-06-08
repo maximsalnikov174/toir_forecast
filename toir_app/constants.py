@@ -42,6 +42,8 @@ TIMEZONE_AE = 'Asia/Yekaterinburg'
 LIST_ORGANIZATIONS: list[str] = ['Ю51', 'Ю52', 'Ю53', 'Ю54']
 
 # БЛОК РЕГИСТРАЦИИ ПОЛЬЗОВАТЕЛЕЙ:
+# Данные для суперпользователя
+ADMIN_ORGANIZATION_DATA = {'name': 'Ю80', 'normal_name': 'УПР'}
 # Максимальная длина имени или фамилии сотрудника:
 PERSON_FULL_NAME_LEN = 40
 # Минимальная длина пароля от личного кабинета:
