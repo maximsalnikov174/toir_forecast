@@ -185,7 +185,7 @@ async def upload_filedata_in_db(
         )
 
     # Проверяем автомобиль (понадобится, когда появятся новые ТС в цехе):
-        car_id = await get_or_create_car_and_return_id(
+        car_id, car_grz = await get_or_create_car_and_return_id(
             session=session,
             personal_id=element_dict['personal_id'],
             grz=element_dict['grz'],
@@ -203,7 +203,8 @@ async def upload_filedata_in_db(
                 car_id=car_id,
                 element_dict=element_dict,
                 last_service_id=last_service,
-                next_service_id=next_service
+                next_service_id=next_service,
+                car_grz=car_grz
             )
 
         # Закидываем всю строчку в коммит

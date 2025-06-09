@@ -1,5 +1,6 @@
 # ----------ФУНКЦИИ, ВЫПОЛНЯЮЩИЕ НАПОЛНЕНИЕ ДАННЫМИ ИЗ CSV-ФАЙЛА----------
 
+import logging
 from typing import Any
 
 from sqlalchemy import select
@@ -48,7 +49,7 @@ async def get_or_create_car_and_return_id(
     grz: str,
     car_model: CarModelID,
     organization: OrganizationID
-) -> int:
+) -> tuple[int, str]:
     """Получает экземпляр модели Car или создает его (автомобиль)."""
     # Можно бы было ВЫШЕ получить все проиндексированные personal_id одним
     # запросом и искать среди них:
@@ -69,9 +70,10 @@ async def get_or_create_car_and_return_id(
         session.add(car)
         await session.commit()
         await session.refresh(car)
-        return car.id
+        logging.info(f'🚚 «{car.grz}» создано.')
+        return car.id, car.grz
 
-    return car_in_db.id
+    return car_in_db.id, car_in_db.grz
 
 
 async def create_service_work(
@@ -79,7 +81,8 @@ async def create_service_work(
     car_id: int,
     element_dict: dict,
     last_service_id: int,
-    next_service_id: int
+    next_service_id: int,
+    **kwargs
 ) -> None:
     """
     Создает или обновляет запись обслуживания для автомобиля.
@@ -131,6 +134,7 @@ async def create_service_work(
             # Обновляем суточный и общий пробег:
             service.daily_distance = validated_service_work.daily_distance
             service.request_reading = validated_service_work.request_reading
+            logging.info(f'🏃‍➡️ «{kwargs["car_grz"]}» : обновился пробег.')
 
         # Записываем дату обновления (нужно для пересчёта статуса):
         service.request_date = validated_service_work.request_date
@@ -145,6 +149,14 @@ async def create_service_work(
         if service:
             service.in_archive = True
             service.service_work_completed = True
+
+            # Логирование записи о ТО, перешедшей в архив
+            logging.info(
+                f'⛔ «{kwargs["car_grz"]}». '
+                f'⚙️#{service.next_service_id} закрыт '
+                f'{validated_service_work.request_date.date()} '
+                f'на пробеге {service.request_reading}'
+            )
 
         # Если инфы о ТС нет или появилась новая запись о сервисе:
         new_service_work: dict[str, Any] = validated_service_work.model_dump()
@@ -167,3 +179,16 @@ async def create_service_work(
     # к примеру, общий пробег - тем самым обновив need_to_update=True:
     if old_request_status_id != upd_status.id or need_to_update:
         session.add(processing_service)
+
+        # Логгирование:
+        if not need_to_update:
+            message = f'☑️ «{kwargs["car_grz"]}». ⚙️#{next_service_id}'
+            if not old_request_status_id:
+                logging.info(
+                    f'{message}. Присвоен глобальный статус: {upd_status.id}.'
+                )
+            else:
+                logging.info(
+                    f'{message}. Изменен глобальный статус'
+                    f'({old_request_status_id}) -> {upd_status.id}.'
+                )

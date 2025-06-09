@@ -1,8 +1,14 @@
 # Стандартное количество элементов в строке rmt-321:
+from pathlib import Path
+
+
 TOTAL_VALUES_IN_RAW_RMT_321 = 22
 
 # Процент вхождения в выборку (у нас утверждено 10%):
 EXCESS_VALUE = 10
+
+# Логирование SQL-запросов (для разработки - True)
+NEED_ECHO_SQL = False
 
 # Длины названий в моделях:
 ORGANIZATION_NAME_LEN = 3  # Длина имени цеха (Ю51)
@@ -56,3 +62,13 @@ ENDPOINT_URL_FOR_REGISTRATION = '/auth'
 ENDPOINT_URL_FOR_AUTH = f'{ENDPOINT_URL_FOR_REGISTRATION}/jwt'
 # URL для получения токена для пользователя:
 ENDPOINT_URL_FOR_GET_TOKEN = f'{ENDPOINT_URL_FOR_AUTH}/login'
+
+
+# Настройка логгирования:
+BASE_DIR = Path(__file__).parent
+LOG_DIR = Path(f'{BASE_DIR}/logs')
+LOG_FILE = Path(f'{LOG_DIR}/logging_toir_forecast.log')
+MAX_BYTES_FOR_LOG_FILE = 10 ** 6
+BACKUP_COUNT = 5
+CUSTOM_TIME_FORMAT = '%Y-%m-%d %H:%M:%S'
+LOGGER_FORMAT = '%(asctime)s | %(name)25s | %(levelname)10s || %(message)s'

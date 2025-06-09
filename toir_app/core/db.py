@@ -9,6 +9,7 @@ from sqlalchemy.ext.asyncio import (AsyncSession,
                                     create_async_engine)
 from sqlalchemy.orm import declared_attr, declarative_base
 
+from toir_app.constants import NEED_ECHO_SQL
 from toir_app.core.config import settings
 
 
@@ -27,7 +28,7 @@ Base = declarative_base(cls=PreBase)
 
 engine: AsyncEngine = create_async_engine(
     settings.database_url,
-    echo=True,  # Логирование SQL-запросов (для разработки)
+    echo=NEED_ECHO_SQL,  # Логирование SQL-запросов (для разработки)
 
     # Проверка соединения перед использованием
     # для автоматического восстановления соединений

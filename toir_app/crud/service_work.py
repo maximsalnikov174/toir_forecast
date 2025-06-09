@@ -11,8 +11,7 @@ from toir_app.crud.service_name import (
     get_service_name_with_request_status
 )
 from toir_app.crud.service_status import get_multi_service_status
-from toir_app.models import ServiceWork
-from toir_app.models.car import Car
+from toir_app.models import Car, ServiceWork
 from toir_app.schemas.service_work import CarAtributesInServiceWork
 
 
@@ -40,10 +39,21 @@ async def get_last_service_with_current_service_id(
     Returns:
         - оbj(ServiceWork)
     """
+
+    # надо найти всю группу для last_service_id
+    GROUP_TO_X = [11, 12, 14]
+    GROUP_TO_XXXX = [9, 10, 13]
+    if last_service_id in GROUP_TO_X:
+        pack = GROUP_TO_X
+    elif last_service_id in GROUP_TO_XXXX:
+        pack = GROUP_TO_XXXX
+    else:
+        pack = [last_service_id]
+
     return await session.scalar(
         select(ServiceWork).where(
             ServiceWork.car_id == car_id,
-            ServiceWork.last_service_id == last_service_id,
+            ServiceWork.last_service_id.in_(pack)
         ).order_by(
             ServiceWork.last_service_reading.desc()
         ).limit(1)
