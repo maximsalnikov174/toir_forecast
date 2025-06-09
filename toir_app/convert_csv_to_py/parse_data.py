@@ -89,8 +89,9 @@ async def convert_csv_to_list(filename: str) -> List[CarDataPoint]:
                     data_point = create_data_point(row, mapping_name)
                     if data_point:
                         total_list.append(data_point)
-                    else:
-                        logging.info(f'Разобраться тут {data_point}')
+                    # else:
+                        # ERROR здесь!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+                        # logging.info(f'Строчка из другого цеха {data_point}')
                 except ValueError as e:
                     logging.error(f'Ошибка обработки данных: {e}')
                     continue
