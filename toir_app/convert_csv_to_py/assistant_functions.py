@@ -1,3 +1,4 @@
+import logging
 from typing import List, Optional
 
 from sqlalchemy import select
@@ -110,7 +111,7 @@ def create_data_point(
             )
         )
     except (ValueError, IndexError) as e:
-        print(f'Ошибка создания точки данных: {e}')
+        logging.error(f'Ошибка создания точки данных: {e}')
         raise
 
 

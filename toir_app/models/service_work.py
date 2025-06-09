@@ -1,3 +1,4 @@
+import logging
 from datetime import datetime as dt
 from calendar import monthrange
 
@@ -139,7 +140,7 @@ class ServiceWork(Base):
             validated_data = BaseCarData.model_validate(element)
             return self._calculated_status(validated_data)
         except Exception as e:
-            print(f'Ошибка расчета статуса: {e}')
+            logging.error(f'Ошибка расчета статуса: {e}')
             return Status.BAD_REQUEST  # Возвращаем статус с ошибкой
 
     def _calculated_status(self, data: BaseCarData) -> Status:

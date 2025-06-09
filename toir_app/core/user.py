@@ -1,3 +1,4 @@
+import logging
 import re
 from typing import Optional, Union
 
@@ -86,7 +87,7 @@ class UserManager(IntegerIDMixin, BaseUserManager[User, int]):
     ):
         """Действие после успешной регистрации пользователя."""
         # Вместо print здесь можно было бы настроить отправку письма.
-        print(f'Пользователь {user.email} зарегистрирован.')
+        logging.info(f'Пользователь {user.email} зарегистрирован.')
 
 
 async def get_user_manager(user_db=Depends(get_user_db)):

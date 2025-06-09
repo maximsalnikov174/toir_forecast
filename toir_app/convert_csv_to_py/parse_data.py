@@ -1,4 +1,5 @@
 import csv
+import logging
 import os
 from typing import List, Optional, Type, TypedDict, Union
 
@@ -61,10 +62,12 @@ async def convert_csv_to_list(filename: str) -> List[CarDataPoint]:
     """
 
     if not os.path.exists(filename):
-        print(f'Файл не найден: {filename}')
+        logging.critical(f'Файл не найден: {filename}')
 
     if os.path.isdir(filename):
-        print(f'Указанный путь ведет к директории: {filename}, а не к файлу.')
+        logging.error(
+            f'Указанный путь ведет к директории: {filename}, а не к файлу.'
+        )
 
     # Заготовка для общего списка данных из файла rmt-321:
     total_list: List[CarDataPoint] = []
@@ -87,9 +90,9 @@ async def convert_csv_to_list(filename: str) -> List[CarDataPoint]:
                     if data_point:
                         total_list.append(data_point)
                     else:
-                        print(data_point)
+                        logging.info(f'Разобраться тут {data_point}')
                 except ValueError as e:
-                    print(f'Ошибка обработки данных: {e}')
+                    logging.error(f'Ошибка обработки данных: {e}')
                     continue
 
             # Кривые данные:
@@ -104,8 +107,9 @@ async def convert_csv_to_list(filename: str) -> List[CarDataPoint]:
                     # Когда в строке кривое количество элементов
                     # (последняя строка файла):
                     if len(rows) < TOTAL_VALUES_IN_RAW_RMT_321:
-                        print(f'Cтрока {row[0]} не соответствует нужной длине')
-                        # logger.warning(f'{row[0]} не соответствует длине.')
+                        logging.error(
+                            f'Cтрока {row[0]} не соответствует нужной длине'
+                        )
                         continue
 
                     # Только гении в элемент csv заталкивают «,»:
@@ -118,15 +122,16 @@ async def convert_csv_to_list(filename: str) -> List[CarDataPoint]:
                         if data_point:
                             total_list.append(data_point)
                         else:
-                            print(data_point)
+                            logging.error(f'И тут разобраться {data_point}')
                     except ValueError as e:
-                        print(f'Ошибка обработки данных: {e}')
+                        logging.error(f'Ошибка обработки данных: {e}')
                         continue
 
                 except Exception as e:
-                    print(f'Ошибка разбора строки: {row}, {str(e)}')
+                    logging.error(f'Ошибка разбора строки: {row}, {str(e)}')
                     continue
 
+    logging.info(f'Общее количество строк - {len(total_list)}')
     return total_list
 
 

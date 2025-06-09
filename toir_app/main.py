@@ -70,13 +70,14 @@ async def main():
                 await upload_filedata_in_db(element, download_session)
             logging.info('Завершена загрузка данных из CSV-файла.')
 
-    # 3. Запускаем FastAPI сервер
-    # (не понятно, как тут дальше начнет работать сессия)
+    # Настраиваем конфигуратор:
     config = uvicorn.Config(
         'toir_app.main:toir_app',
         reload=True
     )
+    # 3. Запускаем FastAPI сервер:
     server = uvicorn.Server(config)
+    # непонятно для чего, не ведаю, что творю)
     await server.serve()
 
 
