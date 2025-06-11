@@ -157,7 +157,7 @@ async def upd_light_model_in_db(
 async def upload_filedata_in_db(
         element: CarDataPoint,
         session: AsyncSession
-) -> None:
+) -> int:
     """
     Проверяет (и вносит) каждую строку из файла csv в базу данных.
 
@@ -215,6 +215,7 @@ async def upload_filedata_in_db(
 
         # Закидываем всю строчку в коммит
         await session.commit()
+        return car_id
 
     except Exception as e:
         await session.rollback()

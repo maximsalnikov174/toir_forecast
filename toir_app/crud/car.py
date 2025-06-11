@@ -1,6 +1,7 @@
+import logging
 import re
-from typing import Optional
 from http import HTTPStatus
+from typing import Optional
 
 from fastapi import HTTPException
 from sqlalchemy import or_, select
@@ -45,6 +46,44 @@ async def get_car_by_pk(
         )
 
     return car
+
+
+async def get_all_active_car_list(
+        session: AsyncSession
+) -> list[Car.id]:
+    """Получаем список ID всех активных Car (со статусом «не в архиве»)."""
+    result = await session.scalars(
+        select(Car.id).where(Car.in_archive.is_(False))
+    )
+    return list(result)
+
+
+async def push_cars_in_archive(
+        cars_in_file: set[int],
+        session: AsyncSession
+):
+    """Перевод всех непереданных в отчёте RMT321 ТС в архив."""
+    car_list_in_db = set(await get_all_active_car_list(session=session))
+    cars_list_in_archive = car_list_in_db - set(cars_in_file)  # дельта car_ids
+
+    for car_id in cars_list_in_archive:
+        car_grz = await add_car_in_archive(car_id=car_id, session=session)
+        logging.info(f'🫡 ТС «{car_grz}» перенесено в архив.')
+
+    await session.commit()
+
+
+async def add_car_in_archive(
+        car_id: int,
+        session: AsyncSession
+) -> Optional[str]:
+    """Перевод Car в архив."""
+    car: Optional[Car] = await get_car_by_pk(car_id=car_id, session=session)
+    if car:
+        car.in_archive = True
+        session.add(car)
+        return str(car.grz)
+    return None
 
 
 async def get_car_by_full_grz(

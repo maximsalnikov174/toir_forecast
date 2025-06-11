@@ -1,17 +1,14 @@
 import asyncio
 import os
 import logging
+from array import array
 
 import uvicorn
-from tqdm import tqdm
-from fastapi import FastAPI
 from dotenv import load_dotenv
+from fastapi import FastAPI
+from tqdm import tqdm
 
-from toir_app.core.db import AsyncSessionLocal
-# Импортируем корутину для создания первого суперюзера.
-from toir_app.core.init_db import create_first_superuser
 from toir_app.api.routers import main_router
-from toir_app.core.config import settings
 from toir_app.convert_csv_to_py.parse_data import (
     convert_csv_to_list,
     upload_filedata_in_db
@@ -20,6 +17,11 @@ from toir_app.convert_csv_to_py.upload_data import (
     upload_all_users_data_in_db,
     need_to_upload_datas
 )
+from toir_app.core.config import settings
+from toir_app.core.db import AsyncSessionLocal
+# Импортируем корутину для создания первого суперюзера.
+from toir_app.core.init_db import create_first_superuser
+from toir_app.crud.car import push_cars_in_archive
 from toir_app.crud.organization import create_superuser_organization
 from toir_app.crud.role import get_superuser_role
 from toir_app.logging.logger import configure_logging
@@ -63,12 +65,24 @@ async def main():
             # 2. Конвертируем CSV и обновляем БД
             lst = await convert_csv_to_list(file_path)  # нужно ли здесь async?
 
+            # Создаём множество ТС в CSV-файле:
+            car_list = array('H')
+
             # TODO
             # Следующие 2 строчки - место для БОЛЬШОГО рефакторинга:
             # Можно (читать-НУЖНО!) проверять, чтобы не было в сессии и в базе
             for element in tqdm(lst):
-                await upload_filedata_in_db(element, download_session)
+                car_list.append(
+                    await upload_filedata_in_db(element, download_session)
+                )
             logging.info('Завершена загрузка данных из CSV-файла.')
+
+            # Переносим все непереданные ТС в архив:
+            await push_cars_in_archive(
+                cars_in_file=car_list,
+                session=download_session
+            )
+            # TODO еще это же надо сделать со всеми связанными ServiceWork
 
     # Настраиваем конфигуратор:
     config = uvicorn.Config(
