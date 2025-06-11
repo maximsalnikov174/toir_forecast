@@ -3,6 +3,7 @@ import os
 import logging
 
 import uvicorn
+from tqdm import tqdm
 from fastapi import FastAPI
 from dotenv import load_dotenv
 
@@ -32,7 +33,6 @@ toir_app.include_router(main_router)
 
 # Находим файл для загрузки данных:
 script_dir = os.path.dirname(os.path.abspath(__file__))
-# file_path = f'{script_dir}/dataset_from_oebs/rmt321_ATU_2025_5_28.csv'
 file_path = f'{script_dir}/dataset_from_oebs/rmt321_ATU_2025_6_9.csv'
 
 
@@ -66,7 +66,7 @@ async def main():
             # TODO
             # Следующие 2 строчки - место для БОЛЬШОГО рефакторинга:
             # Можно (читать-НУЖНО!) проверять, чтобы не было в сессии и в базе
-            for element in lst:
+            for element in tqdm(lst):
                 await upload_filedata_in_db(element, download_session)
             logging.info('Завершена загрузка данных из CSV-файла.')
 
