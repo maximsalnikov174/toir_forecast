@@ -27,6 +27,7 @@ share/python-wheels/
 MANIFEST
 .vscode/
 dataset_from_oebs/
+logs/
 *toir.db
 
 # PyInstaller
