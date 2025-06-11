@@ -1,3 +1,4 @@
+import logging
 from datetime import datetime as dt
 from typing import Optional
 
@@ -68,6 +69,12 @@ class ServiceWorkBase(CarAtributesInServiceWork):
             #     f'Прошлое ТО id#{last_service_id} для ТС id#{car_id} '
             #     f'«выполнено» в будущем ({date}). Исправьте в OeBS!'
             # )
+            logging.warning(
+                f'📆 Дата проведения ТО ({value})- в будущем, '
+                'такого быть не должно!'
+                f'ТС#{info.data["car_id"]}. '
+                f'Вид обслуживания #{info.data["last_service_id"]}.'
+            )
             return dt(2025, 1, 1, 0, 0, 0)
         return value
 

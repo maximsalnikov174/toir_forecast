@@ -62,6 +62,7 @@ def create_data_point(
         if find_element_position(
             row, 'ORGANIZATION_CODE', mapping_name
         ) not in LIST_ORGANIZATIONS:
+            logging.debug(f'ТС ({row[5]}) из другого цеха({row[1]}).')
             return None
 
         # ... получаем только цеха УЭ:

@@ -1,3 +1,4 @@
+import logging
 import re
 from typing import Optional
 
@@ -48,6 +49,7 @@ class CarStartParse(BaseModel):
             raise ValueError('Неверный формат ГРЗ')
         clear_grz = re.search(pattern_grz, value, flags=re.IGNORECASE)
         if not clear_grz:
+            logging.warning(f'Не удалось обработать ГРЗ {value}')
             raise ValueError('Не удалось обработать ГРЗ по шаблону')
         else:
             return clear_grz.group()

@@ -55,6 +55,9 @@ async def get_or_create_car_and_return_id(
     # запросом и искать среди них:
     car_in_db = await get_car_by_personal_id(personal_id, session)
 
+    # TODO перевод ТС в статус "в архиве" после того, как из rmt по нему
+    # не пришло данных
+
     if not car_in_db:
         # загоняем в pydantic-схему:
         validated_car = CarToDownloadInDB(
@@ -99,7 +102,8 @@ async def create_service_work(
     2. Если запись существует, но данные изменились - обновляем;
     3. Если записи нет - создаем новую запись.
     """
-    # Ищем в БД самую свежую запись для данного ТС с тем же видом обслуживания:
+    # Ищем в БД самую свежую запись для данного ТС с тем же или
+    # сгруппированным (пример ТО-1, ТО-2, ТО-3 и тд) видом обслуживания:
     service = await get_last_service_with_current_service_id(
         car_id=car_id,
         last_service_id=last_service_id,
@@ -152,10 +156,10 @@ async def create_service_work(
 
             # Логирование записи о ТО, перешедшей в архив
             logging.info(
-                f'⛔ «{kwargs["car_grz"]}». '
-                f'⚙️#{service.next_service_id} закрыт '
+                f'🏁 «{kwargs["car_grz"]}». '
+                f'🛠️#{service.next_service_id} закрыт '
                 f'{validated_service_work.request_date.date()} '
-                f'на пробеге {service.request_reading}'
+                f'на пробеге {service.request_reading}.'
             )
 
         # Если инфы о ТС нет или появилась новая запись о сервисе:
@@ -182,13 +186,14 @@ async def create_service_work(
 
         # Логгирование:
         if not need_to_update:
-            message = f'☑️ «{kwargs["car_grz"]}». ⚙️#{next_service_id}'
+            message = f'«{kwargs["car_grz"]}». 🛠️#{next_service_id}'
             if not old_request_status_id:
                 logging.info(
-                    f'{message}. Присвоен глобальный статус: {upd_status.id}.'
+                    f'✅ {message}. Присвоен глобальный статус: '
+                    f'{upd_status.id}.'
                 )
             else:
                 logging.info(
-                    f'{message}. Изменен глобальный статус'
+                    f'🔄 {message}. Изменен глобальный статус: '
                     f'({old_request_status_id}) -> {upd_status.id}.'
                 )

@@ -1,5 +1,6 @@
 # РАБОТА С РЕГУЛЯРНЫМИ ВЫРАЖЕНИЯМИ ДЛЯ ОБРАБОТКИ ВИДОВ РАБОТ (SERVICE_NAME):
 
+import logging
 import re
 from collections import defaultdict
 from enum import Enum
@@ -175,4 +176,5 @@ def normalize_service_name(service_name: str) -> Optional[str]:
     #     'Не удалось обработать паттернами строку '
     #     f'«{service_name}»'
     # )
+    logging.warning('Не удалось обработать строку вида ТО: {service_name}')
     return None  # Явный возврат None если ни один паттерн не подошёл
