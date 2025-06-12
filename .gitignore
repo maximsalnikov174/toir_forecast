@@ -29,6 +29,7 @@ MANIFEST
 dataset_from_oebs/
 logs/
 *toir.db
+.DS_Store
 
 # PyInstaller
 #  Usually these files are written by a python script from a template
