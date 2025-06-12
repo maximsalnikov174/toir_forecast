@@ -24,3 +24,17 @@ class ServiceNameBase(ServiceNameID):
         description='Сконвертированный вид работ',
         max_length=SERVICE_STATUS_NAME_LEN
     )
+
+
+class ServiceNameWithGroup(ServiceNameBase):
+    """Схема Видов сервисного обслуживания (ТО-1, ЗМ ДВС и тд) с группами.
+
+    (не используется).
+    """
+    group: int = Field(
+        title='Объединенная группа',
+        description=(
+            'Взаимодополняющие виды работ (пример: в ТО-2 входит ТО-1)'
+        ),
+        max_length=SERVICE_STATUS_NAME_LEN
+    )
