@@ -24,7 +24,8 @@ async def get_car_by_personal_id(
 
 async def get_car_by_pk(
         car_id: int,
-        session: AsyncSession
+        session: AsyncSession,
+        check_car_in_archive: bool = True
 ) -> Optional[Car]:
     """Получаем запись о Car по PK.
 
@@ -39,7 +40,9 @@ async def get_car_by_pk(
 
     if not car:
         raise HTTPException(HTTPStatus.NOT_FOUND, 'ТС не найдено')
-    elif car.in_archive is True:
+
+    # FIXME сравнить результаты car.in_archive is True и car.in_archive
+    elif check_car_in_archive and car.in_archive:
         raise HTTPException(
             HTTPStatus.BAD_REQUEST,
             'ТС находится в архиве, действие невозможно'
@@ -61,29 +64,28 @@ async def get_all_active_car_list(
 async def push_cars_in_archive(
         cars_in_file: set[int],
         session: AsyncSession
-):
-    """Перевод всех непереданных в отчёте RMT321 ТС в архив."""
-    car_list_in_db = set(await get_all_active_car_list(session=session))
-    cars_list_in_archive = car_list_in_db - set(cars_in_file)  # дельта car_ids
+) -> set[int]:
+    """Сбор всех непереданных в отчёте RMT321 ТС и перевод их в архив."""
+    car_list_in_db = await get_all_active_car_list(session=session)
+    cars_list_in_archive = set(car_list_in_db) - set(cars_in_file)
 
     for car_id in cars_list_in_archive:
-        car_grz = await add_car_in_archive(car_id=car_id, session=session)
-        logging.info(f'🫡 ТС «{car_grz}» перенесено в архив.')
+        await add_car_in_archive(car_id=car_id, session=session)
 
-    await session.commit()
+    # await session.commit()
+    return cars_list_in_archive
 
 
 async def add_car_in_archive(
         car_id: int,
         session: AsyncSession
-) -> Optional[str]:
-    """Перевод Car в архив."""
+) -> None:
+    """Архивирование (без коммита) Car."""
     car: Optional[Car] = await get_car_by_pk(car_id=car_id, session=session)
     if car:
         car.in_archive = True
         session.add(car)
-        return str(car.grz)
-    return None
+        logging.info(f'🫡 🚚 ТС «{car.grz}» перенесено в архив.')
 
 
 async def get_car_by_full_grz(

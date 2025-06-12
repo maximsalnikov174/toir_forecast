@@ -24,6 +24,10 @@ from toir_app.core.init_db import create_first_superuser
 from toir_app.crud.car import push_cars_in_archive
 from toir_app.crud.organization import create_superuser_organization
 from toir_app.crud.role import get_superuser_role
+from toir_app.crud.service_work import (
+    add_service_works_in_archive,
+    get_active_service_work_list_by_car
+)
 from toir_app.logging.logger import configure_logging
 
 load_dotenv()  # подгружаем переменные из env
@@ -35,7 +39,7 @@ toir_app.include_router(main_router)
 
 # Находим файл для загрузки данных:
 script_dir = os.path.dirname(os.path.abspath(__file__))
-file_path = f'{script_dir}/dataset_from_oebs/rmt321_ATU_2025_6_9.csv'
+file_path = f'{script_dir}/dataset_from_oebs/rmt321_ATU_2025_6_11.csv'
 
 
 async def main():
@@ -72,17 +76,37 @@ async def main():
             # Следующие 2 строчки - место для БОЛЬШОГО рефакторинга:
             # Можно (читать-НУЖНО!) проверять, чтобы не было в сессии и в базе
             for element in tqdm(lst):
+
+                # Собираем список всех ТС из файла RMT-321:
                 car_list.append(
                     await upload_filedata_in_db(element, download_session)
                 )
             logging.info('Завершена загрузка данных из CSV-файла.')
 
-            # Переносим все непереданные ТС в архив:
-            await push_cars_in_archive(
+            # В рамках одного коммита:
+            # Переносим все непереданные (читай-выбывшие) ТС в архив:
+            archive_car_ids = await push_cars_in_archive(
                 cars_in_file=car_list,
                 session=download_session
             )
-            # TODO еще это же надо сделать со всеми связанными ServiceWork
+            # и связанных с ними ТO:
+            if archive_car_ids:
+                logging.info(
+                    f'Началось архивирование {len(archive_car_ids)} ТС:'
+                )
+                for car_id in archive_car_ids:
+                    service_work_list = (
+                        await get_active_service_work_list_by_car(
+                            car_id=car_id,
+                            session=download_session
+                        )
+                    )
+                    await add_service_works_in_archive(
+                        service_work_list=service_work_list,
+                        session=download_session
+                    )
+
+            await download_session.commit()
 
     # Настраиваем конфигуратор:
     config = uvicorn.Config(
