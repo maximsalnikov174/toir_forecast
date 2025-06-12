@@ -1,6 +1,8 @@
+import logging
 from collections.abc import Sequence
 from typing import Optional
-from sqlalchemy import or_, select
+
+from sqlalchemy import and_, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from toir_app.crud.car import (
@@ -8,10 +10,13 @@ from toir_app.crud.car import (
     get_cars_with_request_and_special_status
 )
 from toir_app.crud.service_name import (
+    get_service_name_group,
     get_service_name_with_request_status
 )
-from toir_app.crud.service_status import get_multi_service_status
-from toir_app.models import Car, ServiceWork
+from toir_app.crud.service_status import (
+    get_multi_service_status
+)
+from toir_app.models import Car, ServiceWork, ServiceName
 from toir_app.schemas.service_work import CarAtributesInServiceWork
 
 
@@ -31,6 +36,9 @@ async def get_last_service_with_current_service_id(
     """
     Возвращает последнюю (свежую) запись сервисного обслуживания.
 
+    Применяется для поиска последней записи в базе данных с целью перевода
+    её в архив.
+
     Args:
         - car_id : ID выбранного ТС
         - last_service_id : ID вида сервисного обслуживания, для которого
@@ -40,24 +48,26 @@ async def get_last_service_with_current_service_id(
         - оbj(ServiceWork)
     """
 
-    # надо найти всю группу для last_service_id
-    GROUP_TO_X = [11, 12, 14]
-    GROUP_TO_XXXX = [9, 10, 13]
-    if last_service_id in GROUP_TO_X:
-        pack = GROUP_TO_X
-    elif last_service_id in GROUP_TO_XXXX:
-        pack = GROUP_TO_XXXX
-    else:
-        pack = [last_service_id]
+    service_name_group = await get_service_name_group(last_service_id, session)
 
-    return await session.scalar(
-        select(ServiceWork).where(
-            ServiceWork.car_id == car_id,
-            ServiceWork.last_service_id.in_(pack)
-        ).order_by(
-            ServiceWork.last_service_reading.desc()
-        ).limit(1)
-    )
+    stmt = select(
+        ServiceWork
+    ).join(
+        ServiceName, ServiceName.id == ServiceWork.last_service_id
+    ).where(
+        ServiceWork.car_id == car_id,
+        or_(
+            and_(
+                ServiceName.group.is_not(None),
+                ServiceName.group == service_name_group
+            ),
+            ServiceWork.last_service_id == last_service_id
+        )
+    ).order_by(
+        ServiceWork.last_service_reading.desc()
+    ).limit(1)
+
+    return await session.scalar(stmt)
 
 
 async def get_last_request_reading_by_car(
@@ -88,32 +98,44 @@ async def check_zvr_unique(
 
 async def get_active_service_work_list_by_car(
         car_id: int,
-        request_status_id: int,
-        session: AsyncSession
+        session: AsyncSession,
+        *,
+        request_status_id: Optional[int] = None,
 ) -> Sequence[ServiceWork]:
     """Получение списка (неархивных) сервисных обслуживаний для ТС.
 
-    Filters:
-        - для всех расчётных статусов, строже выбранного.
+    ### Filters(optional):
+         для всех расчётных статусов (request_status_id), строже выбранного.
 
-    Order_by:
+    ### Order_by:
         - по возрастанию ID service_name (идентично шапке в итоговой таблице).
     """
-    await get_car_by_pk(car_id, session)
+    await get_car_by_pk(car_id, session, check_car_in_archive=False)
 
-    result = await session.scalars(
-        select(ServiceWork)
-        .where(
+    stmt = select(
+            ServiceWork
+        ).where(
             ServiceWork.car_id == car_id,
-            ServiceWork.request_status_id <= request_status_id,
             ServiceWork.in_archive.is_(False)
-        )
-        .order_by(
+        ).order_by(
             ServiceWork.next_service_id  # сортировка по ID вида работ
         )
-    )
+    if request_status_id is not None:
+        stmt = stmt.where(ServiceWork.request_status_id <= request_status_id)
 
+    result = await session.scalars(stmt)
     return result.all()
+
+
+async def add_service_works_in_archive(
+        service_work_list: Sequence[ServiceWork],
+        session: AsyncSession
+):
+    """Архивирование (без коммита) записей о ServiceWork."""
+    for service_work in service_work_list:
+        service_work.in_archive = True
+        session.add(service_work)
+        logging.info(f'🫡 🛠️ ТО id#{service_work.id} перенесено в архив.')
 
 
 async def _get_active_service_work_with_service_status(
