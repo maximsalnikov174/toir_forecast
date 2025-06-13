@@ -159,7 +159,7 @@ async def create_service_work(
                 f'🏁 «{kwargs["car_grz"]}». '
                 f'🛠️#{service.next_service_id} закрыт '
                 f'{validated_service_work.request_date.date()} '
-                f'на пробеге {service.request_reading}.'
+                f'на пробеге {validated_service_work.last_service_reading}'
             )
 
         # Если инфы о ТС нет или появилась новая запись о сервисе:
