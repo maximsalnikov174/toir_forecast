@@ -8,12 +8,12 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from toir_app.convert_csv_to_py.convertation import UsersServiceName
 from toir_app.core.db import Base as db
-from toir_app.models import (ServiceName,
+from toir_app.models import (Role,
+                             ServiceName,
                              ServiceStatus,
                              SpecialStatus,
                              SpecialStatusForCar,
                              Status,
-                             Role,
                              UserRole)
 
 

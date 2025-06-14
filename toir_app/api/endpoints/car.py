@@ -3,25 +3,17 @@ from typing import Optional
 from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from toir_app.models import Car, User
 from toir_app.core.db import get_async_session
 from toir_app.core.user import current_user
-from toir_app.crud.car import (
-    get_car_by_full_grz,
-    get_cars_with_request_and_special_status,
-    add_special_status_to_car
-)
-from toir_app.crud.service_work import (
-    get_last_request_reading_by_car
-)
-from toir_app.crud.service_status import (
-    check_service_status_by_param
-)
-from toir_app.schemas.car import (
-    CarOnlyIDs,
-    CarExpandWithIndicators,
-    CarWithCarModelAndOrganizationIDs
-)
+from toir_app.crud.car import (add_special_status_to_car,
+                               get_cars_with_request_and_special_status,
+                               get_car_by_full_grz)
+from toir_app.crud.service_status import check_service_status_by_param
+from toir_app.crud.service_work import get_last_request_reading_by_car
+from toir_app.models import Car, User
+from toir_app.schemas.car import (CarExpandWithIndicators,
+                                  CarOnlyIDs,
+                                  CarWithCarModelAndOrganizationIDs)
 
 
 router = APIRouter()

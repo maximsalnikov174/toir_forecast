@@ -4,12 +4,9 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from toir_app.core.db import get_async_session
-from toir_app.crud.organization import (
-    get_organization_list,
-    get_current_organization
-)
+from toir_app.crud.organization import (get_current_organization,
+                                        get_organization_list)
 from toir_app.schemas.organization import OrganizationResponse
-
 
 router = APIRouter()
 
