@@ -11,13 +11,10 @@ from toir_app.constants import ZVR_PART_MAX, ZVR_PART_MIN
 from toir_app.core.db import get_async_session
 from toir_app.crud.organization import get_current_organization
 from toir_app.crud.service_work import (
-    check_zvr_unique,
-    create_main_table,
+    check_zvr_unique, create_main_table,
     get_active_service_work_count_for_all_service_status,
-    get_all_active_service_work_with_open_zvr,
-    get_service_work,
     get_active_service_work_list_by_car,
-)
+    get_all_active_service_work_with_open_zvr, get_service_work)
 from toir_app.models import Organization
 from toir_app.schemas.service_work import ServiceWorkWithZVRNumber
 
@@ -47,37 +44,27 @@ async def add_zvr_to_service_work(
     session: AsyncSession = Depends(get_async_session)
 ):
     """Добавление 7-значного ЗВР к service_work."""
-    service_work = await get_service_work(service_work_id, session)
+    if service_work := await get_service_work(service_work_id, session):
+        if service_work.zvr_number:
+            raise HTTPException(
+                status_code=HTTPStatus.UNPROCESSABLE_ENTITY,
+                detail='У данной работы ЗВР уже существует.'
+            )
+        await check_zvr_unique(zvr_number, session)
 
-    if not service_work:
-        raise HTTPException(
-            status_code=HTTPStatus.NOT_FOUND,
-            detail='Указанная работа не найдена.'
-        )
-    if service_work.zvr_number:
-        raise HTTPException(
-            status_code=HTTPStatus.UNPROCESSABLE_ENTITY,
-            detail='У данной работы ЗВР уже существует.'
-        )
-    if await check_zvr_unique(zvr_number, session):
-        raise HTTPException(
-            status_code=HTTPStatus.UNPROCESSABLE_ENTITY,
-            detail=f'Указанный ЗВР #{zvr_number} не уникален, сверьте данные.'
-        )
+        try:
+            service_work.zvr_number = zvr_number
+            service_work.zvr_create_date = dt.now()  # TODO надо дописать tz
 
-    try:
-        service_work.zvr_number = zvr_number
-        service_work.zvr_create_date = dt.now()  # TODO надо дописать tz
-
-        await session.commit()
-        await session.refresh(service_work)  # Опционально
-        return service_work
-    except Exception as e:
-        await session.rollback()
-        raise HTTPException(
-            HTTPStatus.INTERNAL_SERVER_ERROR,
-            detail=f'Ошибка при сохранении ЗВР: {str(e)}'
-        )
+            await session.commit()
+            await session.refresh(service_work)  # Опционально
+            return service_work
+        except Exception as e:
+            await session.rollback()
+            raise HTTPException(
+                HTTPStatus.INTERNAL_SERVER_ERROR,
+                detail=f'Ошибка при сохранении ЗВР: {str(e)}'
+            )
 
 
 @router.patch(
@@ -104,19 +91,14 @@ async def completed_real_service_work(
     """Добавление признака фактического завершения работ в service_work."""
     service_work = await get_service_work(service_work_id, session)
 
-    if not service_work:
-        raise HTTPException(
-            status_code=HTTPStatus.NOT_FOUND,
-            detail='Указанная работа не найдена.'
-        )
-    if not service_work.zvr_number:
+    if service_work and not service_work.zvr_number:
         raise HTTPException(
             status_code=HTTPStatus.UNPROCESSABLE_ENTITY,
             detail='Сначала необходимо добавить ЗВР.'
         )
 
     try:
-        service_work['service_work_completed'] = True
+        service_work.service_work_completed = True
 
         await session.commit()
         await session.refresh(service_work)  # Опционально

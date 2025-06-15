@@ -1,18 +1,16 @@
 import logging
 from collections.abc import Sequence
+from http import HTTPStatus
 from typing import Optional
 
+from fastapi import HTTPException
 from sqlalchemy import and_, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from toir_app.crud.car import (
-    get_car_by_pk,
-    get_cars_with_request_and_special_status
-)
-from toir_app.crud.service_name import (
-    get_service_name_group,
-    get_service_name_with_request_status
-)
+from toir_app.crud.car import (get_car_by_pk,
+                               get_cars_with_request_and_special_status)
+from toir_app.crud.service_name import (get_service_name_group,
+                                        get_service_name_with_request_status)
 from toir_app.crud.service_status import get_multi_service_status
 from toir_app.models import Car, ServiceName, ServiceWork
 from toir_app.schemas.service_work import CarAtributesInServiceWork
@@ -23,7 +21,13 @@ async def get_service_work(
         session: AsyncSession
 ) -> Optional[ServiceWork]:
     """Получение объекта модели ServiceWork по ID."""
-    return await session.get(ServiceWork, service_work_id)
+    result = await session.get(ServiceWork, service_work_id)
+    if not result:
+        raise HTTPException(
+            status_code=HTTPStatus.NOT_FOUND,
+            detail='Указанная работа не найдена.'
+        )
+    return result
 
 
 async def get_last_service_with_current_service_id(
@@ -85,13 +89,17 @@ async def get_last_request_reading_by_car(
 async def check_zvr_unique(
         zvr_number: int,
         session: AsyncSession
-) -> bool:
+) -> None:
     """Проверяет ЗВР на уникальный номер."""
     result = await session.scalar(
         select(ServiceWork)
         .where(ServiceWork.zvr_number == zvr_number)
     )
-    return True if result else False
+    if result:
+        raise HTTPException(
+            status_code=HTTPStatus.UNPROCESSABLE_ENTITY,
+            detail=f'Указанный ЗВР #{zvr_number} не уникален, сверьте данные.'
+        )
 
 
 async def get_active_service_work_list_by_car(
