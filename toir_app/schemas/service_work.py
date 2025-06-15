@@ -2,13 +2,8 @@ import logging
 from datetime import datetime as dt
 from typing import Optional
 
-from pydantic import (
-    BaseModel,
-    Field,
-    computed_field,
-    field_validator,
-    ValidationInfo
-)
+from pydantic import (BaseModel, computed_field, Field, field_validator,
+                      ValidationInfo)
 
 
 class ServiceWorksRequestStatus(BaseModel):
@@ -134,3 +129,8 @@ class ServiceWorkWithZVRNumber(ServiceWorkWithDivergence):
         if self.zvr_create_date:
             return (dt.now()-self.zvr_create_date).days
         return None
+
+
+class ServiceWorkWithInArchive(ServiceWorkWithZVRNumber):
+    """Добавлено поле состояния (в архиве или нет)"""
+    in_archive: bool

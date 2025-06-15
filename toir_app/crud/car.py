@@ -1,12 +1,12 @@
 import logging
 import re
 from http import HTTPStatus
-from typing import Optional
+from typing import Annotated, Optional
 
 from fastapi import HTTPException
 from sqlalchemy import or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import joinedload, contains_eager
+from sqlalchemy.orm import contains_eager, joinedload
 
 from toir_app.constants import pattern_grz_input_user
 from toir_app.models import Car, ServiceWork, SpecialStatus, User
@@ -219,3 +219,17 @@ async def add_special_status_to_car(
 
         return car
     return None
+
+
+async def get_car_history(
+        car_id: Annotated[int, Car.id],
+        session: AsyncSession
+):
+    """Получение истории по сервисным обслуживаниям для ТС."""
+    await get_car_by_pk(car_id=car_id, session=session)
+    return await session.scalars(
+        select(ServiceWork)
+        .join(Car)
+        .where(Car.id == car_id)
+        .order_by(ServiceWork.id)
+    )

@@ -1,20 +1,20 @@
-from typing import Optional
+from http import HTTPStatus
+from typing import List, Optional
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from toir_app.core.db import get_async_session
 from toir_app.core.user import current_user
-from toir_app.crud.car import (add_special_status_to_car,
-                               get_cars_with_request_and_special_status,
-                               get_car_by_full_grz)
+from toir_app.crud.car import (add_special_status_to_car, get_car_by_full_grz,
+                               get_car_history,
+                               get_cars_with_request_and_special_status)
 from toir_app.crud.service_status import check_service_status_by_param
 from toir_app.crud.service_work import get_last_request_reading_by_car
 from toir_app.models import Car, User
-from toir_app.schemas.car import (CarExpandWithIndicators,
-                                  CarOnlyIDs,
+from toir_app.schemas.car import (CarExpandWithIndicators, CarOnlyIDs,
                                   CarWithCarModelAndOrganizationIDs)
-
+from toir_app.schemas.service_work import ServiceWorkWithInArchive
 
 router = APIRouter()
 
@@ -75,7 +75,7 @@ async def get_car_in_db_by_grz(
         'статусов: на ВР, к выбытию/списанию, на реализации и т.д.)\n'
         'Ограничения:\n - ТС не должно быть в архиве.'
     ),
-    status_code=201
+    status_code=HTTPStatus.CREATED
 )
 async def link_special_status_and_car(
     car_id: int,
@@ -90,3 +90,17 @@ async def link_special_status_and_car(
         user=user,
         session=session
     )
+
+
+@router.get(
+    '/get_history',
+    response_model=List[ServiceWorkWithInArchive],
+    name='Отображение истории по выполнению сервисных обслуживаний для ТС.',
+    description='Позже допишу',
+    status_code=HTTPStatus.OK
+)
+async def get_history_for_current_car(
+    car_id: int = Query(None, ge=0, description='ID ТС'),
+    session: AsyncSession = Depends(get_async_session)
+):
+    return await get_car_history(car_id=car_id, session=session)
