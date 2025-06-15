@@ -1,6 +1,6 @@
 from http import HTTPStatus
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from toir_app.core.db import get_async_session
@@ -37,10 +37,4 @@ async def get_organization(
     session: AsyncSession = Depends(get_async_session)
 ):
     """Возвращает выбранное пользователем подразделение."""
-    organization = await get_current_organization(organization_id, session)
-    if not organization:
-        raise HTTPException(
-            HTTPStatus.NOT_FOUND,
-            detail=f'Подразделение с ID={organization_id} не найдено'
-        )
-    return organization
+    return await get_current_organization(organization_id, session)

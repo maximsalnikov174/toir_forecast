@@ -1,6 +1,6 @@
 import asyncio
-import os
 import logging
+import os
 from array import array
 
 import uvicorn
@@ -9,25 +9,19 @@ from fastapi import FastAPI
 from tqdm import tqdm
 
 from toir_app.api.routers import main_router
-from toir_app.convert_csv_to_py.parse_data import (
-    convert_csv_to_list,
-    upload_filedata_in_db
-)
+from toir_app.constants import UPLOAD_FILE_DIR
+from toir_app.convert_csv_to_py.parse_data import (convert_csv_to_list,
+                                                   upload_filedata_in_db)
 from toir_app.convert_csv_to_py.upload_data import (
-    upload_all_users_data_in_db,
-    need_to_upload_datas
-)
+    need_to_upload_datas, upload_all_users_data_in_db)
 from toir_app.core.config import settings
 from toir_app.core.db import AsyncSessionLocal
-# Импортируем корутину для создания первого суперюзера.
 from toir_app.core.init_db import create_first_superuser
 from toir_app.crud.car import push_cars_in_archive
 from toir_app.crud.organization import create_superuser_organization
 from toir_app.crud.role import get_superuser_role
-from toir_app.crud.service_work import (
-    add_service_works_in_archive,
-    get_active_service_work_list_by_car
-)
+from toir_app.crud.service_work import (add_service_works_in_archive,
+                                        get_active_service_work_list_by_car)
 from toir_app.logging.logger import configure_logging
 
 load_dotenv()  # подгружаем переменные из env
@@ -39,7 +33,9 @@ toir_app.include_router(main_router)
 
 # Находим файл для загрузки данных:
 script_dir = os.path.dirname(os.path.abspath(__file__))
-file_path = f'{script_dir}/dataset_from_oebs/rmt321_ATU_2025_6_14.csv'
+date_in_data: str = os.environ['DATE_IN_DATA']
+file_path = f'{script_dir}{UPLOAD_FILE_DIR}{date_in_data}.csv'
+logging.debug(f'Dataset filename: {UPLOAD_FILE_DIR}{date_in_data}.csv')
 
 
 async def main():
@@ -83,7 +79,7 @@ async def main():
                 )
             logging.info('Завершена загрузка данных из CSV-файла.')
 
-            # В рамках одного коммита:
+            # АРХИВИРОВАНИЕ в рамках одного коммита:
             # Переносим все непереданные (читай-выбывшие) ТС в архив:
             archive_car_ids = await push_cars_in_archive(
                 cars_in_file=car_list,
@@ -105,6 +101,8 @@ async def main():
                         service_work_list=service_work_list,
                         session=download_session
                     )
+            else:
+                logging.info('Архивирования ТС не было.')
 
             await download_session.commit()
 

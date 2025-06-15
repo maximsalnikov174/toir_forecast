@@ -1,3 +1,7 @@
+from http import HTTPStatus
+from typing import Annotated, Optional
+
+from fastapi import HTTPException
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -28,13 +32,22 @@ async def get_organization_list(session: AsyncSession) -> list[Organization]:
 
 
 async def get_current_organization(
-        organization_id: int,
+        organization_id: Annotated[int, Organization.id],
         session: AsyncSession
-) -> Organization:
+) -> Optional[Organization]:
     """Возврат выбранного подразделения."""
-    organization = await session.scalars(
+    organization = await session.scalar(
         select(Organization)
         .where(Organization.id == organization_id)
-        .order_by(Organization.name)  # сортировка по Юхх
     )
-    return organization.first()
+    if not organization:
+        raise HTTPException(
+            HTTPStatus.NOT_FOUND,
+            detail=f'Подразделение с ID={organization_id} не найдено'
+        )
+    return organization
+
+
+# get_current_organization_dep = Annotated[
+#     Organization, Depends(get_current_organization)
+# ]

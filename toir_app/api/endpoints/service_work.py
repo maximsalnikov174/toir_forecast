@@ -1,18 +1,15 @@
 from datetime import datetime as dt  # , tzinfo
 from http import HTTPStatus
-from typing import Annotated, Optional
+from typing import Annotated, Dict, Optional
 
-from fastapi import (APIRouter,
-                     Body,
-                     Depends,
-                     HTTPException,
-                     Query)
+from fastapi import APIRouter, Body, Depends, HTTPException, Query
 from pydantic import Field
 from sqlalchemy.ext.asyncio import AsyncSession
 
 # from toir_app.constants import TIMEZONE_AE
 from toir_app.constants import ZVR_PART_MAX, ZVR_PART_MIN
 from toir_app.core.db import get_async_session
+from toir_app.crud.organization import get_current_organization
 from toir_app.crud.service_work import (
     check_zvr_unique,
     create_main_table,
@@ -21,9 +18,8 @@ from toir_app.crud.service_work import (
     get_service_work,
     get_active_service_work_list_by_car,
 )
-from toir_app.schemas.service_work import (
-    ServiceWorkWithZVRNumber
-)
+from toir_app.models import Organization
+from toir_app.schemas.service_work import ServiceWorkWithZVRNumber
 
 router = APIRouter()
 
@@ -163,15 +159,22 @@ async def get_all_active_service_works_list_by_current_car(
         'Получение (в моменте) общей статистики по всем расчётным статусам в'
         ' подразделении (доступно всем).'
     ),
-    description='Необходим для получения статистики по кнопке.'
+    description='Необходим для получения статистики по кнопке.',
+    response_model=Dict[str, int]
 )
-async def get_count_active_service_works_blya(
-    organization_id: int,
+async def get_count_active_service_works(
+    organization_id: Annotated[int, Organization.id] = Query(
+        description='Указать ID подразделения', ge=0
+    ),
     session: AsyncSession = Depends(get_async_session)
 ):
-    return await get_active_service_work_count_for_all_service_status(
-        organization_id, session
-    )
+    if organization := await get_current_organization(
+        organization_id=organization_id,
+        session=session
+    ):
+        return await get_active_service_work_count_for_all_service_status(
+            organization.id, session
+        )
 
 
 @router.get(
@@ -187,11 +190,16 @@ async def get_count_active_service_works_blya(
 async def get_count_all_active_service_work_with_open_zvr(
     organization_id: int,
     session: AsyncSession = Depends(get_async_session)
-) -> dict[str, int]:
-    result = await get_all_active_service_work_with_open_zvr(
-        organization_id, session
-    )
-    return {'active_service_work_with_open_zvr': len(result)}
+) -> Optional[dict[str, int]]:
+    if organization := await get_current_organization(
+        organization_id=organization_id,
+        session=session
+    ):
+        result = await get_all_active_service_work_with_open_zvr(
+            organization.id, session
+        )
+        return {'active_service_work_with_open_zvr': len(result)}
+    return None
 
 
 @router.post(

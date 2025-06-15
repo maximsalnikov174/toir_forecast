@@ -1,7 +1,7 @@
-# Стандартное количество элементов в строке rmt-321:
 from pathlib import Path
 
-
+UPLOAD_FILE_DIR = '/dataset_from_oebs/rmt321_ATU_'
+# Стандартное количество элементов в строке rmt-321:
 TOTAL_VALUES_IN_RAW_RMT_321 = 22
 
 # Процент вхождения в выборку (у нас утверждено 10%):

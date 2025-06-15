@@ -13,10 +13,8 @@ from toir_app.crud.service_name import (
     get_service_name_group,
     get_service_name_with_request_status
 )
-from toir_app.crud.service_status import (
-    get_multi_service_status
-)
-from toir_app.models import Car, ServiceWork, ServiceName
+from toir_app.crud.service_status import get_multi_service_status
+from toir_app.models import Car, ServiceName, ServiceWork
 from toir_app.schemas.service_work import CarAtributesInServiceWork
 
 
