@@ -225,11 +225,17 @@ async def get_car_history(
         car_id: Annotated[int, Car.id],
         session: AsyncSession
 ):
-    """Получение истории по сервисным обслуживаниям для ТС."""
+    """Получение истории по выполненным сервисным обслуживаниям для ТС."""
     await get_car_by_pk(car_id=car_id, session=session)
+
     return await session.scalars(
         select(ServiceWork)
         .join(Car)
-        .where(Car.id == car_id)
-        .order_by(ServiceWork.id)
+        .where(
+            Car.id == car_id,
+            ServiceWork.in_archive.is_(True)
+        ).order_by(
+            ServiceWork.request_reading,
+            ServiceWork.last_service_id  # чтоб всегда был один порядок
+        )
     )
