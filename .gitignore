@@ -29,6 +29,7 @@ MANIFEST
 dataset_from_oebs/
 logs/
 *toir.db
+*db.bak
 .DS_Store
 
 # PyInstaller
