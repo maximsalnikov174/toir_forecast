@@ -3,21 +3,16 @@ import re
 from typing import Optional, Union
 
 from fastapi import Depends, Request
-from fastapi_users import (
-    BaseUserManager, FastAPIUsers, IntegerIDMixin, InvalidPasswordException
-)
-from fastapi_users.authentication import (
-    AuthenticationBackend, BearerTransport, JWTStrategy
-)
+from fastapi_users import (BaseUserManager, FastAPIUsers, IntegerIDMixin,
+                           InvalidPasswordException)
+from fastapi_users.authentication import (AuthenticationBackend,
+                                          BearerTransport, JWTStrategy)
 from fastapi_users_db_sqlalchemy import SQLAlchemyUserDatabase
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from toir_app.constants import (
-    ENDPOINT_URL_FOR_GET_TOKEN,
-    LIFETIME_TOKEN_IN_SECONDS,
-    MIN_PASSWORD_LEN,
-    WORDS_AND_DIGITS
-)
+from toir_app.constants import (ENDPOINT_URL_FOR_GET_TOKEN,
+                                LIFETIME_TOKEN_IN_SECONDS,
+                                MIN_PASSWORD_LEN, WORDS_AND_DIGITS)
 from toir_app.core.config import settings
 from toir_app.core.db import get_async_session
 from toir_app.models import User
