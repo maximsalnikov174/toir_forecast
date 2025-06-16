@@ -59,11 +59,6 @@ class ServiceWorkBase(CarAtributesInServiceWork):
             # last_service_id = info.data['last_service_id']
             # date = value.date().isoformat()
 
-            # # ВМЕСТО RAISE ДОЛЖНО БЫТЬ ЛОГИРОВАНИЕ И/ИЛИ ВРЕМЕННАЯ ЗАПИСЬ ДЕФОЛТНОГО ЗНАЧЕНИЯ
-            # raise ValueError(
-            #     f'Прошлое ТО id#{last_service_id} для ТС id#{car_id} '
-            #     f'«выполнено» в будущем ({date}). Исправьте в OeBS!'
-            # )
             logging.warning(
                 f'📆 Дата проведения ТО ({value})- в будущем, '
                 'такого быть не должно!'
