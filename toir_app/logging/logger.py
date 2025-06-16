@@ -1,15 +1,10 @@
 import logging
-from logging.handlers import RotatingFileHandler
 from datetime import datetime, timezone
+from logging.handlers import RotatingFileHandler
 from zoneinfo import ZoneInfo
 
-from constants import (BACKUP_COUNT,
-                       CUSTOM_TIME_FORMAT,
-                       LOG_FILE,
-                       LOG_DIR,
-                       LOGGER_FORMAT,
-                       MAX_BYTES_FOR_LOG_FILE,
-                       TIMEZONE_AE)
+from constants import (BACKUP_COUNT, CUSTOM_TIME_FORMAT, LOG_DIR, LOG_FILE,
+                       LOGGER_FORMAT, MAX_BYTES_FOR_LOG_FILE, TIMEZONE_AE)
 
 
 class TimezoneFormatter(logging.Formatter):
@@ -49,22 +44,25 @@ def configure_logging():
     )
     rotating_handler.setFormatter(formatter)
 
-    # Получаем корневой логгер
+    # Получаем корневые логгеры:
     root_logger = logging.getLogger()
-    root_logger.setLevel(logging.INFO)
 
-    # # Удаляем все существующие обработчики
-    # for handler in root_logger.handlers[:]:
-    #     root_logger.removeHandler(handler)
-    #     handler.close()
+    # Удаляем все существующие обработчики
+    for handler in root_logger.handlers[:]:
+        root_logger.removeHandler(handler)
+        handler.close()  # Важно для корректного закрытия
 
     # Добавляем наш обработчик
     root_logger.addHandler(rotating_handler)
+    root_logger.setLevel(logging.INFO)
+    print('Текущие обработчики:', root_logger.handlers)
+
+    # Отключаем propagate для всех дочерних логгеров:
+    root_logger.propagate = False
 
     # Тестовый лог с проверкой временной зоны
     test_time = datetime.now(ZoneInfo(TIMEZONE_AE))
     test_time_now = test_time.strftime(CUSTOM_TIME_FORMAT)
-
     logging.info(
         f'Проверка часовой зоны - текущее время {test_time_now} '
         f'(часовая зона: {TIMEZONE_AE})'
