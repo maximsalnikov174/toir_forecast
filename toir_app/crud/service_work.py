@@ -34,6 +34,7 @@ async def get_service_work(
 async def get_last_service_with_current_service_id(
         car_id: int,
         last_service_id: int,
+        base_interval: int,
         session: AsyncSession
 ):
     """
@@ -64,7 +65,10 @@ async def get_last_service_with_current_service_id(
                 ServiceName.group.is_not(None),
                 ServiceName.group == service_name_group
             ),
-            ServiceWork.last_service_id == last_service_id
+            and_(
+                ServiceWork.last_service_id == last_service_id,
+                ServiceWork.base_interval == base_interval
+            )
         )
     ).order_by(
         ServiceWork.last_service_reading.desc()
@@ -148,8 +152,8 @@ def update_reading_and_daily_distance(
     if service_work.request_reading == incoming_data.request_reading:
         logging.info(f'⏸️ «{car_grz}» : за сутки не пошевелился.')
     else:
-        service_work['daily_distance'] = incoming_data.daily_distance
-        service_work['request_reading'] = incoming_data.request_reading
+        service_work.daily_distance = incoming_data.daily_distance
+        service_work.request_reading = incoming_data.request_reading
         logging.info(f'🏃‍➡️ «{car_grz}» : обновился пробег.')
         session.add(service_work)
 
@@ -161,8 +165,8 @@ async def add_service_works_in_archive(
 ):
     """Архивирование (без коммита) записей о ServiceWork."""
     for service_work in service_work_list:
-        service_work['in_archive'] = True
-        service_work['service_work_completed'] = True
+        service_work.in_archive = True
+        service_work.service_work_completed = True
         # TODO Подумать, нужно ли перезаписывать пробег для старой записи
         # Скорее всего НЕТ, поскольку с момента закрытия ЗВР по документам до
         # момента включения в отчет - пройдет некоторое время (и пробег).
