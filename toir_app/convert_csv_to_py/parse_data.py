@@ -7,14 +7,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from toir_app.constants import TOTAL_VALUES_IN_RAW_RMT_321
 from toir_app.convert_csv_to_py.assistant_functions import (
-    base_update_model,
-    create_data_point
-)
+    base_update_model, create_data_point)
 from toir_app.convert_csv_to_py.upload_data_from_csv import (
-    create_service_work,
-    get_or_create_car_and_return_id
-)
+    create_service_work)
 # from toir_app.core.db import get_async_session
+from toir_app.crud.car import get_or_create_car_and_return_id
 from toir_app.models import CarModel, Organization, ServiceName
 from toir_app.schemas.convertation import CarDataPoint
 
