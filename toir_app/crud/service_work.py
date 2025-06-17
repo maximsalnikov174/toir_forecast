@@ -1,7 +1,7 @@
 import logging
 from collections.abc import Sequence
 from http import HTTPStatus
-from typing import Optional
+from typing import Annotated, Optional
 
 from fastapi import HTTPException
 from sqlalchemy import and_, or_, select
@@ -13,7 +13,8 @@ from toir_app.crud.service_name import (get_service_name_group,
                                         get_service_name_with_request_status)
 from toir_app.crud.service_status import get_multi_service_status
 from toir_app.models import Car, ServiceName, ServiceWork
-from toir_app.schemas.service_work import CarAtributesInServiceWork
+from toir_app.schemas.service_work import (CarAtributesInServiceWork,
+                                           ServiceWorkBase)
 
 
 async def get_service_work(
@@ -133,15 +134,51 @@ async def get_active_service_work_list_by_car(
     return result.all()
 
 
+def update_reading_and_daily_distance(
+        car_grz: Annotated[str, Car.grz],
+        service_work: ServiceWork,
+        incoming_data: ServiceWorkBase,
+        session: AsyncSession
+) -> None:
+    """Сравнение поступивших данных с БД и их обновление при необходимости.
+
+    ## Дополнительно:
+        - Добавление в сессию без коммита.
+    """
+    if service_work.request_reading == incoming_data.request_reading:
+        logging.info(f'⏸️ «{car_grz}» : за сутки не пошевелился.')
+    else:
+        service_work['daily_distance'] = incoming_data.daily_distance
+        service_work['request_reading'] = incoming_data.request_reading
+        logging.info(f'🏃‍➡️ «{car_grz}» : обновился пробег.')
+        session.add(service_work)
+
+
 async def add_service_works_in_archive(
         service_work_list: Sequence[ServiceWork],
-        session: AsyncSession
+        session: AsyncSession,
+        **kwargs
 ):
     """Архивирование (без коммита) записей о ServiceWork."""
     for service_work in service_work_list:
-        service_work.in_archive = True
+        service_work['in_archive'] = True
+        service_work['service_work_completed'] = True
+        # TODO Подумать, нужно ли перезаписывать пробег для старой записи
+        # Скорее всего НЕТ, поскольку с момента закрытия ЗВР по документам до
+        # момента включения в отчет - пройдет некоторое время (и пробег).
+
+        if kwargs:
+            logging.info(
+                f'🏁 «{kwargs["car_grz"]}». '
+                f'🛠️#{service_work.next_service_id} закрыт '
+                f'{kwargs["validated_service_work"].request_date.date()} '
+                'на пробеге '
+                f'{kwargs["validated_service_work"].last_service_reading}'
+            )
+        else:
+            logging.info(f'🫡 🛠️ ТО id#{service_work.id} перенесено в архив.')
+
         session.add(service_work)
-        logging.info(f'🫡 🛠️ ТО id#{service_work.id} перенесено в архив.')
 
 
 async def _get_active_service_work_with_service_status(
