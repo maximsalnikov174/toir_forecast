@@ -1,7 +1,7 @@
 import logging
 import re
 from http import HTTPStatus
-from typing import Annotated, Optional
+from typing import Annotated, Any, Optional
 
 from fastapi import HTTPException
 from sqlalchemy import or_, select
@@ -10,6 +10,9 @@ from sqlalchemy.orm import contains_eager, joinedload
 
 from toir_app.constants import pattern_grz_input_user
 from toir_app.models import Car, ServiceWork, SpecialStatus, User
+from toir_app.schemas.car import CarToDownloadInDB
+from toir_app.schemas.car_model import CarModelID
+from toir_app.schemas.organization import OrganizationID
 
 
 async def get_car_by_personal_id(
@@ -83,7 +86,7 @@ async def add_car_in_archive(
     """Архивирование (без коммита) Car."""
     car: Optional[Car] = await get_car_by_pk(car_id=car_id, session=session)
     if car:
-        car.in_archive = True
+        car['in_archive'] = True
         session.add(car)
         logging.info(f'🫡 🚚 ТС «{car.grz}» перенесено в архив.')
 
@@ -205,7 +208,7 @@ async def add_special_status_to_car(
 
         try:
             # Устанавливаем статус
-            car.special_status_id = special_status_id
+            car['special_status_id'] = special_status_id
             await session.commit()
 
             # Обновляем объект из БД
@@ -239,3 +242,34 @@ async def get_car_history(
             ServiceWork.last_service_id  # чтоб всегда был один порядок
         )
     )
+
+
+async def get_or_create_car_and_return_id(
+    session: AsyncSession,
+    personal_id: int,
+    grz: str,
+    car_model: CarModelID,
+    organization: OrganizationID
+) -> tuple[int, str]:
+    """Получает экземпляр модели Car или создает его (автомобиль)."""
+    car_in_db = await get_car_by_personal_id(personal_id, session)
+
+    if not car_in_db:
+        # загоняем в pydantic-схему:
+        validated_car = CarToDownloadInDB(
+            personal_id=personal_id,
+            grz=grz,
+            car_model_id=car_model.id,
+            organization_id=organization.id
+        )
+        new_car: dict[str, Any] = validated_car.model_dump()
+
+        # создаем экземпляр модели Car и добавляем в сессию:
+        car: Car = Car(**new_car)
+        session.add(car)
+        await session.commit()
+        await session.refresh(car)
+        logging.info(f'🚚 «{car.grz}» создано.')
+        return car['id'], car['grz']
+
+    return car_in_db['id'], car_in_db['grz']
