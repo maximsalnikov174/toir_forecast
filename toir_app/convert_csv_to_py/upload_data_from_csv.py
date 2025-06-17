@@ -67,8 +67,11 @@ async def create_service_work(
     service = await get_last_service_with_current_service_id(
         car_id=car_id,
         last_service_id=last_service_id,
+        base_interval=element_dict['base_interval'],
         session=session
     )
+    # Попробовать передавать еще и базовый интервал
+
     # Валидация pydentic-схемой:
     validated_service_work = ServiceWorkBase(
         car_id=car_id,
@@ -86,15 +89,8 @@ async def create_service_work(
     need_to_update = False  # Переменная для срабатывания обновления
 
     if service:
-        # Если пробег последнего сервиса в db отличается от входящих данных ...
-        if service.last_service_reading > (
-            validated_service_work.last_service_reading
-        ):
-            logging.warning(
-                f'⛔ На ТС «{kwargs["car_grz"]}» пробег ниже предыдущего.'
-            )
-
-        elif service.last_service_reading < (
+        # Если пробег последнего сервиса в db ниже входящих данных:
+        if service.last_service_reading < (
             validated_service_work.last_service_reading
         ):
             # ... закрываем старую запись:
@@ -106,22 +102,32 @@ async def create_service_work(
             )
             need_to_update = True  # ставим флаг на обновление.
 
-        else:
-            # Проверяем запись (при необходимости обновляем сут/общ пробеги):
+        elif service.last_service_reading == (
+            validated_service_work.last_service_reading
+        ):
             update_reading_and_daily_distance(
                 car_grz=kwargs['car_grz'],
                 service_work=service,
                 incoming_data=validated_service_work,
                 session=session
             )
-
             # Фиксируем текущий статус экземпляра ...
             old_request_status_id = service.request_status_id
             # ... и записываем дату обновления (нужно для пересчёта статуса)
             service.request_date = validated_service_work.request_date
-
             # Создаём переменную, с которой будем работать далее:
             processing_service = service
+
+        # Если пробег последнего сервиса в db выше входящих данных:
+        elif (
+            service.last_service_reading > (
+                validated_service_work.last_service_reading
+            )
+            and service.base_interval == validated_service_work.base_interval
+        ):
+            logging.warning(
+                f'⛔ На ТС «{kwargs["car_grz"]}» пробег ниже предыдущего.'
+            )
 
     # Если инфы нет вообще или появилась новая запись о сервисе -
     # создаём новый экземпляр (с которым будем работать далее):

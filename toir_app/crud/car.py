@@ -86,7 +86,7 @@ async def add_car_in_archive(
     """Архивирование (без коммита) Car."""
     car: Optional[Car] = await get_car_by_pk(car_id=car_id, session=session)
     if car:
-        car['in_archive'] = True
+        car.in_archive = True
         session.add(car)
         logging.info(f'🫡 🚚 ТС «{car.grz}» перенесено в архив.')
 
@@ -270,6 +270,6 @@ async def get_or_create_car_and_return_id(
         await session.commit()
         await session.refresh(car)
         logging.info(f'🚚 «{car.grz}» создано.')
-        return car['id'], car['grz']
+        return car.id, car.grz
 
-    return car_in_db['id'], car_in_db['grz']
+    return car_in_db.id, car_in_db.grz
