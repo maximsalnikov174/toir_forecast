@@ -272,4 +272,11 @@ async def get_or_create_car_and_return_id(
         logging.info(f'🚚 «{car.grz}» создано.')
         return car.id, car.grz
 
+    else:
+        # Проверяем прописку ТС в подразделении:
+        if car_in_db.organization_id != organization.id:
+            car_in_db.organization_id = organization.id
+            logging.info(f'ТС {grz} изменило прописку на {organization}')
+            session.add(car_in_db)
+
     return car_in_db.id, car_in_db.grz
