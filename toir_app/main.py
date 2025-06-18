@@ -88,7 +88,7 @@ async def main():
             # и связанных с ними ТO:
             if archive_car_ids:
                 logging.info(
-                    f'Началось архивирование {len(archive_car_ids)} ТС:'
+                    f'Выполнено архивирование {len(archive_car_ids)} ТС:'
                 )
                 for car_id in archive_car_ids:
                     service_work_list = (
