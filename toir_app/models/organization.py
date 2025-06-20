@@ -5,7 +5,7 @@ from toir_app.constants import (ORGANIZATION_NAME_LEN,
                                 ORGANIZATION_NORMAL_NAME_LEN)
 from toir_app.core.db import Base
 
-# Пока не работает:
+# FIXME Пока не работает:
 convert_oebs_to_1c = {
     'Ю51': '2-МГ',
     'Ю52': '3-АЛ',

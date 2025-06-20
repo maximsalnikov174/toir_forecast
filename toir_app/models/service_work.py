@@ -1,6 +1,6 @@
 import logging
-from datetime import datetime as dt
 from calendar import monthrange
+from datetime import datetime as dt
 
 from sqlalchemy import (Boolean,
                         Column,
@@ -88,6 +88,12 @@ class ServiceWork(Base):
         Integer,
         ForeignKey('servicename.id')
     )
+    station_id = Column(
+        Integer,
+        ForeignKey('station.id', name='fk_service_work_station_id_station'),
+        nullable=True,
+        default=None
+    )
     # Вычисляемое поле статуса (превыш/подошло/не надо) по собранным данным:
     request_status_id = Column(
         Integer,
@@ -114,6 +120,10 @@ class ServiceWork(Base):
         lazy='selectin',  # более эффективная загрузка связей
         cascade='delete',
         doc='М:1 Список работ (записей) в данном сервисном статусе.'
+    )
+    station = relationship(
+        'Station',
+        back_populates='station_works'
     )
 
     @property
