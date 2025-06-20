@@ -71,12 +71,17 @@ async def push_cars_in_archive(
     """Сбор всех непереданных в отчёте RMT321 ТС и перевод их в архив."""
     car_list_in_db = await get_all_active_car_list(session=session)
     cars_list_in_archive = set(car_list_in_db) - set(cars_in_file)
-    logging.info(f'Начало архивирования {len(cars_list_in_archive)} ТС:')
 
-    for car_id in cars_list_in_archive:
-        await add_car_in_archive(car_id=car_id, session=session)
+    if cars_list_in_archive:
+        logging.info(f'Начало архивирования {len(cars_list_in_archive)} ТС:')
 
-    logging.info(f'Архивирование {len(cars_list_in_archive)} ТС завершено.')
+        for car_id in cars_list_in_archive:
+            await add_car_in_archive(car_id=car_id, session=session)
+
+        logging.info(
+            f'Архивирование {len(cars_list_in_archive)} ТС завершено.'
+        )
+
     # await session.commit()
     return cars_list_in_archive
 
