@@ -19,7 +19,8 @@ from toir_app.schemas.service_work import (CarAtributesInServiceWork,
 
 async def get_service_work(
         service_work_id: int,
-        session: AsyncSession
+        session: AsyncSession,
+        check_active: bool = True
 ) -> Optional[ServiceWork]:
     """Получение объекта модели ServiceWork по ID."""
     result = await session.get(ServiceWork, service_work_id)
@@ -27,6 +28,11 @@ async def get_service_work(
         raise HTTPException(
             status_code=HTTPStatus.NOT_FOUND,
             detail='Указанная работа не найдена.'
+        )
+    if check_active and result.in_archive:
+        raise HTTPException(
+            status_code=HTTPStatus.BAD_REQUEST,
+            detail='Указанная работа находится в архиве.'
         )
     return result
 

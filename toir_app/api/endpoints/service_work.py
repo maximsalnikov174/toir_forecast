@@ -15,7 +15,7 @@ from toir_app.crud.service_work import (
     get_active_service_work_count_for_all_service_status,
     get_active_service_work_list_by_car,
     get_all_active_service_work_with_open_zvr, get_service_work)
-from toir_app.models import Organization
+from toir_app.models import Organization, Station
 from toir_app.schemas.service_work import ServiceWorkWithZVRNumber
 
 router = APIRouter()
@@ -25,7 +25,7 @@ router = APIRouter()
     '/add_zvr',
     response_model=ServiceWorkWithZVRNumber,
     name=(
-        'Добавление ЗВР к конкретному service_work'
+        'Добавление ЗВР + ID участка ТО к конкретному service_work'
         ' (доступно сотруднику подразделения).'
     ),
     description=(
@@ -41,6 +41,7 @@ async def add_zvr_to_service_work(
     zvr_number: Annotated[
         int, Field(ge=ZVR_PART_MIN, lt=ZVR_PART_MAX)
     ],
+    station_id: Annotated[int, Station.id],
     session: AsyncSession = Depends(get_async_session)
 ):
     """Добавление 7-значного ЗВР к service_work."""
@@ -54,6 +55,7 @@ async def add_zvr_to_service_work(
 
         try:
             service_work.zvr_number = zvr_number
+            service_work.station_id = station_id
             service_work.zvr_create_date = dt.now()  # TODO надо дописать tz
 
             await session.commit()
