@@ -26,4 +26,4 @@ class Station(Base):
     )
 
     def __repr__(self):
-        return f'<Цех {self.name}>'
+        return f'СТО «{self.name}»'
