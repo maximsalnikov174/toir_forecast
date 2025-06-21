@@ -9,13 +9,14 @@ from sqlalchemy.ext.asyncio import AsyncSession
 # from toir_app.constants import TIMEZONE_AE
 from toir_app.constants import ZVR_PART_MAX, ZVR_PART_MIN
 from toir_app.core.db import get_async_session
+from toir_app.core.user import current_user
 from toir_app.crud.organization import get_current_organization
 from toir_app.crud.service_work import (
-    check_zvr_unique, create_main_table,
+    check_users_can_edit_service_work, check_zvr_unique, create_main_table,
     get_active_service_work_count_for_all_service_status,
     get_active_service_work_list_by_car,
     get_all_active_service_work_with_open_zvr, get_service_work)
-from toir_app.models import Organization, Station
+from toir_app.models import Organization, Station, User
 from toir_app.schemas.service_work import ServiceWorkWithZVRNumber
 
 router = APIRouter()
@@ -42,6 +43,7 @@ async def add_zvr_to_service_work(
         int, Field(ge=ZVR_PART_MIN, lt=ZVR_PART_MAX)
     ],
     station_id: Annotated[int, Station.id],
+    user: User = Depends(current_user),
     session: AsyncSession = Depends(get_async_session)
 ):
     """Добавление 7-значного ЗВР к service_work."""
@@ -51,6 +53,7 @@ async def add_zvr_to_service_work(
                 status_code=HTTPStatus.UNPROCESSABLE_ENTITY,
                 detail='У данной работы ЗВР уже существует.'
             )
+        await check_users_can_edit_service_work(user, service_work)
         await check_zvr_unique(zvr_number, session)
 
         try:
@@ -88,16 +91,19 @@ async def add_zvr_to_service_work(
 )
 async def completed_real_service_work(
     service_work_id: int,
+    user: User = Depends(current_user),
     session: AsyncSession = Depends(get_async_session)
 ):
     """Добавление признака фактического завершения работ в service_work."""
     service_work = await get_service_work(service_work_id, session)
 
-    if service_work and not service_work.zvr_number:
-        raise HTTPException(
-            status_code=HTTPStatus.UNPROCESSABLE_ENTITY,
-            detail='Сначала необходимо добавить ЗВР.'
-        )
+    if service_work:
+        await check_users_can_edit_service_work(user, service_work)
+        if not service_work.zvr_number:
+            raise HTTPException(
+                status_code=HTTPStatus.UNPROCESSABLE_ENTITY,
+                detail='Сначала необходимо добавить ЗВР.'
+            )
 
     try:
         service_work.service_work_completed = True
