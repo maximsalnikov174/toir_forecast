@@ -6,13 +6,14 @@ from typing import Annotated, Optional
 from fastapi import HTTPException
 from sqlalchemy import and_, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from toir_app.crud.car import (get_car_by_pk,
                                get_cars_with_request_and_special_status)
 from toir_app.crud.service_name import (get_service_name_group,
                                         get_service_name_with_request_status)
 from toir_app.crud.service_status import get_multi_service_status
-from toir_app.models import Car, ServiceName, ServiceWork
+from toir_app.models import Car, ServiceName, ServiceWork, User, UserRole
 from toir_app.schemas.service_work import (CarAtributesInServiceWork,
                                            ServiceWorkBase)
 
@@ -23,7 +24,12 @@ async def get_service_work(
         check_active: bool = True
 ) -> Optional[ServiceWork]:
     """Получение объекта модели ServiceWork по ID."""
-    result = await session.get(ServiceWork, service_work_id)
+    stmt = (
+        select(ServiceWork)
+        .options(selectinload(ServiceWork.car))  # Явно загружаем связь с Car
+        .where(ServiceWork.id == service_work_id)
+    )
+    result = await session.scalar(stmt)
     if not result:
         raise HTTPException(
             status_code=HTTPStatus.NOT_FOUND,
@@ -331,3 +337,22 @@ async def create_main_table(
         total_data.append(one_row)
 
     return total_data
+
+
+async def check_users_can_edit_service_work(
+        user: User,
+        service_work: ServiceWork
+) -> None:
+    """Проверка полномочий пользователя для внесения изменений.
+
+    Если пользователь имеет права «Только чтение» или он является сотрудником
+    другого подразделения - действия невозможны.
+    """
+    if (
+        user.users_role.name == UserRole.READ_ONLY.value
+        or service_work.car.organization_id != user.organization_id
+    ):
+        raise HTTPException(
+            status_code=HTTPStatus.FORBIDDEN,
+            detail='Недостаточно прав!'
+        )
