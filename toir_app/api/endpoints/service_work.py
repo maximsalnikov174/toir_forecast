@@ -150,7 +150,7 @@ async def get_all_active_service_works_list_by_current_car(
         ' подразделении (доступно всем).'
     ),
     description='Необходим для получения статистики по кнопке.',
-    response_model=Dict[str, int]
+    response_model=Dict[str, Dict[str, int]]
 )
 async def get_count_active_service_works(
     organization_id: Annotated[int, Organization.id] = Query(

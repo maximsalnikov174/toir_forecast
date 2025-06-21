@@ -201,28 +201,57 @@ async def _get_active_service_work_with_service_status(
         *,
         organization_id: int,
         service_status_id: int,
-        session: AsyncSession
+        session: AsyncSession,
+        need_stats: bool = False
 ):
     """
     Получение активных сервисных работ в подразделении с расчётным статусом.
+
+    ## Args:
+    - need_stats: если указать True - переключается на сбор статистики по
+    видам: «пустые», «с открытым ЗВР», «с незакрытым ЗВР» с получением кол-ва.
     """
-    result = await session.scalars(
-        select(ServiceWork)
-        .join(Car)
-        .where(
-            ServiceWork.request_status_id == service_status_id,
-            ServiceWork.in_archive.is_(False),
-            Car.organization_id == organization_id,
-            Car.in_archive.is_(False)
-        )
+    stmt = select(
+        ServiceWork
+    ).join(
+        Car
+    ).where(
+        ServiceWork.request_status_id == service_status_id,
+        ServiceWork.in_archive.is_(False),
+        Car.organization_id == organization_id,
+        Car.in_archive.is_(False)
     )
-    return result.all()
+    total_result = (await session.scalars(stmt)).all()
+
+    # Переключение на сбор данных по группам:
+    if need_stats:
+        de_facto_completed_stmt = stmt.where(
+            ServiceWork.service_work_completed.is_(True)
+        )
+        zvr_create_stmt = stmt.where(
+            ServiceWork.zvr_number,
+            ServiceWork.service_work_completed.is_(False)
+        )
+        de_facto_completed_result = (
+            await session.scalars(de_facto_completed_stmt)
+        ).all()
+        zvr_create_result = (await session.scalars(zvr_create_stmt)).all()
+
+        return {
+            'without_zvr':
+            len(total_result) - len(de_facto_completed_result)
+            - len(zvr_create_result),
+            'with_open_zvr': len(zvr_create_result),
+            'de_facto_completed': len(de_facto_completed_result)
+        }
+
+    return total_result
 
 
 async def get_active_service_work_count_for_all_service_status(
         organization_id: int,
         session: AsyncSession
-) -> dict[str, int]:
+) -> dict[str, dict[str, int]]:
     """Получение сводных данных о количестве активных работ по статусам."""
     # Получение списка сервисных статусов:
     service_statuses = await get_multi_service_status(session=session)
@@ -235,9 +264,10 @@ async def get_active_service_work_count_for_all_service_status(
         value = await _get_active_service_work_with_service_status(
             organization_id=organization_id,
             service_status_id=service_status.id,
-            session=session
+            session=session,
+            need_stats=True
         )
-        summary_data[service_status.name] = len(value)
+        summary_data[service_status.name] = value
 
     return summary_data
 
