@@ -8,22 +8,39 @@ from fastapi_users import (BaseUserManager, FastAPIUsers, IntegerIDMixin,
 from fastapi_users.authentication import (AuthenticationBackend,
                                           BearerTransport, JWTStrategy)
 from fastapi_users_db_sqlalchemy import SQLAlchemyUserDatabase
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
-from toir_app.constants import (ENDPOINT_URL_FOR_GET_TOKEN,
-                                LIFETIME_TOKEN_IN_SECONDS,
-                                MIN_PASSWORD_LEN, WORDS_AND_DIGITS)
+from toir_app.constants import (COMPANY_DOMAIN, ENDPOINT_URL_FOR_GET_TOKEN,
+                                LIFETIME_TOKEN_IN_SECONDS, MIN_PASSWORD_LEN,
+                                WORDS_AND_DIGITS)
 from toir_app.core.config import settings
 from toir_app.core.db import get_async_session
+from toir_app.exception import InvalidEmailException
 from toir_app.models import User
 from toir_app.schemas.user import UserCreate
+
+
+class ExpandUserDatabase(SQLAlchemyUserDatabase):
+    async def get(self, id):
+        """Получение модели User вместе с relationships."""
+        statement = select(self.user_table).options(
+            selectinload(self.user_table.users_role),
+            selectinload(self.user_table.users_organization)
+            # когда появятся еще какие-то связи:
+            # ...
+        ).where(
+            self.user_table.id == id
+        )
+        return await super()._get_user(statement)
 
 
 # Асинхронный генератор обеспечивает доступ к БД через SQLAlchemy
 # и в дальнейшем будет использоваться в качестве dependency
 # для объекта класса UserManager:
 async def get_user_db(session: AsyncSession = Depends(get_async_session)):
-    yield SQLAlchemyUserDatabase(session, User)
+    yield ExpandUserDatabase(session, User)
 
 # Определяем транспорт: передавать токен будем
 # через заголовок HTTP-запроса Authorization: Bearer
@@ -49,6 +66,17 @@ auth_backend = AuthenticationBackend(
 
 
 class UserManager(IntegerIDMixin, BaseUserManager[User, int]):
+
+    async def get_by_email(self, user_email):
+        """Получение пользователя с валидацией его email по шаблону ММК."""
+        if not re.search(COMPANY_DOMAIN, user_email):
+            raise InvalidEmailException(
+                reason=(
+                    'Емэйл должен быть вида '
+                    'ivanov.ii@atu.mmk.ru или petrov@mmk.ru'
+                )
+            )
+        return await super().get_by_email(user_email)
 
     async def validate_password(
         self,
