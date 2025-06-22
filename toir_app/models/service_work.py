@@ -8,7 +8,7 @@ from sqlalchemy.orm import relationship
 
 from toir_app.constants import EXCESS_VALUE, LEN_ZVR
 from toir_app.core.db import Base
-from toir_app.models.static_model import Status
+from toir_app.models import Status
 from toir_app.schemas.convertation import BaseCarData
 
 
