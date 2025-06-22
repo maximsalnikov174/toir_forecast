@@ -46,6 +46,11 @@ class Organization(Base):
         back_populates='users_organization',
         cascade='delete'
     )
+    stats = relationship(
+        'ServiceStatusStats',
+        back_populates='organization',
+        cascade='delete'
+    )
 
     def __repr__(self):
         return f'<Цех {self.name}>'
