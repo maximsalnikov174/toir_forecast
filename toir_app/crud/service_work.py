@@ -1,7 +1,7 @@
 import logging
 from collections.abc import Sequence
 from http import HTTPStatus
-from typing import Annotated, Optional
+from typing import Annotated, List, Optional
 
 from fastapi import HTTPException
 from sqlalchemy import and_, or_, select
@@ -13,7 +13,8 @@ from toir_app.crud.car import (get_car_by_pk,
 from toir_app.crud.service_name import (get_service_name_group,
                                         get_service_name_with_request_status)
 from toir_app.crud.service_status import get_multi_service_status
-from toir_app.models import Car, ServiceName, ServiceWork, User, UserRole
+from toir_app.models import (Car, Organization, ServiceName, ServiceStatus,
+                             ServiceWork, SpecialStatus, User, UserRole)
 from toir_app.schemas.service_work import (CarAtributesInServiceWork,
                                            ServiceWorkBase)
 
@@ -199,8 +200,9 @@ async def add_service_works_in_archive(
 
 async def _get_active_service_work_with_service_status(
         *,
-        organization_id: int,
-        service_status_id: int,
+        organization_id: Annotated[int, Organization.id],
+        service_status_id: Annotated[int, ServiceStatus.id],
+        special_status_list: List[Annotated[int, SpecialStatus.id]],
         session: AsyncSession,
         need_stats: bool = False
 ):
@@ -208,6 +210,8 @@ async def _get_active_service_work_with_service_status(
     Получение активных сервисных работ в подразделении с расчётным статусом.
 
     ## Args:
+    - special_status_list: если нужно к ТС без статусов добавить, например,
+    находящиеся на ВР ТС;
     - need_stats: если указать True - переключается на сбор статистики по
     видам: «пустые», «с открытым ЗВР», «с незакрытым ЗВР» с получением кол-ва.
     """
@@ -219,7 +223,11 @@ async def _get_active_service_work_with_service_status(
         ServiceWork.request_status_id == service_status_id,
         ServiceWork.in_archive.is_(False),
         Car.organization_id == organization_id,
-        Car.in_archive.is_(False)
+        Car.in_archive.is_(False),
+        or_(
+            Car.special_status_id.is_(None),
+            Car.special_status_id.in_(special_status_list)
+        )
     )
     total_result = (await session.scalars(stmt)).all()
 
@@ -249,7 +257,8 @@ async def _get_active_service_work_with_service_status(
 
 
 async def get_active_service_work_count_for_all_service_status(
-        organization_id: int,
+        organization_id: Annotated[int, Organization.id],
+        special_status_list: List[Annotated[int, SpecialStatus.id]],
         session: AsyncSession
 ) -> dict[str, dict[str, int]]:
     """Получение сводных данных о количестве активных работ по статусам."""
@@ -264,6 +273,7 @@ async def get_active_service_work_count_for_all_service_status(
         value = await _get_active_service_work_with_service_status(
             organization_id=organization_id,
             service_status_id=service_status.id,
+            special_status_list=special_status_list,
             session=session,
             need_stats=True
         )
@@ -273,7 +283,7 @@ async def get_active_service_work_count_for_all_service_status(
 
 
 async def get_all_active_service_work_with_open_zvr(
-        organization_id: int,
+        organization_id: Annotated[int, Organization.id],
         session: AsyncSession
 ):
     """Получение «зависших» активных сервисных работ."""

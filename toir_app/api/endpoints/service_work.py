@@ -1,6 +1,6 @@
 from datetime import datetime as dt  # , tzinfo
 from http import HTTPStatus
-from typing import Annotated, Dict, Optional
+from typing import Annotated, Dict, List, Optional
 
 from fastapi import APIRouter, Body, Depends, HTTPException, Query
 from pydantic import Field
@@ -16,7 +16,7 @@ from toir_app.crud.service_work import (
     get_active_service_work_count_for_all_service_status,
     get_active_service_work_list_by_car,
     get_all_active_service_work_with_open_zvr, get_service_work)
-from toir_app.models import Organization, Station, User
+from toir_app.models import Organization, SpecialStatus, Station, User
 from toir_app.schemas.service_work import ServiceWorkWithZVRNumber
 
 router = APIRouter()
@@ -149,10 +149,21 @@ async def get_all_active_service_works_list_by_current_car(
         'Получение (в моменте) общей статистики по всем расчётным статусам в'
         ' подразделении (доступно всем).'
     ),
-    description='Необходим для получения статистики по кнопке.',
+    description=(
+        'Необходим для получения статистики по направлению ТО в целом по ЦП. '
+        'Для точного понимания состояния необходимо передать ID спецстатусов, '
+        'чтобы убрать, например, для подлежащих списанию или выставленных на '
+        'продажу ТС сервисные работы.'
+    ),
     response_model=Dict[str, Dict[str, int]]
 )
 async def get_count_active_service_works(
+    special_status_list: List[Annotated[int, SpecialStatus.id]] = Query(
+        description=(
+            'Указать список ID специальных статусов, которые нужно включить '
+            'в выборку.'
+        )
+    ),
     organization_id: Annotated[int, Organization.id] = Query(
         description='Указать ID подразделения', ge=0
     ),
@@ -163,7 +174,9 @@ async def get_count_active_service_works(
         session=session
     ):
         return await get_active_service_work_count_for_all_service_status(
-            organization.id, session
+            special_status_list=special_status_list,
+            organization_id=organization.id,
+            session=session
         )
 
 
