@@ -1,8 +1,8 @@
-"""add2 stats for organization
+"""add stats for organization
 
-Revision ID: 2c0ca2b61325
+Revision ID: 87dda72201a8
 Revises: 1ff5955b216f
-Create Date: 2025-06-22 22:07:08.004606
+Create Date: 2025-06-23 10:24:49.232714
 
 """
 from typing import Sequence, Union
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = '2c0ca2b61325'
+revision: str = '87dda72201a8'
 down_revision: Union[str, None] = '1ff5955b216f'
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -37,23 +37,17 @@ def upgrade() -> None:
         sa.Column('bad_reqiest_slice_id', sa.Integer(), nullable=False),
         sa.Column('id', sa.Integer(), nullable=False),
         sa.ForeignKeyConstraint(
-            ['organization_id'], ['organization.id'],
-        ),
+            ['bad_reqiest_slice_id'], ['serviceworkstate.id'], ),
         sa.ForeignKeyConstraint(
-            ['danger_slice_id'], ['serviceworkstate.id'],
-        ),
+            ['danger_slice_id'], ['serviceworkstate.id'], ),
         sa.ForeignKeyConstraint(
-            ['time_has_come_slice_id'], ['serviceworkstate.id'],
-        ),
+            ['no_need_slice_id'], ['serviceworkstate.id'], ),
         sa.ForeignKeyConstraint(
-            ['wait_moment_slice_id'], ['serviceworkstate.id'],
-        ),
+            ['organization_id'], ['organization.id'], ),
         sa.ForeignKeyConstraint(
-            ['no_need_slice_id'], ['serviceworkstate.id'],
-        ),
+            ['time_has_come_slice_id'], ['serviceworkstate.id'], ),
         sa.ForeignKeyConstraint(
-            ['bad_reqiest_slice_id'], ['serviceworkstate.id'],
-        ),
+            ['wait_moment_slice_id'], ['serviceworkstate.id'], ),
         sa.PrimaryKeyConstraint('id'),
         sa.UniqueConstraint('bad_reqiest_slice_id'),
         sa.UniqueConstraint('danger_slice_id'),

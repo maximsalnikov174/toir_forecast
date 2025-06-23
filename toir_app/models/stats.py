@@ -71,28 +71,28 @@ class ServiceStatusStats(Base):
         'Organization',
         back_populates='stats'
     )
-    danger_slice = relationship(
-        "serviceworkstate",
-        foreign_keys=[danger_slice_id],
-        backref="danger_status_stats"
-    )
-    time_has_come_slice = relationship(
-        "serviceworkstate",
-        foreign_keys=[time_has_come_slice_id],
-        backref="time_has_come_status_stats"
-    )
-    wait_moment_slice = relationship(
-        "serviceworkstate",
-        foreign_keys=[wait_moment_slice_id],
-        backref="wait_moment_status_stats"
-    )
-    no_need_slice = relationship(
-        "serviceworkstate",
-        foreign_keys=[no_need_slice_id],
-        backref="no_need_status_stats"
-    )
-    bad_reqiest_slice = relationship(
-        "serviceworkstate",
-        foreign_keys=[bad_reqiest_slice_id],
-        backref="bad_request_status_stats"
-    )
+    # danger_slice = relationship(
+    #     "serviceworkstate",
+    #     foreign_keys=[danger_slice_id],
+    #     backref="danger_status_stats"
+    # )
+    # time_has_come_slice = relationship(
+    #     "serviceworkstate",
+    #     foreign_keys=[time_has_come_slice_id],
+    #     backref="time_has_come_status_stats"
+    # )
+    # wait_moment_slice = relationship(
+    #     "serviceworkstate",
+    #     foreign_keys=[wait_moment_slice_id],
+    #     backref="wait_moment_status_stats"
+    # )
+    # no_need_slice = relationship(
+    #     "serviceworkstate",
+    #     foreign_keys=[no_need_slice_id],
+    #     backref="no_need_status_stats"
+    # )
+    # bad_reqiest_slice = relationship(
+    #     "serviceworkstate",
+    #     foreign_keys=[bad_reqiest_slice_id],
+    #     backref="bad_request_status_stats"
+    # )
