@@ -51,3 +51,19 @@ async def get_current_organization(
 # get_current_organization_dep = Annotated[
 #     Organization, Depends(get_current_organization)
 # ]
+
+
+async def get_organization_by_name(
+        name: Annotated[str, Organization.name],
+        session: AsyncSession
+) -> Optional[Organization]:
+    organization = await session.scalar(
+        select(Organization)
+        .where(Organization.name == name)
+    )
+    if not organization:
+        raise HTTPException(
+            HTTPStatus.NOT_FOUND,
+            detail=f'Подразделение {name} не найдено'
+        )
+    return organization

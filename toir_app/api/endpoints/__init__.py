@@ -5,3 +5,4 @@ from .special_status import router as special_status_router  # noqa
 from .organization import router as organization_router  # noqa
 from .service_status import router as service_status_router  # noqa
 from .user import router as user_router  # noqa
+from .stats import router as stats_router  # noqa
