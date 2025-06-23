@@ -1,4 +1,5 @@
 from pathlib import Path
+from typing import List
 
 UPLOAD_FILE_DIR = '/dataset_from_oebs/rmt321_ATU_'
 # Стандартное количество элементов в строке rmt-321:
@@ -47,6 +48,9 @@ PATTERN_DATE_OEBS = '%d.%m.%Y %H:%M:%S'
 TIMEZONE_AE = 'Asia/Yekaterinburg'
 
 LIST_ORGANIZATIONS: list[str] = ['Ю51', 'Ю52', 'Ю53', 'Ю54']
+
+# FIXME Уточнить, когда будут созданы все необходимые статусы:
+SPECIAL_STATUS_LIST_FOR_GET_STATS: List[int] = [2, 3]
 
 # БЛОК РЕГИСТРАЦИИ ПОЛЬЗОВАТЕЛЕЙ:
 # Данные для суперпользователя

@@ -59,7 +59,7 @@ class ServiceStatusStats(Base):
         unique=True,
         nullable=False
     )
-    bad_reqiest_slice_id = Column(
+    bad_request_slice_id = Column(
         Integer,
         ForeignKey('serviceworkstate.id'),
         unique=True,

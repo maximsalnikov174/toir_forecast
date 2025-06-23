@@ -22,6 +22,7 @@ from toir_app.crud.organization import create_superuser_organization
 from toir_app.crud.role import get_superuser_role
 from toir_app.crud.service_work import (add_service_works_in_archive,
                                         get_active_service_work_list_by_car)
+from toir_app.crud.stats import add_statement_after_loading_csv_file
 from toir_app.logging.logger import configure_logging
 
 load_dotenv()  # подгружаем переменные из env
@@ -101,6 +102,10 @@ async def main():
             else:
                 logging.info('Архивирования ТС не было.')
 
+            logging.info('Начало обновления статистики:')
+            await add_statement_after_loading_csv_file(
+                session=download_session
+            )
             await download_session.commit()
 
     # Настраиваем конфигуратор:
