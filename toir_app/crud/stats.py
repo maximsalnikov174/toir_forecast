@@ -4,6 +4,7 @@ from datetime import datetime as dt
 from typing import Annotated, Dict
 
 from sqlalchemy import select
+from sqlalchemy.orm import joinedload
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from toir_app.constants import (LIST_ORGANIZATIONS,
@@ -60,8 +61,16 @@ async def get_stats_for_organization(
         organization_id: Annotated[int, Organization.id],
         session: AsyncSession
 ):
+    """Получение статистики по подразделению с загрузкой доп.моделей."""
     return await session.scalars(
         select(ServiceStatusStats)
-        # .join(ServiceWorkState)
         .where(ServiceStatusStats.organization_id == organization_id)
+        .options(
+            joinedload(ServiceStatusStats.organization),
+            joinedload(ServiceStatusStats.danger_slice),
+            joinedload(ServiceStatusStats.time_has_come_slice),
+            joinedload(ServiceStatusStats.wait_moment_slice),
+            joinedload(ServiceStatusStats.no_need_slice),
+            joinedload(ServiceStatusStats.bad_request_slice)
+        )
     )

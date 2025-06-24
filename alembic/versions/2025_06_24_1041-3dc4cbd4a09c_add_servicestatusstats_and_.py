@@ -1,8 +1,8 @@
-"""add stats for organization
+"""add ServiceStatusStats and relationships for ServiceStatusStats
 
-Revision ID: 1aa0bb67c77e
+Revision ID: 3dc4cbd4a09c
 Revises: 1ff5955b216f
-Create Date: 2025-06-23 12:41:15.050954
+Create Date: 2025-06-24 10:41:28.983532
 
 """
 from typing import Sequence, Union
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = '1aa0bb67c77e'
+revision: str = '3dc4cbd4a09c'
 down_revision: Union[str, None] = '1ff5955b216f'
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
