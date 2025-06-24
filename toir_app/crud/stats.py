@@ -3,6 +3,7 @@ import os
 from datetime import datetime as dt
 from typing import Annotated, Dict
 
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from toir_app.constants import (LIST_ORGANIZATIONS,
@@ -10,7 +11,8 @@ from toir_app.constants import (LIST_ORGANIZATIONS,
 from toir_app.crud.organization import get_organization_by_name
 from toir_app.crud.service_work import (
     get_active_service_work_count_for_all_service_status)
-from toir_app.models import ServiceStatusStats, ServiceWorkState, Status
+from toir_app.models import (Organization, ServiceStatusStats,
+                             ServiceWorkState, Status)
 
 
 async def add_statement_after_loading_csv_file(session: AsyncSession):
@@ -52,3 +54,14 @@ async def add_statement_after_loading_csv_file(session: AsyncSession):
                 f'📈 Статистика по {organization_name} за {stmt_date} '
                 'загружена в БД.')
     await session.commit()
+
+
+async def get_stats_for_organization(
+        organization_id: Annotated[int, Organization.id],
+        session: AsyncSession
+):
+    return await session.scalars(
+        select(ServiceStatusStats)
+        # .join(ServiceWorkState)
+        .where(ServiceStatusStats.organization_id == organization_id)
+    )
