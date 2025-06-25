@@ -14,10 +14,11 @@ import { useFilterStore } from '../../Functions/FilterStoreAcceptButton'
 import axios from 'axios'
 import { ref, watch } from 'vue'
 
+
 const { selectedDivId, selectedMinimalStatus, selectedValues } = useFilterStore()
 const loading = ref(false)
 
-const emit = defineEmits(['applied'])
+const emit = defineEmits(['applied', 'servicesFetched', 'carsFetched'])
 
 // Вотчеры для отслеживания изменений фильтров
 watch([selectedDivId, selectedMinimalStatus, selectedValues], ([divId, status, values]) => {
@@ -30,6 +31,25 @@ watch([selectedDivId, selectedMinimalStatus, selectedValues], ([divId, status, v
 
 const showAlert = (message, type = 'info') => {
   alert(`${type.toUpperCase()}: ${message}`)
+}
+
+const makeRequest = async (url, params, requestBody = [0, null]) => {
+  console.log(`Отправка POST-запроса на ${url} с параметрами:`, params)
+  console.log('Тело запроса:', requestBody)
+
+  const response = await axios.post(
+    url,
+    requestBody,
+    {
+      params: params,
+      headers: {
+        'accept': 'application/json',
+        'Content-Type': 'application/json'
+      }
+    }
+  )
+
+  return response.data
 }
 
 const handleApply = async () => {
@@ -57,6 +77,7 @@ const handleApply = async () => {
 
     if (selectedMinimalStatus.value !== null && selectedMinimalStatus.value !== undefined) {
       params.request_status_id = selectedMinimalStatus.value
+      params.request_status_param = selectedMinimalStatus.value
     }
 
     if (selectedDivId.value !== null && selectedDivId.value !== undefined) {
@@ -67,26 +88,39 @@ const handleApply = async () => {
       params.hide_service_work_with_zvr = selectedValues.value
     }
 
-    const requestBody = [0, null]
-
-    console.log('Отправка POST-запроса с параметрами:', params)
-    console.log('Тело запроса:', requestBody)
-
-    const response = await axios.post(
+    // Основной запрос
+    const mainResponse = await makeRequest(
       'http://127.0.0.1:8001/service_work/get_table',
-      requestBody,
+      params
+    )
+    emit('applied', mainResponse)
+
+    // Дополнительный запрос для сервисных имен
+    const servicesResponse = await makeRequest(
+      'http://127.0.0.1:8001/service_name/all_service_names',
       {
-        params: params,
-        headers: {
-          'accept': 'application/json',
-          'Content-Type': 'application/json'
-        }
+        request_status_param: params.request_status_param || 0,
+        organization_id: params.organization_id || 0
       }
     )
+    emit('servicesFetched', servicesResponse)
 
-    emit('applied', response.data)
+    // Дополнительный запрос для автомобилей
+    const carsResponse = await makeRequest(
+      'http://127.0.0.1:8001/car/with_many_statuses',
+      {
+        request_status_param: params.request_status_param || 0,
+        organization_id: params.organization_id || 0
+      }
+    )
+    emit('carsFetched', carsResponse)
+
     showAlert('Фильтры успешно применены', 'success')
-    return response.data
+    return {
+      main: mainResponse,
+      services: servicesResponse,
+      cars: carsResponse
+    }
 
   } catch (error) {
     console.error('Ошибка при выполнении запроса:', error)
