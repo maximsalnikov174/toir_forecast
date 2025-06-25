@@ -170,8 +170,7 @@ async def get_cars_with_request_and_special_status(
             )
         ).options(
             joinedload(Car.car_model),
-            joinedload(Car.special_status),
-            joinedload(Car.organization)
+            joinedload(Car.special_status)
         )
         .distinct()  # distinct - дедупликация (FIXME не уверен, что так)
         .order_by(Car.grz)
