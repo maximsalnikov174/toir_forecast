@@ -1,4 +1,5 @@
 import { ref, onMounted, watch } from 'vue'
+import { api } from "../../boot/axios.js";
 
 export function useStatusOptions() {
   const statusOptions = ref([])
@@ -13,20 +14,15 @@ export function useStatusOptions() {
   const fetchStatuses = async () => {
     loading.value = true
     try {
-      const response = await fetch('http://127.0.0.1:8001/special_status/all', {
-        method: 'GET',
-        headers: {
-          'accept': 'application/json'
-        }
-      })
+      const response = await api.get('/special_status/all')
 
-      if (!response.ok) {
-        throw new Error('Ошибка при загрузке статусов')
-      }
+      // В Axios данные всегда в response.data
+      statusOptions.value = response.data
 
-      statusOptions.value = await response.json()
     } catch (error) {
       console.error('Ошибка загрузки данных:', error)
+      // Можно добавить обработку ошибки, например:
+      statusOptions.value = [] // Очищаем список в случае ошибки
     } finally {
       loading.value = false
     }
@@ -38,7 +34,7 @@ export function useStatusOptions() {
 
   return {
     statusOptions,
-    selectedStatuses, // Возвращаем для использования в компоненте
+    selectedStatuses,
     loading
   }
 }
