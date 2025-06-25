@@ -11,9 +11,8 @@
 
 <script setup>
 import { useFilterStore } from '../../Functions/FilterStoreAcceptButton'
-import axios from 'axios'
 import { ref, watch } from 'vue'
-
+import { api } from "../../../boot/axios.js";
 
 const { selectedDivId, selectedMinimalStatus, selectedValues } = useFilterStore()
 const loading = ref(false)
@@ -33,12 +32,12 @@ const showAlert = (message, type = 'info') => {
   alert(`${type.toUpperCase()}: ${message}`)
 }
 
-const makeRequest = async (url, params, requestBody = [0, null]) => {
-  console.log(`Отправка POST-запроса на ${url} с параметрами:`, params)
+const makeRequest = async (endpoint, params, requestBody = [0, null]) => {
+  console.log(`Отправка POST-запроса на ${endpoint} с параметрами:`, params)
   console.log('Тело запроса:', requestBody)
 
-  const response = await axios.post(
-    url,
+  const response = await api.post(
+    endpoint,
     requestBody,
     {
       params: params,
@@ -90,14 +89,14 @@ const handleApply = async () => {
 
     // Основной запрос
     const mainResponse = await makeRequest(
-      'http://127.0.0.1:8001/service_work/get_table',
+      '/service_work/get_table',
       params
     )
     emit('applied', mainResponse)
 
     // Дополнительный запрос для сервисных имен
     const servicesResponse = await makeRequest(
-      'http://127.0.0.1:8001/service_name/all_service_names',
+      '/service_name/all_service_names',
       {
         request_status_param: params.request_status_param || 0,
         organization_id: params.organization_id || 0
@@ -107,7 +106,7 @@ const handleApply = async () => {
 
     // Дополнительный запрос для автомобилей
     const carsResponse = await makeRequest(
-      'http://127.0.0.1:8001/car/with_many_statuses',
+      '/car/with_many_statuses',
       {
         request_status_param: params.request_status_param || 0,
         organization_id: params.organization_id || 0
