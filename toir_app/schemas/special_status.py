@@ -4,7 +4,7 @@ from pydantic import Field, BaseModel
 
 from toir_app.models.static_model import SpecialStatusForCar
 from toir_app.schemas.mixins import TimestampMixin
-from toir_app.schemas.user import UserBase
+# from toir_app.schemas.user import UserRead
 
 
 class SpecialStatusWithTimestamp(TimestampMixin):
@@ -20,10 +20,10 @@ class SpecialStatusWithTimestamp(TimestampMixin):
         None,
         title='Текущий статус'
     )
-    from_user: Optional[UserBase] = Field(
-        None,
-        title='Пользователь, присвоивший статус'
-    )
+    # from_user: Optional[UserRead] = Field(
+    #     None,
+    #     title='Пользователь, присвоивший статус'
+    # )
 
 
 class FullSpecialStatusSchemas(BaseModel):

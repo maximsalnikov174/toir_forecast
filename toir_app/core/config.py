@@ -1,3 +1,5 @@
+from typing import Optional
+from pydantic import EmailStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -5,6 +7,13 @@ class Settings(BaseSettings):
     """Класс для работы с переменными окружения."""
     app_title: str = 'Приложение ТОиР'
     database_url: str  # Обязательный параметр без значения по умолчанию
+    secret: str = 'SECRET'
+    first_superuser_email: Optional[EmailStr] = None
+    first_superuser_password: Optional[str] = None
+    superuser_name: str = 'Admin'
+    superuser_surname: str = 'Adminov'
+    superuser_organization: int = 1
+    superuser_role: int = 1
 
     model_config = SettingsConfigDict(
         env_file='.env',

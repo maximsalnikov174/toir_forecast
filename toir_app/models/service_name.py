@@ -1,4 +1,4 @@
-from sqlalchemy import Column, String
+from sqlalchemy import Column, String, Integer
 from sqlalchemy.orm import relationship
 
 from toir_app.constants import SERVICE_STATUS_NAME_LEN
@@ -19,6 +19,11 @@ class ServiceName(Base):
         String(SERVICE_STATUS_NAME_LEN),
         nullable=False,
         unique=True
+    )
+    group = Column(
+        Integer,
+        nullable=True,
+        default=None
     )
 
     # Связи с другими таблицами:

@@ -1,29 +1,49 @@
+from typing import Optional
+from fastapi_users import schemas
 from pydantic import Field
 
 from toir_app.constants import PERSON_FULL_NAME_LEN
-from toir_app.models.static_model import UserRole
-from toir_app.schemas.mixins import BaseModelWithTimestamps
-from toir_app.schemas.organization import OrganizationResponse
 
 
-class UserBase(BaseModelWithTimestamps):
-    """Базовая модель Пользователя системы."""
-    surname: str = Field(
-        title='Фамилия',
-        max_length=PERSON_FULL_NAME_LEN
-    )
+class UserRead(schemas.BaseUser[int]):
+    """Схема с базовыми полями модели пользователя."""
     name: str = Field(
         title='Имя',
         max_length=PERSON_FULL_NAME_LEN
     )
-    patronymic: str = Field(
-        title='Отчество',
+    surname: str = Field(
+        title='Фамилия',
         max_length=PERSON_FULL_NAME_LEN
     )
-    organization: OrganizationResponse = Field(
-        title='Сотрудник цеха'
+    organization_id: int = Field(
+        ..., title='ID из таблицы подразделений.'
     )
-    role: UserRole = Field(
-        UserRole.READ_ONLY,
-        title='Полномочия (из спр.)'
+    role_id: int = Field(
+        ..., title='ID из таблицы ролей в системе.'
     )
+
+
+class UserCreate(schemas.BaseUserCreate):
+    """Схема создания нового пользователя."""
+    name: str = Field(
+        title='Имя',
+        max_length=PERSON_FULL_NAME_LEN
+    )
+    surname: str = Field(
+        title='Фамилия',
+        max_length=PERSON_FULL_NAME_LEN
+    )
+    organization_id: int = Field(
+        ..., title='ID из таблицы подразделений.'
+    )
+    role_id: int = Field(
+        ..., title='ID из таблицы ролей в системе.'
+    )
+
+
+class UserUpdate(schemas.BaseUserUpdate):
+    """Схема обновления данных пользователя.
+
+    Можно изменить подразделение и/или роль(маловероятно)."""
+    organization_id: Optional[int]
+    role_id: Optional[int]

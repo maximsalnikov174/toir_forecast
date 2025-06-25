@@ -1,4 +1,5 @@
 import csv
+import logging
 import os
 from typing import List, Optional, Type, TypedDict, Union
 
@@ -6,14 +7,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from toir_app.constants import TOTAL_VALUES_IN_RAW_RMT_321
 from toir_app.convert_csv_to_py.assistant_functions import (
-    base_update_model,
-    create_data_point
-)
+    base_update_model, create_data_point)
 from toir_app.convert_csv_to_py.upload_data_from_csv import (
-    create_service_work,
-    get_or_create_car_and_return_id
-)
+    create_service_work)
 # from toir_app.core.db import get_async_session
+from toir_app.crud.car import get_or_create_car_and_return_id
 from toir_app.models import CarModel, Organization, ServiceName
 from toir_app.schemas.convertation import CarDataPoint
 
@@ -61,10 +59,12 @@ async def convert_csv_to_list(filename: str) -> List[CarDataPoint]:
     """
 
     if not os.path.exists(filename):
-        print(f'Файл не найден: {filename}')
+        logging.critical(f'Файл не найден: {filename}')
 
     if os.path.isdir(filename):
-        print(f'Указанный путь ведет к директории: {filename}, а не к файлу.')
+        logging.error(
+            f'Указанный путь ведет к директории: {filename}, а не к файлу.'
+        )
 
     # Заготовка для общего списка данных из файла rmt-321:
     total_list: List[CarDataPoint] = []
@@ -86,10 +86,11 @@ async def convert_csv_to_list(filename: str) -> List[CarDataPoint]:
                     data_point = create_data_point(row, mapping_name)
                     if data_point:
                         total_list.append(data_point)
-                    else:
-                        print(data_point)
+                    # else:
+                        # ERROR здесь!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+                        # logging.info(f'Строчка из другого цеха {data_point}')
                 except ValueError as e:
-                    print(f'Ошибка обработки данных: {e}')
+                    logging.error(f'Ошибка обработки данных: {e}')
                     continue
 
             # Кривые данные:
@@ -104,8 +105,9 @@ async def convert_csv_to_list(filename: str) -> List[CarDataPoint]:
                     # Когда в строке кривое количество элементов
                     # (последняя строка файла):
                     if len(rows) < TOTAL_VALUES_IN_RAW_RMT_321:
-                        print(f'Cтрока {row[0]} не соответствует нужной длине')
-                        # logger.warning(f'{row[0]} не соответствует длине.')
+                        logging.error(
+                            f'Cтрока {row[0]} не соответствует нужной длине'
+                        )
                         continue
 
                     # Только гении в элемент csv заталкивают «,»:
@@ -118,15 +120,16 @@ async def convert_csv_to_list(filename: str) -> List[CarDataPoint]:
                         if data_point:
                             total_list.append(data_point)
                         else:
-                            print(data_point)
+                            logging.error(f'И тут разобраться {data_point}')
                     except ValueError as e:
-                        print(f'Ошибка обработки данных: {e}')
+                        logging.error(f'Ошибка обработки данных: {e}')
                         continue
 
                 except Exception as e:
-                    print(f'Ошибка разбора строки: {row}, {str(e)}')
+                    logging.error(f'Ошибка разбора строки: {row}, {str(e)}')
                     continue
 
+    logging.info(f'Общее количество строк - {len(total_list)}')
     return total_list
 
 
@@ -151,7 +154,7 @@ async def upd_light_model_in_db(
 async def upload_filedata_in_db(
         element: CarDataPoint,
         session: AsyncSession
-) -> None:
+) -> int:
     """
     Проверяет (и вносит) каждую строку из файла csv в базу данных.
 
@@ -185,7 +188,7 @@ async def upload_filedata_in_db(
         )
 
     # Проверяем автомобиль (понадобится, когда появятся новые ТС в цехе):
-        car_id = await get_or_create_car_and_return_id(
+        car_id, car_grz = await get_or_create_car_and_return_id(
             session=session,
             personal_id=element_dict['personal_id'],
             grz=element_dict['grz'],
@@ -203,11 +206,13 @@ async def upload_filedata_in_db(
                 car_id=car_id,
                 element_dict=element_dict,
                 last_service_id=last_service,
-                next_service_id=next_service
+                next_service_id=next_service,
+                car_grz=car_grz
             )
 
         # Закидываем всю строчку в коммит
         await session.commit()
+        return car_id
 
     except Exception as e:
         await session.rollback()

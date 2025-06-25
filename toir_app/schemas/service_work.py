@@ -1,13 +1,9 @@
+import logging
 from datetime import datetime as dt
 from typing import Optional
 
-from pydantic import (
-    BaseModel,
-    Field,
-    computed_field,
-    field_validator,
-    ValidationInfo
-)
+from pydantic import (BaseModel, computed_field, Field, field_validator,
+                      ValidationInfo)
 
 
 class ServiceWorksRequestStatus(BaseModel):
@@ -63,11 +59,12 @@ class ServiceWorkBase(CarAtributesInServiceWork):
             # last_service_id = info.data['last_service_id']
             # date = value.date().isoformat()
 
-            # # ВМЕСТО RAISE ДОЛЖНО БЫТЬ ЛОГИРОВАНИЕ И/ИЛИ ВРЕМЕННАЯ ЗАПИСЬ ДЕФОЛТНОГО ЗНАЧЕНИЯ
-            # raise ValueError(
-            #     f'Прошлое ТО id#{last_service_id} для ТС id#{car_id} '
-            #     f'«выполнено» в будущем ({date}). Исправьте в OeBS!'
-            # )
+            logging.warning(
+                f'📆 Дата проведения ТО ({value})- в будущем, '
+                'такого быть не должно!'
+                f'ТС#{info.data["car_id"]}. '
+                f'Вид обслуживания #{info.data["last_service_id"]}.'
+            )
             return dt(2025, 1, 1, 0, 0, 0)
         return value
 
@@ -75,7 +72,7 @@ class ServiceWorkBase(CarAtributesInServiceWork):
 class ServiceWorkWithDivergence(ServiceWorkBase):
     @computed_field
     def divergence(self) -> Optional[float]:
-        """Отклонение фактического пробега от норматива.
+        """Отклонение фактического пробега от норматива (1 знак после «,»).
 
         Returns:
         - если значение (-) превышение
@@ -86,10 +83,13 @@ class ServiceWorkWithDivergence(ServiceWorkBase):
             and self.last_service_reading
             and self.base_interval
         ):
-            return (
-                self.last_service_reading
-                + self.base_interval
-                - self.request_reading
+            return round(
+                (
+                    self.last_service_reading
+                    + self.base_interval
+                    - self.request_reading
+                ),
+                1
             )
         return None
 
@@ -124,3 +124,8 @@ class ServiceWorkWithZVRNumber(ServiceWorkWithDivergence):
         if self.zvr_create_date:
             return (dt.now()-self.zvr_create_date).days
         return None
+
+
+class ServiceWorkWithInArchive(ServiceWorkWithZVRNumber):
+    """Добавлено поле состояния (в архиве или нет)"""
+    in_archive: bool

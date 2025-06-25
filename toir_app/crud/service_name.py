@@ -58,3 +58,13 @@ async def get_service_name_with_request_status(
         .order_by(ServiceName.id)  # сортировка по ID вида работ
     )
     return list(service_names.scalars().all())
+
+
+async def get_service_name_group(
+    service_name_id: int,
+    session: AsyncSession,
+) -> Optional[int]:
+    """Возврат номера группы вида сервисного обслуживания."""
+    return await session.scalar(
+        select(ServiceName.group).where(ServiceName.id == service_name_id)
+    )

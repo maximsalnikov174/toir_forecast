@@ -5,12 +5,13 @@ from toir_app.constants import (ORGANIZATION_NAME_LEN,
                                 ORGANIZATION_NORMAL_NAME_LEN)
 from toir_app.core.db import Base
 
-# Пока не работает:
+# FIXME Пока не работает:
 convert_oebs_to_1c = {
-    'Ю51': 'ЦП-2',
-    'Ю52': 'ЦП-3',
-    'Ю53': 'ЦП-4',
-    'Ю54': 'ЦП-5'
+    'Ю51': '2-МГ',
+    'Ю52': '3-АЛ',
+    'Ю53': '4-НТ',
+    'Ю54': '5-НТ',
+    'Ю80': 'УПР'
 }
 
 
@@ -39,6 +40,16 @@ class Organization(Base):
         lazy='selectin',
         cascade='delete',
         doc='1:M Список автомобилей, числящихся в данном цехе.'
+    )
+    employees = relationship(
+        'User',
+        back_populates='users_organization',
+        cascade='delete'
+    )
+    stats = relationship(
+        'ServiceStatusStats',
+        back_populates='organization',
+        cascade='delete'
     )
 
     def __repr__(self):

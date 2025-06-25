@@ -1,18 +1,14 @@
-from datetime import datetime as dt
+import logging
 from calendar import monthrange
+from datetime import datetime as dt
 
-from sqlalchemy import (Boolean,
-                        Column,
-                        DateTime,
-                        Float,
-                        ForeignKey,
-                        Integer,
+from sqlalchemy import (Boolean, Column, DateTime, Float, ForeignKey, Integer,
                         String)
 from sqlalchemy.orm import relationship
 
 from toir_app.constants import EXCESS_VALUE, LEN_ZVR
 from toir_app.core.db import Base
-from toir_app.models.static_model import Status
+from toir_app.models import Status
 from toir_app.schemas.convertation import BaseCarData
 
 
@@ -87,6 +83,12 @@ class ServiceWork(Base):
         Integer,
         ForeignKey('servicename.id')
     )
+    station_id = Column(
+        Integer,
+        ForeignKey('station.id', name='fk_service_work_station_id_station'),
+        nullable=True,
+        default=None
+    )
     # Вычисляемое поле статуса (превыш/подошло/не надо) по собранным данным:
     request_status_id = Column(
         Integer,
@@ -114,6 +116,10 @@ class ServiceWork(Base):
         cascade='delete',
         doc='М:1 Список работ (записей) в данном сервисном статусе.'
     )
+    station = relationship(
+        'Station',
+        back_populates='station_works'
+    )
 
     @property
     def calculated_status(self) -> Status:
@@ -139,7 +145,7 @@ class ServiceWork(Base):
             validated_data = BaseCarData.model_validate(element)
             return self._calculated_status(validated_data)
         except Exception as e:
-            print(f'Ошибка расчета статуса: {e}')
+            logging.error(f'Ошибка расчета статуса: {e}')
             return Status.BAD_REQUEST  # Возвращаем статус с ошибкой
 
     def _calculated_status(self, data: BaseCarData) -> Status:

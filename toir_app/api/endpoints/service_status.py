@@ -14,7 +14,7 @@ router = APIRouter()
 @router.get(
     '/all',
     response_model=list[ServiceStatusSchema],
-    name=('Список расчётных статусов'),
+    name=('Список расчётных статусов (доступно всем)'),
     description=(
         'Получение списка всех расчётных статусов для сервисного'
         ' обслуживания.'

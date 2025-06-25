@@ -1,6 +1,9 @@
 from typing import Optional
 from pydantic import BaseModel, Field
 
+from toir_app.constants import (ORGANIZATION_NORMAL_NAME_PATTERN,
+                                ORGANIZATION_BASE_NAME_PATTERN)
+
 
 class OrganizationBase(BaseModel):
     """Базовая (только name) схема Подразделения (цеха)."""
@@ -8,7 +11,7 @@ class OrganizationBase(BaseModel):
         ...,
         title='Объект в OeBS',
         description='Название подразделения в формате Юхх',
-        pattern=r'^Ю\d{2}$',
+        pattern=ORGANIZATION_BASE_NAME_PATTERN,
         examples=['Ю51']
     )
 
@@ -24,6 +27,6 @@ class OrganizationResponse(OrganizationID, OrganizationBase):
         None,
         title='Номер цеха',
         description='Номер цеха перевозок (привычный)',
-        pattern=r'^\d-\w{1,3}$',
+        pattern=ORGANIZATION_NORMAL_NAME_PATTERN,
         examples=['2-МГ', '4-УСТ', '3-Л']
     )

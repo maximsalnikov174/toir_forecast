@@ -3,12 +3,11 @@
 # from contextlib import asynccontextmanager
 
 from sqlalchemy import Column, Integer
-from sqlalchemy.ext.asyncio import (AsyncSession,
-                                    AsyncEngine,
-                                    async_sessionmaker,
-                                    create_async_engine)
-from sqlalchemy.orm import declared_attr, declarative_base
+from sqlalchemy.ext.asyncio import (AsyncEngine, AsyncSession,
+                                    async_sessionmaker, create_async_engine)
+from sqlalchemy.orm import declarative_base, declared_attr
 
+from toir_app.constants import NEED_ECHO_SQL
 from toir_app.core.config import settings
 
 
@@ -27,7 +26,7 @@ Base = declarative_base(cls=PreBase)
 
 engine: AsyncEngine = create_async_engine(
     settings.database_url,
-    echo=True,  # Логирование SQL-запросов (для разработки)
+    echo=NEED_ECHO_SQL,  # Логирование SQL-запросов (для разработки)
 
     # Проверка соединения перед использованием
     # для автоматического восстановления соединений

@@ -27,7 +27,10 @@ share/python-wheels/
 MANIFEST
 .vscode/
 dataset_from_oebs/
+logs/
 *toir.db
+*db.bak
+.DS_Store
 
 # PyInstaller
 #  Usually these files are written by a python script from a template

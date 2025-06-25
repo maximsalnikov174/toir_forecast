@@ -16,7 +16,7 @@ router = APIRouter()
 @router.get(
     '/all',
     response_model=list[FullSpecialStatusSchemas],
-    name='Получение всех специальных статусов',
+    name='Получение всех специальных статусов (доступно всем).',
     description=(
         '''
         С помощью списка из данных статусов пользователь сможет выбрать и

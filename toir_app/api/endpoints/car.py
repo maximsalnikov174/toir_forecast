@@ -1,27 +1,20 @@
-from typing import Optional
+from http import HTTPStatus
+from typing import List, Optional
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from toir_app.models import Car
 from toir_app.core.db import get_async_session
-from toir_app.crud.car import (
-    get_car_by_full_grz,
-    get_cars_with_request_and_special_status,
-    add_special_status_to_car
-)
-from toir_app.crud.service_work import (
-    get_last_request_reading_by_car
-)
-from toir_app.crud.service_status import (
-    check_service_status_by_param
-)
-from toir_app.schemas.car import (
-    CarOnlyIDs,
-    CarExpandWithIndicators,
-    CarWithCarModelAndOrganizationIDs
-)
-
+from toir_app.core.user import current_user
+from toir_app.crud.car import (add_special_status_to_car, get_car_by_full_grz,
+                               get_car_history,
+                               get_cars_with_request_and_special_status)
+from toir_app.crud.service_status import check_service_status_by_param
+from toir_app.crud.service_work import get_last_request_reading_by_car
+from toir_app.models import Car, User
+from toir_app.schemas.car import (CarExpandWithIndicators, CarOnlyIDs,
+                                  CarWithCarModelAndOrganizationIDs)
+from toir_app.schemas.service_work import ServiceWorkWithInArchive
 
 router = APIRouter()
 
@@ -29,7 +22,7 @@ router = APIRouter()
 @router.post(
     '/with_many_statuses',
     response_model=list[CarOnlyIDs],
-    name='Срез списка машин цеха Х',
+    name='Срез списка машин цеха Х (доступно всем)',
     description=(
         'Получение среза списка машин цеха Х.\nУчитываются:\n'
         '- расчётный статус (учитывается он и всё что строже)\n'
@@ -59,7 +52,7 @@ async def get_all_cars_with_selected_request_status(
 @router.get(
     '/about_car',
     response_model=CarExpandWithIndicators,
-    name='Поиск машины по ГРЗ и возврат информации о ней.',
+    name='Поиск машины по ГРЗ и возврат информации о ней (доступно всем).',
     response_model_exclude_none=True
 )
 async def get_car_in_db_by_grz(
@@ -74,23 +67,40 @@ async def get_car_in_db_by_grz(
 @router.patch(
     '/{car_id}/add_special_status',
     response_model=CarWithCarModelAndOrganizationIDs,
-    name='Добавление специального статуса ТС.',
+    # dependencies=[Depends(current_user)],
+    name='Добавление специального статуса ТС (только сотрудник цеха).',
     description=(
         'ТС устанавливается специальный статус, предназначенный для помощи '
         '(в дальнейшем) сотрудникам с определением состояния ТС (примеры '
         'статусов: на ВР, к выбытию/списанию, на реализации и т.д.)\n'
         'Ограничения:\n - ТС не должно быть в архиве.'
     ),
-    status_code=201
+    status_code=HTTPStatus.CREATED
 )
 async def link_special_status_and_car(
     car_id: int,
     special_status_id: int,
+    user: User = Depends(current_user),
     session: AsyncSession = Depends(get_async_session)
 ):
     """Установка специального статуса для ТС."""
     return await add_special_status_to_car(
-        special_status_id,
-        car_id,
-        session
+        special_status_id=special_status_id,
+        car_id=car_id,
+        user=user,
+        session=session
     )
+
+
+@router.get(
+    '/get_history',
+    response_model=List[ServiceWorkWithInArchive],
+    name='Отображение истории по выполнению сервисных обслуживаний для ТС.',
+    description='Позже допишу',
+    status_code=HTTPStatus.OK
+)
+async def get_history_for_current_car(
+    car_id: int = Query(None, ge=0, description='ID ТС'),
+    session: AsyncSession = Depends(get_async_session)
+):
+    return await get_car_history(car_id=car_id, session=session)

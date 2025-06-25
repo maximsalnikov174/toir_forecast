@@ -1,20 +1,17 @@
 # ----------ФУНКЦИИ, ВЫПОЛНЯЮЩИЕ НАПОЛНЕНИЕ ДАННЫМИ ИЗ CSV-ФАЙЛА----------
 
+import logging
 from typing import Any
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from toir_app.core.db import Base as db
-from toir_app.crud.car import get_car_by_personal_id
 from toir_app.crud.service_status import get_service_status_by_name
-from toir_app.crud.service_work import get_last_service_with_current_service_id
-from toir_app.models import Car, ServiceWork
-from toir_app.schemas.car import (
-    CarToDownloadInDB
-)
-from toir_app.schemas.car_model import CarModelID
-from toir_app.schemas.organization import OrganizationID
+from toir_app.crud.service_work import (
+    add_service_works_in_archive, get_last_service_with_current_service_id,
+    update_reading_and_daily_distance)
+from toir_app.models import ServiceWork
 from toir_app.schemas.service_work import ServiceWorkBase
 
 
@@ -42,44 +39,13 @@ async def upload_users_data_in_db(
     await session.commit()
 
 
-async def get_or_create_car_and_return_id(
-    session: AsyncSession,
-    personal_id: int,
-    grz: str,
-    car_model: CarModelID,
-    organization: OrganizationID
-) -> int:
-    """Получает экземпляр модели Car или создает его (автомобиль)."""
-    # Можно бы было ВЫШЕ получить все проиндексированные personal_id одним
-    # запросом и искать среди них:
-    car_in_db = await get_car_by_personal_id(personal_id, session)
-
-    if not car_in_db:
-        # загоняем в pydantic-схему:
-        validated_car = CarToDownloadInDB(
-            personal_id=personal_id,
-            grz=grz,
-            car_model_id=car_model.id,
-            organization_id=organization.id
-        )
-        new_car: dict[str, Any] = validated_car.model_dump()
-
-        # создаем экземпляр модели Car и добавляем в сессию:
-        car: Car = Car(**new_car)
-        session.add(car)
-        await session.commit()
-        await session.refresh(car)
-        return car.id
-
-    return car_in_db.id
-
-
 async def create_service_work(
     session: AsyncSession,
     car_id: int,
     element_dict: dict,
     last_service_id: int,
-    next_service_id: int
+    next_service_id: int,
+    **kwargs
 ) -> None:
     """
     Создает или обновляет запись обслуживания для автомобиля.
@@ -96,12 +62,16 @@ async def create_service_work(
     2. Если запись существует, но данные изменились - обновляем;
     3. Если записи нет - создаем новую запись.
     """
-    # Ищем в БД самую свежую запись для данного ТС с тем же видом обслуживания:
+    # Ищем в БД самую свежую запись для данного ТС с тем же или
+    # сгруппированным (пример ТО-1, ТО-2, ТО-3 и тд) видом обслуживания:
     service = await get_last_service_with_current_service_id(
         car_id=car_id,
         last_service_id=last_service_id,
+        base_interval=element_dict['base_interval'],
         session=session
     )
+    # Попробовать передавать еще и базовый интервал
+
     # Валидация pydentic-схемой:
     validated_service_work = ServiceWorkBase(
         car_id=car_id,
@@ -118,52 +88,72 @@ async def create_service_work(
     old_request_status_id = None  # Переменная для старого статуса
     need_to_update = False  # Переменная для срабатывания обновления
 
-    # Если сервис в БД совпадает с полученным (в т.ч. пробег посл. сервиса):
-    if (
-        service
-        and service.last_service_reading == (
+    if service:
+        # Если пробег последнего сервиса в db ниже входящих данных:
+        if service.last_service_reading < (
             validated_service_work.last_service_reading
-        )
-    ):
-        # ... но при этом изменился общий пробег - ОБНОВЛЕНИЕ ЗАПИСИ по сути
-        if service.request_reading != validated_service_work.request_reading:
-            need_to_update = True
-            # Обновляем суточный и общий пробег:
-            service.daily_distance = validated_service_work.daily_distance
-            service.request_reading = validated_service_work.request_reading
+        ):
+            # ... закрываем старую запись:
+            await add_service_works_in_archive(
+                service_work_list=[service],
+                session=session,
+                car_grz=kwargs['car_grz'],
+                validated_service_work=validated_service_work
+            )
+            need_to_update = True  # ставим флаг на обновление.
 
-        # Записываем дату обновления (нужно для пересчёта статуса):
-        service.request_date = validated_service_work.request_date
-        # и дополнительно фиксируем старый статус экземпляра:
-        old_request_status_id = service.request_status_id
+        elif service.last_service_reading == (
+            validated_service_work.last_service_reading
+        ):
+            update_reading_and_daily_distance(
+                car_grz=kwargs['car_grz'],
+                service_work=service,
+                incoming_data=validated_service_work,
+                session=session
+            )
+            # Фиксируем текущий статус экземпляра ...
+            old_request_status_id = service.request_status_id
+            # ... и записываем дату обновления (нужно для пересчёта статуса)
+            service.request_date = validated_service_work.request_date
+            # Создаём переменную, с которой будем работать далее:
+            processing_service = service
 
-        # Создаём переменную, с которой будем работать далее:
-        processing_service = service
+        # Если пробег последнего сервиса в db выше входящих данных:
+        elif (
+            service.last_service_reading > (
+                validated_service_work.last_service_reading
+            )
+            and service.base_interval == validated_service_work.base_interval
+        ):
+            logging.warning(
+                f'⛔ На ТС «{kwargs["car_grz"]}» пробег ниже предыдущего.'
+            )
 
-    else:
-        # Перевод старой записи в архив:
-        if service:
-            service.in_archive = True
-            service.service_work_completed = True
-
-        # Если инфы о ТС нет или появилась новая запись о сервисе:
+    # Если инфы нет вообще или появилась новая запись о сервисе -
+    # создаём новый экземпляр (с которым будем работать далее):
+    if not service or need_to_update:
         new_service_work: dict[str, Any] = validated_service_work.model_dump()
-
-        # Создание нового экземпляра (с которым будем работать далее):
         processing_service = ServiceWork(**new_service_work)
 
     # Рассчитываем и получаем глобальный статус для авто:
-    # Должно гарантированно рассчитываться!
     upd_status = processing_service.calculated_status
-    upd_status = (
-        await get_service_status_by_name(upd_status.value, session)
-    )
+    upd_status = await get_service_status_by_name(upd_status.value, session)
     processing_service.request_status_id = upd_status.id
 
     # Если глоб. статус изменился - для
     # * обновляемой записи - откат или прогресс
     # * новой записи - в любом случае должна быть разница
-    # или глоб. статус - прежний, но поменялись (малозначимые) данные,
-    # к примеру, общий пробег - тем самым обновив need_to_update=True:
-    if old_request_status_id != upd_status.id or need_to_update:
+    if old_request_status_id != upd_status.id:
         session.add(processing_service)
+
+        # Логгирование:
+        message = f'«{kwargs["car_grz"]}». 🛠️#{next_service_id}'
+        if old_request_status_id:
+            logging.info(
+                f'🔄 {message}. Изменен глобальный статус: '
+                f'({old_request_status_id}) -> {upd_status.id}.'
+            )
+        else:
+            logging.info(
+                f'✅ {message}. Присвоен глобальный статус: {upd_status.id}.'
+            )
