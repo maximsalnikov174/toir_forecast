@@ -44,9 +44,11 @@ const handleServicesFetched = (servicesData) => {
 }
 
 .cards-container {
+  margin-left: auto;
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
   margin-top: 20px;
+  justify-content: flex-end;
 }
 </style>
