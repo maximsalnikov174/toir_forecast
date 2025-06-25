@@ -1,5 +1,6 @@
 import { ref, onMounted, watch } from 'vue' // Добавляем импорт watch
 import { useFilterStore } from '../Functions/FilterStoreAcceptButton.js'
+import { api } from "../../boot/axios.js"
 
 export function MinimalStatusSelect() {
   const { selectedMinimalStatus } = useFilterStore()
@@ -12,19 +13,16 @@ export function MinimalStatusSelect() {
 
   const fetchMinimalStatus = async () => {
     try {
-      const response = await fetch('http://127.0.0.1:8001/service_status/all', {
+      const response = await api.get('/service_status/all', {
         headers: {
           'accept': 'application/json'
         }
       })
 
-      if (!response.ok) {
-        throw new Error('Ошибка при загрузке организаций')
-      }
-
-      MinimalStatus.value = await response.json()
+      MinimalStatus.value =  response.data
     } catch (error) {
       console.error('Ошибка:', error)
+      MinimalStatus.value =[]
     }
   }
 
