@@ -113,6 +113,7 @@ class ServiceWorkWithZVRNumber(ServiceWorkWithDivergence):
         title='Работы завершены по факту',
         description='Флаг фактического завершения сервисных работ',
     )
+    request_status_id: int = Field(..., title='id расчётного статуса')
 
     @computed_field
     def days_between_service_work_completed_and_now(self) -> Optional[int]:
