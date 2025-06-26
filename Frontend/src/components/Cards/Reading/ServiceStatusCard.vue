@@ -2,8 +2,11 @@
   <div class="q-pa-md">
     <q-card class="service-status-card">
       <q-card-section class="card-content">
+        <div class="vertical-bar top-bar"></div> <!-- Верхняя серая полоска -->
+        <div class="vertical-bar bottom-bar"></div> <!-- Нижняя серая полоска -->
         <div class="characteristic-title">Характеристики</div>
         <div class="other-text">другая</div>
+        <div class="additional-text">еще текст</div>
       </q-card-section>
     </q-card>
   </div>
@@ -15,6 +18,22 @@
   height: 68px;
   background-color: #FFFFFF;
   position: relative;
+}
+
+.vertical-bar {
+  position: absolute;
+  width: 5px;
+  height: 30px;
+  left: 3px;
+  background: #A5A5A5;
+}
+
+.top-bar {
+  top: 3px;
+}
+
+.bottom-bar {
+  top: 35px;
 }
 
 .characteristic-title {
@@ -36,6 +55,19 @@
   width: 51px;
   height: 12px;
   top: 9px;
+  left: 13px;
+  font-family: 'Inter', sans-serif;
+  font-weight: 200;
+  font-size: 10px;
+  line-height: 100%;
+  letter-spacing: 0%;
+}
+
+.additional-text {
+  position: absolute;
+  width: 37px;
+  height: 12px;
+  top: 47px;
   left: 13px;
   font-family: 'Inter', sans-serif;
   font-weight: 200;
