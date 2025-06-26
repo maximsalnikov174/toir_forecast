@@ -62,11 +62,9 @@ def upgrade() -> None:
     sa.Column('in_archive', sa.Boolean(), nullable=True, comment='Флаг нахождения в архиве (при списании/продаже)'),
     sa.Column('car_model_id', sa.Integer(), nullable=True),
     sa.Column('organization_id', sa.Integer(), nullable=True),
-    sa.Column('special_status_id', sa.Integer(), nullable=True, comment='Глобальные статусы (на ВР, к выбытию, на реализации и т.д.)'),
     sa.Column('id', sa.Integer(), nullable=False),
     sa.ForeignKeyConstraint(['car_model_id'], ['carmodel.id'], ),
     sa.ForeignKeyConstraint(['organization_id'], ['organization.id'], ),
-    sa.ForeignKeyConstraint(['special_status_id'], ['specialstatus.id'], ),
     sa.PrimaryKeyConstraint('id'),
     sa.UniqueConstraint('grz'),
     sa.UniqueConstraint('personal_id')
