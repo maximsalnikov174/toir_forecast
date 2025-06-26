@@ -158,7 +158,8 @@ async def get_cars_with_request_and_special_status(
     cars = await session.execute(
         select(Car)
         .join(ServiceWork, Car.id == ServiceWork.car_id)
-        .options(contains_eager(Car.service_works))  # жадный подгруз ServWork
+        .options(
+            contains_eager(Car.service_works))  # жадный подгруз ServWork
         .where(
             ServiceWork.request_status_id <= request_status_id,
             Car.organization_id == organization_id,
@@ -167,7 +168,11 @@ async def get_cars_with_request_and_special_status(
                 Car.special_status_id.is_(None),
                 Car.special_status_id.in_(special_status_ids)
             )
-        ).distinct()  # distinct - дедупликация (FIXME не уверен, что так)
+        ).options(
+            joinedload(Car.car_model),
+            joinedload(Car.special_status)
+        )
+        .distinct()  # distinct - дедупликация (FIXME не уверен, что так)
         .order_by(Car.grz)
     )
     return list(cars.unique().scalars().all())  # получение уникальных cars
