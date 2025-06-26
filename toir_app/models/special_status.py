@@ -1,5 +1,4 @@
-from sqlalchemy import (Boolean, Column, Date, ForeignKey, Integer, String,
-                        UniqueConstraint)
+from sqlalchemy import Boolean, Column, Date, ForeignKey, Integer, String
 from sqlalchemy.orm import relationship
 
 from toir_app.constants import (SPECIAL_STATUS_FOR_CAR_COMMENT,
@@ -33,6 +32,17 @@ class SpecialStatus(Base):
 
 
 class SpecialStatusForCar(Base):
+
+    # # нельзя для одной машины поставить несколько раз одинаковый статус
+    # # т.е. набор машина-статус-время_не_прошло должны быть уникальны
+    # __table_args__ = (
+    #    UniqueConstraint(
+    #        'car_id',
+    #        'special_status_id',
+    #        name='uq_special_status_for_car'
+    #     ),
+    # )
+
     date_left = Column(Date, nullable=False)
     comment = Column(
         String(SPECIAL_STATUS_FOR_CAR_COMMENT),
@@ -66,13 +76,3 @@ class SpecialStatusForCar(Base):
         'SpecialStatus', back_populates='car_associations'
     )
     user = relationship('User', back_populates='assigned_statuses')
-
-    # нельзя для одной машины поставить несколько раз одинаковый статус
-    # т.е. набор машина-статус-время_не_прошло должны быть уникальны
-    __table_args__ = (
-       UniqueConstraint(
-           'car_id',
-           'special_status_id',
-           name='uq_special_status_for_car'
-        ),
-    )
