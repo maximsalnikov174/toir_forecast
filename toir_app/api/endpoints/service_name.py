@@ -47,5 +47,6 @@ async def get_all_service_names_with_selected_request_status(
         request_status_id=request_status_param,
         special_status_ids=special_status_ids,
         organization_id=organization_id,
-        session=session
+        session=session,
+        need_range=True
     )
