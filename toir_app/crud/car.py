@@ -243,7 +243,7 @@ async def get_car_history(
 
     return await session.scalars(
         select(ServiceWork)
-        .join(Car)
+        .join(ServiceWork.car)
         .where(
             Car.id == car_id,
             ServiceWork.in_archive.is_(True)
