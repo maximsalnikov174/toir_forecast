@@ -14,7 +14,8 @@ from toir_app.crud.service_name import (get_service_name_group,
                                         get_service_name_with_request_status)
 from toir_app.crud.service_status import get_multi_service_status
 from toir_app.models import (Car, Organization, ServiceName, ServiceStatus,
-                             ServiceWork, SpecialStatus, User, UserRole)
+                             ServiceWork, SpecialStatus, SpecialStatusForCar,
+                             User, UserRole)
 from toir_app.schemas.service_work import (CarAtributesInServiceWork,
                                            ServiceWorkBase)
 
@@ -67,26 +68,24 @@ async def get_last_service_with_current_service_id(
 
     service_name_group = await get_service_name_group(last_service_id, session)
 
-    stmt = select(
-        ServiceWork
-    ).join(
-        ServiceName, ServiceName.id == ServiceWork.last_service_id
-    ).where(
-        ServiceWork.car_id == car_id,
-        or_(
-            and_(
-                ServiceName.group.is_not(None),
-                ServiceName.group == service_name_group
-            ),
-            and_(
-                ServiceWork.last_service_id == last_service_id,
-                ServiceWork.base_interval == base_interval
+    stmt = (
+        select(ServiceWork)
+        .join(ServiceName, ServiceName.id == ServiceWork.last_service_id)
+        .where(
+            ServiceWork.car_id == car_id,
+            or_(
+                and_(
+                    ServiceName.group.is_not(None),
+                    ServiceName.group == service_name_group
+                ),
+                and_(
+                    ServiceWork.last_service_id == last_service_id,
+                    ServiceWork.base_interval == base_interval
+                )
             )
-        )
-    ).order_by(
-        ServiceWork.last_service_reading.desc()
-    ).limit(1)
-
+        ).order_by(ServiceWork.last_service_reading.desc())
+        .limit(1)
+    )
     return await session.scalar(stmt)
 
 
@@ -136,14 +135,15 @@ async def get_active_service_work_list_by_car(
     """
     await get_car_by_pk(car_id, session, check_car_in_archive=False)
 
-    stmt = select(
-            ServiceWork
-        ).where(
+    stmt = (
+        select(ServiceWork)
+        .where(
             ServiceWork.car_id == car_id,
             ServiceWork.in_archive.is_(False)
         ).order_by(
             ServiceWork.next_service_id  # сортировка по ID вида работ
         )
+    )
     if request_status_id is not None:
         stmt = stmt.where(ServiceWork.request_status_id <= request_status_id)
 
@@ -215,18 +215,19 @@ async def _get_active_service_work_with_service_status(
     - need_stats: если указать True - переключается на сбор статистики по
     видам: «пустые», «с открытым ЗВР», «с незакрытым ЗВР» с получением кол-ва.
     """
-    stmt = select(
-        ServiceWork
-    ).join(
-        Car
-    ).where(
-        ServiceWork.request_status_id == service_status_id,
-        ServiceWork.in_archive.is_(False),
-        Car.organization_id == organization_id,
-        Car.in_archive.is_(False),
-        or_(
-            Car.special_status_id.is_(None),
-            Car.special_status_id.in_(special_status_list)
+    stmt = (
+        select(ServiceWork)
+        .join(ServiceWork.car)
+        .outerjoin(Car.status_associations)
+        .where(
+            ServiceWork.request_status_id == service_status_id,
+            ServiceWork.in_archive.is_(False),
+            Car.organization_id == organization_id,
+            Car.in_archive.is_(False),
+            or_(
+                Car.status_associations == None,
+                SpecialStatusForCar.special_status_id.in_(special_status_list)
+            )
         )
     )
     total_result = (await session.scalars(stmt)).all()
@@ -315,15 +316,20 @@ async def _get_service_work_for_car_and_service_name(
 
     # TODO Если ТС в архиве - должен сработать pass
 
-    stmt = select(ServiceWork).join(Car).where(
-        Car.id == car_id,
-        or_(
-            Car.special_status_id.in_(special_status_ids),
-            Car.special_status_id.is_(None),
-        ),
-        ServiceWork.request_status_id <= request_status_id,
-        ServiceWork.in_archive.is_(False),
-        ServiceWork.next_service_id == service_name_id,
+    stmt = (
+        select(ServiceWork)
+        .join(ServiceWork.car)
+        .outerjoin(Car.status_associations)
+        .where(
+            ServiceWork.request_status_id <= request_status_id,
+            ServiceWork.in_archive.is_(False),
+            ServiceWork.next_service_id == service_name_id,
+            Car.id == car_id,
+            or_(
+                Car.status_associations == None,
+                SpecialStatusForCar.special_status_id.in_(special_status_ids)
+            )
+        )
     )
 
     # Скрыть записи о сервисном обслуживании, если для них уже создан ЗВР:
