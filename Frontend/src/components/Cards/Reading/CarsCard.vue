@@ -1,5 +1,5 @@
 <template>
-  <q-card class="custom-card" style="width: 212px; height: 66px; position: absolute; top: 271px; left: 232px;">
+  <q-card class="custom-card" style="width: 212px; height: 66px;">
     <q-card-section horizontal>
       <!-- Место для картинки -->
       <q-img
@@ -15,7 +15,7 @@
 
         <!-- Основной текст -->
         <div style="width: 150px; height: 22px; font-family: Inter; font-weight: 700; font-size: 18px; line-height: 100%; letter-spacing: 0%; vertical-align: middle;">
-          Название товара
+          {{ grz }}
         </div>
 
         <div class="row items-center">
@@ -38,15 +38,21 @@
 import { defineComponent } from 'vue'
 
 export default defineComponent({
-  name: 'ProductCard'
+  name: 'ProductCard',
+  props: {
+    grz: {
+      type: String,
+      required: true
+    }
+  }
 })
 </script>
 
 <style>
-/* Если нужно подключить шрифт Inter */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@200;400;700&display=swap');
 
 .custom-card {
   font-family: 'Inter', sans-serif;
+  margin-bottom: 10px;
 }
 </style>

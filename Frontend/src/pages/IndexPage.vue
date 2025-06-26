@@ -7,30 +7,47 @@
     <ToAccept
       @tableDataFetched="handleTableDataFetched"
       @servicesFetched="handleServicesFetched"
+      @carsFetched="handleCarsFetched"
     />
   </div>
 
-  <!-- Горизонтальный контейнер для имен сервисов -->
-  <div class="service-names-container">
-    <ServiceNamesCard
-      v-for="(service,) in services"
-      :key="service.service_name_id"
-      :name="service.name"
-    />
-  </div>
+  <!-- Основной контейнер для карточек машин и сервисов -->
+  <div class="main-container">
+    <!-- Колонка с карточками машин -->
+    <div class="cars-column">
+      <CarsCard
+        v-for="(car, index) in cars"
+        :key="car.personal_id"
+        :grz="car.grz"
+        :style="{ top: `${271 + index * 76}px` }"
+      />
+    </div>
 
-  <!-- Горизонтальные строки статусов -->
-  <div class="status-rows-container">
-    <div v-for="(row, rowIndex) in tableData" :key="rowIndex" class="status-row">
-      <template v-for="(item, itemIndex) in row" :key="itemIndex">
-        <ServiceStatusCard
-          v-if="item"
-          :lastReading="item.last_service_reading"
-          :requestReading="item.request_reading"
-          :divergence="item.divergence"
+    <!-- Остальная часть (сервисы) -->
+    <div class="services-container">
+      <!-- Горизонтальный контейнер для имен сервисов -->
+      <div class="service-names-container">
+        <ServiceNamesCard
+          v-for="(service,) in services"
+          :key="service.service_name_id"
+          :name="service.name"
         />
-        <div v-else class="empty-card"></div>
-      </template>
+      </div>
+
+      <!-- Горизонтальные строки статусов -->
+      <div class="status-rows-container">
+        <div v-for="(row, rowIndex) in tableData" :key="rowIndex" class="status-row">
+          <template v-for="(item, itemIndex) in row" :key="itemIndex">
+            <ServiceStatusCard
+              v-if="item"
+              :lastReading="item.last_service_reading"
+              :requestReading="item.request_reading"
+              :divergence="item.divergence"
+            />
+            <div v-else class="empty-card"></div>
+          </template>
+        </div>
+      </div>
     </div>
   </div>
 </template>
@@ -44,9 +61,11 @@ import HideServiceWorkWithZvr from '../components/UI/Button/HideServiceWorkWithZ
 import ToAccept from 'src/components/UI/Button/ToAccept.vue'
 import ServiceNamesCard from '../components/Cards/Reading/ServiceNamesCards.vue'
 import ServiceStatusCard from '../components/Cards/Reading/ServiceStatusCard.vue'
+import CarsCard from '../components/Cards/Reading/CarsCard.vue'
 
 const tableData = ref([]);
 const services = ref([]);
+const cars = ref([]);
 
 const handleTableDataFetched = (data) => {
   tableData.value = data;
@@ -54,6 +73,10 @@ const handleTableDataFetched = (data) => {
 
 const handleServicesFetched = (servicesData) => {
   services.value = servicesData;
+}
+
+const handleCarsFetched = (carsData) => {
+  cars.value = carsData;
 }
 </script>
 
@@ -68,11 +91,25 @@ const handleServicesFetched = (servicesData) => {
   flex: 1;
 }
 
+.main-container {
+  display: flex;
+}
+
+.cars-column {
+
+  width: 212px;
+ 
+}
+
+.services-container {
+  flex: 1;
+  overflow-x: auto;
+}
+
 .service-names-container {
   display: flex;
   gap: 10px;
   margin-bottom: 10px;
-  overflow-x: auto;
   padding-bottom: 10px;
 }
 
@@ -88,18 +125,16 @@ const handleServicesFetched = (servicesData) => {
 
 .status-rows-container *{
   flex:1
-
 }
 
 .status-row {
   display: flex;
   gap: 10px;
-  overflow-x: auto;
   padding-bottom: 10px;
 }
 
 .empty-card {
-  width: 118px; /* Ширина ServiceStatusCard */
+  width: 118px;
   height: 0;
   visibility: hidden;
 }
