@@ -1,14 +1,10 @@
 <template>
-  <div class="q-pa-md">
-    <q-card class="service-status-card">
-      <q-card-section class="card-content">
-        <div class="vertical-bar top-bar"></div>
-        <div class="vertical-bar bottom-bar"></div>
-        <div class="characteristic-title">{{ lastReading }}</div>
-        <div class="other-text">Текущее: {{ requestReading }}</div>
-        <div class="additional-text">Отклонение: {{ divergence }}</div>
-      </q-card-section>
-    </q-card>
+  <div class="service-status-card">
+    <div class="vertical-bar top-bar"></div>
+    <div class="vertical-bar bottom-bar"></div>
+    <div class="characteristic-title">{{ lastReading }}</div>
+    <div class="other-text">Текущее: {{ requestReading }}</div>
+    <div class="additional-text">Отклонение: {{ divergence }}</div>
   </div>
 </template>
 
@@ -33,10 +29,11 @@ defineProps({
 .service-status-card {
   width: 150px;
   height: 80px;
-  background-color: #FFFFFF;
-  position: relative;
+  background: #FFFFFF;
   border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  position: relative;
+  flex-shrink: 0;
 }
 
 .vertical-bar {
@@ -65,7 +62,7 @@ defineProps({
   font-weight: 700;
   font-size: 18px;
   line-height: 100%;
-  letter-spacing: 0%;
+  color: #000000;
   text-align: right;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -82,7 +79,7 @@ defineProps({
   font-weight: 400;
   font-size: 10px;
   line-height: 100%;
-  letter-spacing: 0%;
+  color: #000000;
 }
 
 .additional-text {
@@ -95,6 +92,6 @@ defineProps({
   font-weight: 400;
   font-size: 10px;
   line-height: 100%;
-  letter-spacing: 0%;
+  color: #000000;
 }
 </style>

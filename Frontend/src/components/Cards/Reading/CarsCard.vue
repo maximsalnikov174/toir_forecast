@@ -1,23 +1,21 @@
 <template>
-  <div class="car-card-container">
-    <q-card class="car-card">
-      <q-card-section horizontal>
-        <q-img
-          src="your-image-path-here"
-          class="car-image"
-        />
+  <q-card class="car-card">
+    <q-card-section horizontal>
+      <q-img
+        src="your-image-path-here"
+        class="car-image"
+      />
 
-        <q-card-section class="car-content">
-          <div class="characteristic-subtitle">Характеристики</div>
-          <div class="car-grz">{{ grz }}</div>
-          <div class="row items-center">
-            <div class="additional-info">Доп.инфо</div>
-            <div class="car-value">123</div>
-          </div>
-        </q-card-section>
+      <q-card-section class="car-content">
+        <div class="characteristic-subtitle">Характеристики</div>
+        <div class="car-grz">{{ grz }}</div>
+        <div class="row items-center">
+          <div class="additional-info">Доп.инфо</div>
+          <div class="car-value">123</div>
+        </div>
       </q-card-section>
-    </q-card>
-  </div>
+    </q-card-section>
+  </q-card>
 </template>
 
 <script>
@@ -35,15 +33,14 @@ export default defineComponent({
 </script>
 
 <style scoped>
-.car-card-container {
-  margin-bottom: 10px;
-}
-
 .car-card {
   width: 212px;
   height: 80px;
+  background: #FFFFFF;
   border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  margin-right: 20px;
+  flex-shrink: 0;
 }
 
 .car-image {
@@ -63,6 +60,7 @@ export default defineComponent({
   font-weight: 200;
   font-size: 10px;
   line-height: 100%;
+  color: #000000;
   margin-bottom: 6px;
 }
 
@@ -73,6 +71,7 @@ export default defineComponent({
   font-weight: 700;
   font-size: 18px;
   line-height: 100%;
+  color: #000000;
   margin-bottom: 12px;
 }
 
@@ -83,6 +82,7 @@ export default defineComponent({
   font-weight: 400;
   font-size: 10px;
   line-height: 100%;
+  color: #000000;
   text-align: right;
 }
 
@@ -93,6 +93,7 @@ export default defineComponent({
   font-weight: 400;
   font-size: 10px;
   line-height: 100%;
+  color: #000000;
   text-align: right;
   margin-left: 5px;
 }
