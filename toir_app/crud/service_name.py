@@ -3,7 +3,7 @@ from sqlalchemy import and_, or_, select
 # from sqlalchemy.orm import joinedload
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from toir_app.models import ServiceName, ServiceWork, Car
+from toir_app.models import Car, ServiceName, ServiceWork, SpecialStatusForCar
 
 
 async def get_service_name_with_request_status(
@@ -35,6 +35,7 @@ async def get_service_name_with_request_status(
         select(ServiceName)
         .join(ServiceWork, ServiceName.id == ServiceWork.next_service_id)
         .join(Car)
+        .outerjoin(Car.status_associations)
         # .options(
         #     joinedload(ServiceWork.car),
         # )
@@ -50,8 +51,10 @@ async def get_service_name_with_request_status(
                 Car.organization_id == organization_id,
                 Car.in_archive.is_(False),
                 or_(
-                    Car.special_status_id.in_(special_status_ids),
-                    Car.special_status_id.is_(None)
+                    Car.status_associations == None,
+                    SpecialStatusForCar.special_status_id.in_(
+                        special_status_ids
+                    )
                 )
             )
         ).distinct()  # distinct - дедупликация

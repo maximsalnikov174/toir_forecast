@@ -2,7 +2,7 @@ from typing import Optional
 
 from pydantic import Field, BaseModel
 
-from toir_app.models.static_model import SpecialStatusForCar
+from toir_app.models.static_model import SpecialStatusForCarBase
 from toir_app.schemas.mixins import TimestampMixin
 # from toir_app.schemas.user import UserRead
 
@@ -16,7 +16,7 @@ class SpecialStatusWithTimestamp(TimestampMixin):
     - на реализации
     - после ВР
     """
-    status: Optional[SpecialStatusForCar] = Field(
+    status: Optional[SpecialStatusForCarBase] = Field(
         None,
         title='Текущий статус'
     )

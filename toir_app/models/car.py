@@ -26,7 +26,6 @@ class Car(Base):
         default=False,
         comment='Флаг нахождения в архиве (при списании/продаже)'
     )
-
     # Связи:
     car_model_id = Column(
         Integer,
@@ -36,13 +35,6 @@ class Car(Base):
         Integer,
         ForeignKey('organization.id')
     )
-    special_status_id = Column(
-        Integer,
-        ForeignKey('specialstatus.id'),
-        nullable=True,
-        comment='Глобальные статусы (на ВР, к выбытию, на реализации и т.д.)'
-    )
-
     # Обратные связи:
     car_model = relationship(
         'CarModel',
@@ -52,14 +44,15 @@ class Car(Base):
         'Organization',
         back_populates='cars'
     )
-    special_status = relationship(
-        'SpecialStatus',
-        back_populates='cars'
-    )
     service_works = relationship(
         'ServiceWork',
         back_populates='car',
         cascade='all, delete-orphan'
+    )
+    status_associations = relationship(
+        'SpecialStatusForCar',
+        back_populates='car',
+        order_by='asc(SpecialStatusForCar.date_left)'  # Сортировка по дате
     )
 
     # def __repr__(self):

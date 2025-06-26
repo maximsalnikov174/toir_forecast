@@ -1,9 +1,9 @@
 from fastapi_users_db_sqlalchemy import SQLAlchemyBaseUserTable
-from sqlalchemy import Column, String, Integer, ForeignKey
+from sqlalchemy import Column, ForeignKey, Integer, String
 from sqlalchemy.orm import relationship
 
-from toir_app.core.db import Base
 from toir_app.constants import PERSON_FULL_NAME_LEN
+from toir_app.core.db import Base
 
 
 class User(SQLAlchemyBaseUserTable[int], Base):
@@ -43,6 +43,10 @@ class User(SQLAlchemyBaseUserTable[int], Base):
         back_populates='employees_by_role',
         cascade='delete'
     )
+    assigned_statuses = relationship(
+        'SpecialStatusForCar',
+        back_populates='user'
+    )
 
     def __repr__(self):
-        return f'{self.name} {self.surname} ({self.organization.name})'
+        return f'{self.name} {self.surname}'

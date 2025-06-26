@@ -9,7 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import contains_eager, joinedload
 
 from toir_app.constants import pattern_grz_input_user
-from toir_app.models import Car, ServiceWork, SpecialStatus, User
+from toir_app.models import Car, ServiceWork, SpecialStatusForCar, User
 from toir_app.schemas.car import CarToDownloadInDB
 from toir_app.schemas.car_model import CarModelID
 from toir_app.schemas.organization import OrganizationID
@@ -158,21 +158,18 @@ async def get_cars_with_request_and_special_status(
     cars = await session.execute(
         select(Car)
         .join(ServiceWork, Car.id == ServiceWork.car_id)
-        .options(
-            contains_eager(Car.service_works))  # жадный подгруз ServWork
+        .outerjoin(Car.status_associations)
+        .options(contains_eager(Car.service_works))  # жадный подгруз ServWork
         .where(
             ServiceWork.request_status_id <= request_status_id,
             Car.organization_id == organization_id,
             Car.in_archive.is_(False),
             or_(
-                Car.special_status_id.is_(None),
-                Car.special_status_id.in_(special_status_ids)
+                Car.status_associations == None,
+                SpecialStatusForCar.special_status_id.in_(special_status_ids)
             )
-        ).options(
-            joinedload(Car.car_model),
-            joinedload(Car.special_status)
-        )
-        .distinct()  # distinct - дедупликация (FIXME не уверен, что так)
+        ).distinct()  # distinct - дедупликация (FIXME не уверен, что так)
+        .options(joinedload(Car.car_model))
         .order_by(Car.grz)
     )
     return list(cars.unique().scalars().all())  # получение уникальных cars
@@ -196,44 +193,45 @@ async def add_special_status_to_car(
         - 404 если ID выбранного статуса нет в списке статусов.
         - 500 если случились прочие проблемы.
     """
+    pass
     # Проверяем, существует ли car и special_status:
-    if not await session.get(SpecialStatus, special_status_id):
-        raise HTTPException(HTTPStatus.NOT_FOUND, 'Статус не найден')
+#     if not await session.get(SpecialStatus, special_status_id):
+#         raise HTTPException(HTTPStatus.NOT_FOUND, 'Статус не найден')
 
-    car = await get_car_by_pk(car_id, session)
+#     car = await get_car_by_pk(car_id, session)
 
-    if car:
+#     if car:
 
-        if (
-            car.organization_id != user.organization_id
-            and not user.is_superuser
-        ):
-            raise HTTPException(
-                HTTPStatus.FORBIDDEN,
-                'Только пользователь подразделения или суперпользователь'
-            )
+#         if (
+#             car.organization_id != user.organization_id
+#             and not user.is_superuser
+#         ):
+#             raise HTTPException(
+#                 HTTPStatus.FORBIDDEN,
+#                 'Только пользователь подразделения или суперпользователь'
+#             )
 
-        if special_status_id == car.special_status_id:
-            raise HTTPException(
-                HTTPStatus.BAD_REQUEST, 'Выбранный статус и так равен текущему'
-            )
+#         if special_status_id in car.status_associations:
+#             raise HTTPException(
+#                 HTTPStatus.BAD_REQUEST, 'Выбранный статус и так равен текущему'
+#             )
 
-        try:
-            # Устанавливаем статус
-            car['special_status_id'] = special_status_id
-            await session.commit()
+#         try:
+#             # Устанавливаем статус
+#             car['special_status_id'] = special_status_id
+#             await session.commit()
 
-            # Обновляем объект из БД
-            await session.refresh(car)
-        except Exception as e:
-            await session.rollback()
-            raise HTTPException(
-                status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
-                detail=f'Ошибка при обновлении статуса ТС: {str(e)}'
-            )
+#             # Обновляем объект из БД
+#             await session.refresh(car)
+#         except Exception as e:
+#             await session.rollback()
+#             raise HTTPException(
+#                 status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
+#                 detail=f'Ошибка при обновлении статуса ТС: {str(e)}'
+#             )
 
-        return car
-    return None
+#         return car
+#     return None
 
 
 async def get_car_history(
@@ -245,7 +243,7 @@ async def get_car_history(
 
     return await session.scalars(
         select(ServiceWork)
-        .join(Car)
+        .join(ServiceWork.car)
         .where(
             Car.id == car_id,
             ServiceWork.in_archive.is_(True)
