@@ -1,44 +1,30 @@
 <template>
-  <q-card class="custom-card" style="width: 212px; height: 66px;">
-    <q-card-section horizontal>
-      <!-- Место для картинки -->
-      <q-img
-        src="your-image-path-here"
-        style="width: 38px; height: 38px;"
-      />
+  <div class="car-card-container">
+    <q-card class="car-card">
+      <q-card-section horizontal>
+        <q-img
+          src="your-image-path-here"
+          class="car-image"
+        />
 
-      <q-card-section>
-        <!-- Текст с характеристиками -->
-        <div style="width: 125px; height: 12px; font-family: Inter; font-weight: 200; font-size: 10px; line-height: 100%; letter-spacing: 0%; vertical-align: middle;">
-          Характеристики товара
-        </div>
-
-        <!-- Основной текст -->
-        <div style="width: 150px; height: 22px; font-family: Inter; font-weight: 700; font-size: 18px; line-height: 100%; letter-spacing: 0%; vertical-align: middle;">
-          {{ grz }}
-        </div>
-
-        <div class="row items-center">
-          <!-- Дополнительный текст -->
-          <div style="width: 39px; height: 12px; font-family: Inter; font-weight: 400; font-size: 10px; line-height: 100%; letter-spacing: 0%; text-align: right; vertical-align: middle;">
-            Доп.инфо
+        <q-card-section class="car-content">
+          <div class="characteristic-subtitle">Характеристики</div>
+          <div class="car-grz">{{ grz }}</div>
+          <div class="row items-center">
+            <div class="additional-info">Доп.инфо</div>
+            <div class="car-value">123</div>
           </div>
-
-          <!-- Еще один текст -->
-          <div style="width: 22px; height: 12px; font-family: Inter; font-weight: 400; font-size: 10px; line-height: 100%; letter-spacing: 0%; text-align: right; vertical-align: middle; margin-left: 5px;">
-            123
-          </div>
-        </div>
+        </q-card-section>
       </q-card-section>
-    </q-card-section>
-  </q-card>
+    </q-card>
+  </div>
 </template>
 
 <script>
 import { defineComponent } from 'vue'
 
 export default defineComponent({
-  name: 'ProductCard',
+  name: 'CarCard',
   props: {
     grz: {
       type: String,
@@ -48,11 +34,66 @@ export default defineComponent({
 })
 </script>
 
-<style>
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@200;400;700&display=swap');
-
-.custom-card {
-  font-family: 'Inter', sans-serif;
+<style scoped>
+.car-card-container {
   margin-bottom: 10px;
+}
+
+.car-card {
+  width: 212px;
+  height: 80px;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.car-image {
+  width: 38px;
+  height: 38px;
+  margin: 21px 0 0 16px;
+}
+
+.car-content {
+  padding: 8px 0 0 8px;
+}
+
+.characteristic-subtitle {
+  width: 125px;
+  height: 12px;
+  font-family: 'Inter', sans-serif;
+  font-weight: 200;
+  font-size: 10px;
+  line-height: 100%;
+  margin-bottom: 6px;
+}
+
+.car-grz {
+  width: 150px;
+  height: 22px;
+  font-family: 'Inter', sans-serif;
+  font-weight: 700;
+  font-size: 18px;
+  line-height: 100%;
+  margin-bottom: 12px;
+}
+
+.additional-info {
+  width: 39px;
+  height: 12px;
+  font-family: 'Inter', sans-serif;
+  font-weight: 400;
+  font-size: 10px;
+  line-height: 100%;
+  text-align: right;
+}
+
+.car-value {
+  width: 22px;
+  height: 12px;
+  font-family: 'Inter', sans-serif;
+  font-weight: 400;
+  font-size: 10px;
+  line-height: 100%;
+  text-align: right;
+  margin-left: 5px;
 }
 </style>
