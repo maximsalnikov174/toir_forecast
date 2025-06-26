@@ -71,7 +71,7 @@ class CarBase(CarStartParse):
     - ГРЗ
     - (new) ID специального статуса
     """
-    special_status_id: Optional[int] = None
+    special_status_id: Optional[int] = None  # FIXME это теперь не работает!!!!!
 
 
 class CarBaseWithSpecialStatusAndTimestamp(
