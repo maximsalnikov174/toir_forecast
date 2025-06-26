@@ -2,7 +2,7 @@ import logging
 import re
 from typing import Optional
 
-from pydantic import Field, field_validator, BaseModel
+from pydantic import BaseModel, Field, field_validator
 
 from toir_app.constants import pattern_grz
 # from toir_app.schemas.car_model import CarModelBase
@@ -96,7 +96,7 @@ class CarWithCarModelAndOrganizationIDs(CarBase):
     organization_id: int = Field(..., title='ID подразделения')
 
 
-class CarWithCarModelAndOrganizationFields(CarBase):
+class CarWithCarModelFields(CarBase):
     """
     Расширенная схема модели Автомобиля.
 
@@ -106,13 +106,11 @@ class CarWithCarModelAndOrganizationFields(CarBase):
     - ГРЗ
     - ID специального статуса
     - (new) Поля марки ТС
-    - (new) Поля подразделения
     """
     car_model: CarModelWithID
-    organization: OrganizationResponse
 
 
-class CarExpandWithIndicators(CarWithCarModelAndOrganizationFields):
+class CarWithCarModelAndOrganizationFields(CarWithCarModelFields):
     """
     Расширенная схема модели Автомобиля.
 
@@ -122,7 +120,21 @@ class CarExpandWithIndicators(CarWithCarModelAndOrganizationFields):
     - ГРЗ
     - ID специального статуса
     - Поля марки ТС
-    - Поля подразделения
+    - (new) Поля подразделения
+    """
+    organization: OrganizationResponse
+
+
+class CarExpandWithIndicators(CarWithCarModelFields):
+    """
+    Расширенная схема модели Автомобиля.
+
+    Используемые поля:
+    - PK aka ID
+    - ID из OeBS
+    - ГРЗ
+    - ID специального статуса
+    - Поля марки ТС
     - (new) Общий пробег
     - (new) Среднесуточный пробег
     """

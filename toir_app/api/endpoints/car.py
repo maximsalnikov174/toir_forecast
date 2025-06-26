@@ -12,7 +12,7 @@ from toir_app.crud.car import (add_special_status_to_car, get_car_by_full_grz,
 from toir_app.crud.service_status import check_service_status_by_param
 from toir_app.crud.service_work import get_last_request_reading_by_car
 from toir_app.models import Car, User
-from toir_app.schemas.car import (CarExpandWithIndicators, CarOnlyIDs,
+from toir_app.schemas.car import (CarExpandWithIndicators,
                                   CarWithCarModelAndOrganizationIDs)
 from toir_app.schemas.service_work import ServiceWorkWithInArchive
 
@@ -21,7 +21,7 @@ router = APIRouter()
 
 @router.post(
     '/with_many_statuses',
-    response_model=list[CarOnlyIDs],
+    response_model=list[CarExpandWithIndicators],
     name='Срез списка машин цеха Х (доступно всем)',
     description=(
         'Получение среза списка машин цеха Х.\nУчитываются:\n'
@@ -44,9 +44,13 @@ async def get_all_cars_with_selected_request_status(
     # FIXME Попробовать здесь реализовать отбор без None
     pass
 
-    return await get_cars_with_request_and_special_status(
+    cars = await get_cars_with_request_and_special_status(
         request_status_param, special_status_ids, organization_id, session
     )
+    for car in cars:
+        car.indicators = await get_last_request_reading_by_car(car.id, session)
+
+    return cars
 
 
 @router.get(
