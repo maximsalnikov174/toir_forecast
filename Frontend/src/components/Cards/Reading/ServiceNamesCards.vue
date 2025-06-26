@@ -15,7 +15,7 @@ defineProps({
 
 <style scoped>
 .ServiceNamesCard {
-  width: auto; /* Изменено с фиксированной ширины */
+  width: 150px; /* Изменено с фиксированной ширины */
   min-width: 118px;
   height: 41px;
   background-color: #555555;

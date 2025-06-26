@@ -92,7 +92,7 @@ const handleApply = async () => {
       '/service_work/get_table',
       params
     )
-    emit('applied', mainResponse)
+    emit('tableDataFetched', mainResponse);
 
     // Дополнительный запрос для сервисных имен
     const servicesResponse = await makeRequest(
