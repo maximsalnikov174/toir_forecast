@@ -17,6 +17,7 @@ ORGANIZATION_NORMAL_NAME_LEN = 5  # 2-МГ, 3-А, 3-Л, 4-НТ, 4-УСТ, 5-НТ
 CAR_MODEL_NAME_LEN = 50  # Длина названия ТС (Шевроле Нива)
 STATUS_NAME_LEN = 20  # Длина названия статуса (Превышение или Подошло)
 SPECIAL_STATUS_NAME_LEN = 40
+SPECIAL_STATUS_FOR_CAR_COMMENT = 200
 CAR_GRZ_LEN = 20  # Длина гос рег знака (У 123 АЕ 174)
 SERVICE_STATUS_NAME_LEN = 40  # Длина вида обслуживания (ТО-1, ТО ГБО и тд)
 STATION_NAME_LEN = 10

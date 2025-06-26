@@ -12,7 +12,7 @@ class Status(str, Enum):
     BAD_REQUEST = 'Не был расчитан'
 
 
-class SpecialStatusForCar(str, Enum):
+class SpecialStatusForCarBase(str, Enum):
     """
     Глобальные статусы, устанавливающие особое состояние для ТС (для админа).
 
