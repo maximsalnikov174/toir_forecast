@@ -1,3 +1,4 @@
+from datetime import date
 from http import HTTPStatus
 from typing import List, Optional
 
@@ -84,6 +85,8 @@ async def get_car_in_db_by_grz(
 async def link_special_status_and_car(
     car_id: int,
     special_status_id: int,
+    date_from_user: date = Query(..., example='2025-09-01'),
+    comment: Optional[str] = None,
     user: User = Depends(current_user),
     session: AsyncSession = Depends(get_async_session)
 ):
@@ -92,7 +95,9 @@ async def link_special_status_and_car(
         special_status_id=special_status_id,
         car_id=car_id,
         user=user,
-        session=session
+        session=session,
+        date_from_user=date_from_user,
+        comment=comment
     )
 
 
