@@ -87,6 +87,11 @@ const handleCarsFetched = (carsData) => {
   margin-bottom: 20px;
 }
 
+.buttons-container *{
+  flex:1;
+
+}
+
 .data-container {
   display: flex;
   flex-direction: column;
