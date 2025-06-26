@@ -1,15 +1,17 @@
 import logging
 import re
+from datetime import date
 from http import HTTPStatus
 from typing import Annotated, Any, Optional
 
 from fastapi import HTTPException
 from sqlalchemy import or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import contains_eager, joinedload
+from sqlalchemy.orm import contains_eager, joinedload, selectinload
 
 from toir_app.constants import pattern_grz_input_user
-from toir_app.models import Car, ServiceWork, SpecialStatusForCar, User
+from toir_app.models import (Car, ServiceWork, SpecialStatus,
+                             SpecialStatusForCar, User)
 from toir_app.schemas.car import CarToDownloadInDB
 from toir_app.schemas.car_model import CarModelID
 from toir_app.schemas.organization import OrganizationID
@@ -28,23 +30,34 @@ async def get_car_by_personal_id(
 async def get_car_by_pk(
         car_id: int,
         session: AsyncSession,
-        check_car_in_archive: bool = True
+        check_car_in_archive: bool = True,
+        expand_data: bool = False
 ) -> Optional[Car]:
     """Получаем запись о Car по PK.
 
-    Returns:
+    ### Args:
+    - check_car_in_archive: проверяет ТС, переведенные в архив;
+    - expand_data: получение связанных данных(специальные статусы ТС).
+
+    ### Returns:
         - объект модели Car
 
-    Exceptions:
+    ### Exceptions:
         - 404 если ТС не найдено
         - 400 если ТС находится в архиве
     """
-    car = await session.get(Car, car_id)
+    if expand_data:
+        car = await session.scalar(
+            select(Car)
+            .options(selectinload(Car.status_associations))
+            .where(Car.id == car_id)
+        )
+    else:
+        car = await session.get(Car, car_id)
 
     if not car:
         raise HTTPException(HTTPStatus.NOT_FOUND, 'ТС не найдено')
 
-    # FIXME сравнить результаты car.in_archive is True и car.in_archive
     elif check_car_in_archive and car.in_archive:
         raise HTTPException(
             HTTPStatus.BAD_REQUEST,
@@ -59,7 +72,8 @@ async def get_all_active_car_list(
 ) -> list[Car.id]:
     """Получаем список ID всех активных Car (со статусом «не в архиве»)."""
     result = await session.scalars(
-        select(Car.id).where(Car.in_archive.is_(False))
+        select(Car.id)
+        .where(Car.in_archive.is_(False))
     )
     return list(result)
 
@@ -179,7 +193,9 @@ async def add_special_status_to_car(
         special_status_id: int,
         car_id: int,
         user: User,
-        session: AsyncSession
+        date_from_user: date,
+        session: AsyncSession,
+        comment: Optional[str] = None
 ) -> Optional[Car]:
     """Устанавливает специальный статус для ТС.
 
@@ -193,45 +209,58 @@ async def add_special_status_to_car(
         - 404 если ID выбранного статуса нет в списке статусов.
         - 500 если случились прочие проблемы.
     """
-    pass
     # Проверяем, существует ли car и special_status:
-#     if not await session.get(SpecialStatus, special_status_id):
-#         raise HTTPException(HTTPStatus.NOT_FOUND, 'Статус не найден')
+    if not await session.get(SpecialStatus, special_status_id):
+        raise HTTPException(HTTPStatus.NOT_FOUND, 'Статус не найден')
 
-#     car = await get_car_by_pk(car_id, session)
+    car = await get_car_by_pk(car_id, session, expand_data=True)
 
-#     if car:
+    if car:
 
-#         if (
-#             car.organization_id != user.organization_id
-#             and not user.is_superuser
-#         ):
-#             raise HTTPException(
-#                 HTTPStatus.FORBIDDEN,
-#                 'Только пользователь подразделения или суперпользователь'
-#             )
+        if (
+            car.organization_id != user.organization_id
+            and not user.is_superuser
+        ):
+            raise HTTPException(
+                HTTPStatus.FORBIDDEN,
+                'Только пользователь подразделения или суперпользователь'
+            )
 
-#         if special_status_id in car.status_associations:
-#             raise HTTPException(
-#                 HTTPStatus.BAD_REQUEST, 'Выбранный статус и так равен текущему'
-#             )
+        active_status_car = {
+            elem.special_status_id: elem.date_left
+            for elem in car.status_associations
+            if elem.is_active
+        }
 
-#         try:
-#             # Устанавливаем статус
-#             car['special_status_id'] = special_status_id
-#             await session.commit()
+        if special_status_id in active_status_car.keys():
+            raise HTTPException(
+                HTTPStatus.BAD_REQUEST,
+                'Выбранный статус ТС уже назначен '
+                f'и действует до {active_status_car[special_status_id]}'
+            )
 
-#             # Обновляем объект из БД
-#             await session.refresh(car)
-#         except Exception as e:
-#             await session.rollback()
-#             raise HTTPException(
-#                 status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
-#                 detail=f'Ошибка при обновлении статуса ТС: {str(e)}'
-#             )
+        try:
+            element = SpecialStatusForCar()
+            element.car_id = car_id
+            element.special_status_id = special_status_id
+            element.assigned_by_user_id = user.id
+            element.comment = comment
+            element.date_left = date_from_user
+            element.is_active = True
+            session.add(element)
+            await session.commit()
 
-#         return car
-#     return None
+            # Обновляем объект из БД
+            await session.refresh(car)
+        except Exception as e:
+            await session.rollback()
+            raise HTTPException(
+                status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
+                detail=f'Ошибка при обновлении статуса ТС: {str(e)}'
+            )
+
+        return car
+    return None
 
 
 async def get_car_history(
