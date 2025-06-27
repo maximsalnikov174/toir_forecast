@@ -1,9 +1,10 @@
 import logging
+from datetime import date
 from datetime import datetime as dt
 from typing import Optional
 
-from pydantic import (BaseModel, computed_field, Field, field_validator,
-                      ValidationInfo)
+from pydantic import (BaseModel, computed_field, Field, field_serializer,
+                      field_validator, ValidationInfo)
 
 
 class ServiceWorksRequestStatus(BaseModel):
@@ -67,6 +68,11 @@ class ServiceWorkBase(CarAtributesInServiceWork):
             )
             return dt(2025, 1, 1, 0, 0, 0)
         return value
+
+    @field_serializer('last_service_date')
+    def convert_datetime_to_date(self, last_service_date: dt) -> date:
+        """Преобразует datetime -> date для отображения в главной таблице."""
+        return last_service_date.date()
 
 
 class ServiceWorkWithDivergence(ServiceWorkBase):
