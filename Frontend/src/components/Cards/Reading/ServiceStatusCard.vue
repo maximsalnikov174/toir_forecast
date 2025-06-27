@@ -3,8 +3,8 @@
     <div class="vertical-bar top-bar"></div>
     <div class="vertical-bar bottom-bar"></div>
     <div class="characteristic-title">{{ lastReading }}</div>
-    <div class="other-text">Текущее: {{ requestReading }}</div>
-    <div class="additional-text">Отклонение: {{ divergence }}</div>
+    <div class="other-text"> {{ LastServiceDate }}</div>
+    <div class="additional-text"> {{ DBSWCAN }}</div>
   </div>
 </template>
 
@@ -14,11 +14,11 @@ defineProps({
     type: [String, Number],
     default: 'Н/Д'
   },
-  requestReading: {
-    type: [String, Number],
+  LastServiceDate: {
+    type: [Date],
     default: 'Н/Д'
   },
-  divergence: {
+  DBSWCAN: {
     type: [String, Number],
     default: 'Н/Д'
   }
