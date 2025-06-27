@@ -1,6 +1,7 @@
+from datetime import date
 from typing import Optional
 
-from pydantic import Field, BaseModel
+from pydantic import BaseModel, Field
 
 from toir_app.models.static_model import SpecialStatusForCarBase
 from toir_app.schemas.mixins import TimestampMixin
@@ -29,3 +30,11 @@ class SpecialStatusWithTimestamp(TimestampMixin):
 class FullSpecialStatusSchemas(BaseModel):
     id: int
     name: str
+
+
+class SpecialStatusForCarSchema(BaseModel):
+    special_status_id: int
+    comment: str
+    date_left: date
+    is_active: bool
+    assigned_by_user_id: int
