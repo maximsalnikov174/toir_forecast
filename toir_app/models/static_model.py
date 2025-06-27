@@ -43,6 +43,7 @@ class StaticOrganization(str, Enum):
     ORG_THREE = 'Ю52'
     ORG_FOUR = 'Ю53'
     ORG_FIVE = 'Ю54'
+    ORG_UPR = 'Ю80'
 
 
 convert_oebs_name_to_1c_normal_name: dict[str, str] = {

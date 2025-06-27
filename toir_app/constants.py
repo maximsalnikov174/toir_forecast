@@ -55,8 +55,6 @@ LIST_ORGANIZATIONS: list[str] = ['Ю51', 'Ю52', 'Ю53', 'Ю54']
 SPECIAL_STATUS_LIST_FOR_GET_STATS: List[int] = [2, 3]
 
 # БЛОК РЕГИСТРАЦИИ ПОЛЬЗОВАТЕЛЕЙ:
-# Данные для суперпользователя
-ADMIN_ORGANIZATION_DATA = {'name': 'Ю80', 'normal_name': 'УПР'}
 # Максимальная длина имени или фамилии сотрудника:
 PERSON_FULL_NAME_LEN = 40
 # Минимальная длина пароля от личного кабинета:
