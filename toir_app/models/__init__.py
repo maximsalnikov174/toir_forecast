@@ -1,4 +1,6 @@
-from .static_model import Status, SpecialStatusForCarBase, UserRole  # noqa
+from .static_model import (  # noqa
+    Status, SpecialStatusForCarBase, StaticOrganization, UserRole  # noqa
+)  # noqa
 from .car import Car  # noqa
 from .car_model import CarModel  # noqa
 from .organization import Organization  # noqa

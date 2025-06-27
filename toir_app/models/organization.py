@@ -5,15 +5,6 @@ from toir_app.constants import (ORGANIZATION_NAME_LEN,
                                 ORGANIZATION_NORMAL_NAME_LEN)
 from toir_app.core.db import Base
 
-# FIXME Пока не работает:
-convert_oebs_to_1c = {
-    'Ю51': '2-МГ',
-    'Ю52': '3-АЛ',
-    'Ю53': '4-НТ',
-    'Ю54': '5-НТ',
-    'Ю80': 'УПР'
-}
-
 
 class Organization(Base):
     """

@@ -8,14 +8,17 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from toir_app.convert_csv_to_py.convertation import UsersServiceName
 from toir_app.core.db import Base as db
-from toir_app.models import (Role,
+from toir_app.models import (Organization,
+                             Role,
                              ServiceName,
                              ServiceStatus,
                              SpecialStatus,
                              SpecialStatusForCarBase,
+                             StaticOrganization,
                              Status,
                              UserRole)
-
+from toir_app.models.static_model import (convert_oebs_name_to_1c_normal_name,
+                                          ServiceWorkData)
 
 # Все что нужно загрузить при СОЗДАНИИ базы:
 need_to_upload_datas = [
@@ -23,6 +26,7 @@ need_to_upload_datas = [
     (Status, ServiceStatus),  # подошло, превышение
     (UsersServiceName, ServiceName),  # ТО-2, замена масла ДВС
     (UserRole, Role),  # админ, только чтение
+    (StaticOrganization, Organization)  # Ю51, Ю52, Ю53, Ю54, УПР
     # ...
 ]
 
@@ -61,4 +65,18 @@ async def upload_users_data_in_db(
 
     if not existing:
         new_instance = apps_model(name=value)
+        if (
+            apps_model.__name__ == 'ServiceName'
+            and hasattr(apps_model, 'group')
+        ):
+            setattr(new_instance, 'group', ServiceWorkData.get(value))
+        elif (
+            apps_model.__name__ == 'Organization'
+            and hasattr(apps_model, 'normal_name')
+        ):
+            setattr(
+                new_instance,
+                'normal_name',
+                convert_oebs_name_to_1c_normal_name.get(value))
+
         session.add(new_instance)
