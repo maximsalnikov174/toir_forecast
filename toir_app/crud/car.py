@@ -1,6 +1,6 @@
 import logging
 import re
-from datetime import date
+from datetime import date, timedelta
 from http import HTTPStatus
 from typing import Annotated, Any, Optional
 
@@ -9,7 +9,7 @@ from sqlalchemy import or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import contains_eager, joinedload, selectinload
 
-from toir_app.constants import pattern_grz_input_user
+from toir_app.constants import MAX_SPECIAL_STATUS_VALID, pattern_grz_input_user
 from toir_app.models import (Car, ServiceWork, SpecialStatus,
                              SpecialStatusForCar, User)
 from toir_app.schemas.car import CarToDownloadInDB
@@ -213,6 +213,15 @@ async def add_special_status_to_car(
         - 404 если ID выбранного статуса нет в списке статусов.
         - 500 если случились прочие проблемы.
     """
+    if date_from_user <= date.today():
+        raise HTTPException(HTTPStatus.BAD_REQUEST, 'Укажите дату в будущем!')
+    elif date_from_user + timedelta(MAX_SPECIAL_STATUS_VALID):
+        raise HTTPException(
+            HTTPStatus.BAD_REQUEST,
+            'Давайте так: специальный статус для ТС действует '
+            f'не больше {MAX_SPECIAL_STATUS_VALID} дней!'
+        )
+
     # Проверяем, существует ли car и special_status:
     if not await session.get(SpecialStatus, special_status_id):
         raise HTTPException(HTTPStatus.NOT_FOUND, 'Статус не найден')
