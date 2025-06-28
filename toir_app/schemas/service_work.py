@@ -1,7 +1,7 @@
 import logging
 from datetime import date
 from datetime import datetime as dt
-from typing import Optional
+from typing import Optional, Union
 
 from pydantic import (BaseModel, computed_field, Field, field_serializer,
                       field_validator, ValidationInfo)
@@ -70,8 +70,17 @@ class ServiceWorkBase(CarAtributesInServiceWork):
         return value
 
     @field_serializer('last_service_date')
-    def convert_datetime_to_date(self, last_service_date: dt) -> date:
-        """Преобразует datetime -> date для отображения в главной таблице."""
+    def convert_datetime_to_date(
+        self, last_service_date: dt, info
+    ) -> Union[date, dt]:
+        """Обработка поля 'last_service_date'.
+
+        ## Variants:
+        - [dflt] Преобразует datetime->date для отображения в главной таблице.
+        - При передаче в model_dump(context='create_update_mode') - не меняет;
+        """
+        if info.context == 'create_update_mode':
+            return last_service_date
         return last_service_date.date()
 
 

@@ -132,7 +132,9 @@ async def create_service_work(
     # Если инфы нет вообще или появилась новая запись о сервисе -
     # создаём новый экземпляр (с которым будем работать далее):
     if not service or need_to_update:
-        new_service_work: dict[str, Any] = validated_service_work.model_dump()
+        new_service_work: dict[str, Any] = validated_service_work.model_dump(
+            context='create_update_mode'
+        )
         processing_service = ServiceWork(**new_service_work)
 
     # Рассчитываем и получаем глобальный статус для авто:
