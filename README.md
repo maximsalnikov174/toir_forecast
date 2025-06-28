@@ -16,7 +16,7 @@ toir_atu_fastapi
 
 Порядок запуска:
 
-Cоздать и активировать виртуальное окружение:  
+1. Cоздать и активировать виртуальное окружение:  
 ```  
 python -m venv venv  
 ```  
@@ -31,24 +31,28 @@ source venv/bin/activate
 source venv/scripts/activate  
 ```  
 
-Установить зависимости из файла requirements.txt:  
+2. Установить зависимости из файла requirements.txt:  
 ```  
 python -m pip install --upgrade pip  
 ```  
 
 ```  
 pip install -r requirements.txt  
-```  
+```
 
-Создать файл .env в корне проекта с переменными окружения (есть в env.example):  
-
-
-Применение миграций (работать только с ними), находящихся в /alembic/versions:
+3. Применить миграции (работать только с ними), находящихся в /alembic/versions:
 ```
 alembic upgrade head
 ```
 
-Запуск приложения через терминал:
+4. Файл .env
+Создать файл .env в корне проекта (директория toir_app) с переменными окружения (есть в env.example)
+
+5. Если нужно загрузить файл с внешними данными:
+* в файле .env найти переменную UPLOAD_DATA_FROM_CSV и присвоить ей значение TRUE
+* в каталог dataset_from_oebs вложить файл RMT321_ATU_….csv (вместо многоточия - дата в формате ГГГГ_ММ_ДД)
+
+6. Запуск приложения через терминал:
 ```
 uvicorn toir_app.main:toir_app --host 0.0.0.0 --port 8000 --reload
 ```
