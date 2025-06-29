@@ -5,7 +5,7 @@ from array import array
 
 import uvicorn
 from dotenv import load_dotenv
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI
 from tqdm import tqdm
 
 from toir_app.api.routers import main_router
@@ -22,8 +22,13 @@ from toir_app.crud.organization import get_organization_by_name
 from toir_app.crud.role import get_superuser_role
 from toir_app.crud.service_work import (add_service_works_in_archive,
                                         get_active_service_work_list_by_car)
+from toir_app.crud.special_status import (
+    deactivate_list_of_special_status_for_car
+)
 from toir_app.crud.stats import add_statement_after_loading_csv_file
+from toir_app.exception import StaticDataInDBNotFoundException
 from toir_app.logging.logger import configure_logging
+from toir_app.models import StaticOrganization
 
 load_dotenv()  # подгружаем переменные из env
 
@@ -43,10 +48,12 @@ async def main():
     """Основная асинхронная функция инициализации"""
     async with AsyncSessionLocal() as download_session:
         try:
+            # Проверяем наполнение БД статическими данными:
             await get_organization_by_name(
-                name='Ю80', session=download_session
+                name=StaticOrganization.ORG_UPR.value,
+                session=download_session
             )
-        except HTTPException:
+        except StaticDataInDBNotFoundException:
             logging.info('Началась загрузка статических данных.')
             # 1. Загружаем enum-значения в БД (по итогу - коммит, он нужен)
             await upload_all_users_data_in_db(
@@ -56,7 +63,8 @@ async def main():
 
             logging.info('Начало создания первого суперпользователя.')
             organization = await get_organization_by_name(
-                name='Ю80', session=download_session
+                name=StaticOrganization.ORG_UPR.value,
+                session=download_session
             )
             role_id = await get_superuser_role(session=download_session)
             await create_first_superuser(
@@ -75,7 +83,7 @@ async def main():
             car_list = array('H')
 
             # TODO
-            # Следующие 2 строчки - место для БОЛЬШОГО рефакторинга:
+            # Следующие строчки - место для БОЛЬШОГО рефакторинга:
             # Можно (читать-НУЖНО!) проверять, чтобы не было в сессии и в базе
             for element in tqdm(lst):
 
@@ -84,6 +92,8 @@ async def main():
                     await upload_filedata_in_db(element, download_session)
                 )
             logging.info('Завершена загрузка данных из CSV-файла.')
+
+            await deactivate_list_of_special_status_for_car(download_session)
 
             # АРХИВИРОВАНИЕ в рамках одного коммита:
             # Переносим все непереданные (читай-выбывшие) ТС в архив:

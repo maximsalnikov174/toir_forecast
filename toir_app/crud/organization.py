@@ -5,6 +5,7 @@ from fastapi import HTTPException
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from toir_app.exception import StaticDataInDBNotFoundException
 from toir_app.models import Organization
 
 
@@ -49,7 +50,7 @@ async def get_organization_by_name(
     )).scalar_one_or_none()
     if organization:
         return organization
-    raise HTTPException(
+    raise StaticDataInDBNotFoundException(
         HTTPStatus.NOT_FOUND,
         detail=f'Подразделение {name} не найдено'
     )
