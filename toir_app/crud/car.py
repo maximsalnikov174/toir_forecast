@@ -143,7 +143,8 @@ async def get_car_by_full_grz(
             Car.in_archive.is_(False)
         ).options(
             joinedload(Car.organization),
-            joinedload(Car.car_model)
+            joinedload(Car.car_model),
+            joinedload(Car.status_associations)
         )
     )
     if not car:
