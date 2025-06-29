@@ -13,17 +13,17 @@
     </div>
 
     <div class="data-container">
-      <!-- Заголовок с именами сервисов -->
-      <div class="services-header">
-        <div class="cars-header-placeholder"></div>
-        <div class="service-names-row">
-          <ServiceNamesCard
-            v-for="service in services"
-            :key="service.service_name_id"
-            :name="service.name"
-          />
-        </div>
-      </div>
+  <!-- Заголовок с именами сервисов -->
+  <div class="services-header sticky-header">
+    <div class="cars-header-placeholder"></div>
+    <div class="service-names-row">
+      <ServiceNamesCard
+        v-for="service in services"
+        :key="service.service_name_id"
+        :name="service.name"
+      />
+    </div>
+  </div>
 
       <!-- Основные данные - машины и статусы -->
       <div class="data-rows">
@@ -75,6 +75,15 @@ const handleCarsFetched = (carsData) => {
 </script>
 
 <style scoped>
+
+.sticky-header {
+  position: sticky;
+  top: 0; /* Расстояние от верхнего края, можно настроить */
+  z-index: 100; /* Чтобы заголовок был поверх других элементов */
+  padding-top: 10px; /* Отступ сверху для лучшего вида */
+  margin-bottom: 10px; /* Отступ снизу */
+}
+
 .index-page {
   padding: 20px;
   font-family: 'Inter', sans-serif;
@@ -95,6 +104,7 @@ const handleCarsFetched = (carsData) => {
 .data-container {
   display: flex;
   flex-direction: column;
+  position: relative;
 }
 
 .services-header {
@@ -114,6 +124,7 @@ const handleCarsFetched = (carsData) => {
   overflow-x: auto;
   padding-bottom: 10px;
   flex: 1;
+  position: relative; /* Добавьте это */
 }
 
 .data-rows {

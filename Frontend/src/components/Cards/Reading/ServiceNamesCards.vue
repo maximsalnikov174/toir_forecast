@@ -15,29 +15,34 @@ defineProps({
 
 <style scoped>
 .ServiceNamesCard {
-  width: 150px; /* Изменено с фиксированной ширины */
-  min-width: 118px;
-  height: 41px;
+  min-width: 150px;
+  max-width: 150px;
+  min-height: 41px; /* Изменено с height на min-height */
   background-color: #555555;
   position: relative;
   display: flex;
   justify-content: center;
   align-items: center;
-  padding: 0 10px;
+  padding: 5px 10px; /* Увеличено padding сверху и снизу */
   border-radius: 4px;
+  flex-shrink: 0;
+  word-break: break-word; /* Добавлено для переноса длинных слов */
 }
 
 .card-text {
   font-family: Inter, sans-serif;
   font-weight: 400;
   font-size: 12px;
-  line-height: 100%;
+  line-height: 1.2; /* Увеличено для многострочного текста */
   letter-spacing: 0%;
   text-align: center;
   color: white;
-  white-space: nowrap; /* Предотвращает перенос текста */
-  overflow: hidden;
-  text-overflow: ellipsis; /* Добавляет многоточие если текст не помещается */
-  max-width: 100%;
+  white-space: normal; /* Изменено с nowrap на normal */
+  overflow: visible; /* Изменено с hidden на visible */
+  text-overflow: clip; /* Изменено с ellipsis на clip */
+  display: -webkit-box;
+  -webkit-line-clamp: 2; /* Ограничение до 2 строк (можно изменить) */
+  -webkit-box-orient: vertical;
+  width: 100%;
 }
 </style>
