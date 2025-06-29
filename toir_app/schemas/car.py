@@ -10,7 +10,8 @@ from toir_app.constants import pattern_grz
 from toir_app.schemas.car_model import CarModelWithID
 from toir_app.schemas.organization import OrganizationResponse
 from toir_app.schemas.service_work import CarAtributesInServiceWork
-from toir_app.schemas.special_status import SpecialStatusWithTimestamp
+from toir_app.schemas.special_status import (SpecialStatusForCarSchema,
+                                             SpecialStatusWithTimestamp)
 
 
 class CarOnlyIDs(BaseModel):
@@ -71,7 +72,7 @@ class CarBase(CarStartParse):
     - ГРЗ
     - (new) ID специального статуса
     """
-    special_status_id: Optional[int] = None  # FIXME это теперь не работает!!!!!
+    status_associations: Optional[list[SpecialStatusForCarSchema]]
 
 
 class CarBaseWithSpecialStatusAndTimestamp(

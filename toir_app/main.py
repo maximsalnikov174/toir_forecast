@@ -20,12 +20,17 @@ from toir_app.core.config import settings
 from toir_app.core.db import AsyncSessionLocal
 from toir_app.core.init_db import create_first_superuser
 from toir_app.crud.car import push_cars_in_archive
-from toir_app.crud.organization import create_superuser_organization
+from toir_app.crud.organization import get_organization_by_name
 from toir_app.crud.role import get_superuser_role
 from toir_app.crud.service_work import (add_service_works_in_archive,
                                         get_active_service_work_list_by_car)
+from toir_app.crud.special_status import (
+    deactivate_list_of_special_status_for_car
+)
 from toir_app.crud.stats import add_statement_after_loading_csv_file
+from toir_app.exception import StaticDataInDBNotFoundException
 from toir_app.logging.logger import configure_logging
+from toir_app.models import StaticOrganization
 
 load_dotenv()  # подгружаем переменные из env
 
@@ -53,7 +58,13 @@ logging.debug(f'Dataset filename: {UPLOAD_FILE_DIR}{date_in_data}.csv')
 async def main():
     """Основная асинхронная функция инициализации"""
     async with AsyncSessionLocal() as download_session:
-        if os.environ['UPLOAD_STATIC_DATA_FROM_CSV'].lower() == 'true':
+        try:
+            # Проверяем наполнение БД статическими данными:
+            await get_organization_by_name(
+                name=StaticOrganization.ORG_UPR.value,
+                session=download_session
+            )
+        except StaticDataInDBNotFoundException:
             logging.info('Началась загрузка статических данных.')
             # 1. Загружаем enum-значения в БД (по итогу - коммит, он нужен)
             await upload_all_users_data_in_db(
@@ -61,16 +72,18 @@ async def main():
             )
             logging.info('Завершилась загрузка статических данных.')
 
-        if os.environ['CREATE_SUPERUSER'].lower() == 'true':
             logging.info('Начало создания первого суперпользователя.')
-            organization_id = await create_superuser_organization(
-                download_session
+            organization = await get_organization_by_name(
+                name=StaticOrganization.ORG_UPR.value,
+                session=download_session
             )
             role_id = await get_superuser_role(session=download_session)
             await create_first_superuser(
-                role_id=role_id, organization_id=organization_id
+                role_id=role_id,
+                organization_id=organization.id
             )
             logging.info('Суперпользователь создан.')
+            await download_session.commit()
 
         if os.environ['UPLOAD_DATA_FROM_CSV'].lower() == 'true':
             logging.info('Началась загрузка данных из CSV-файла.')
@@ -81,7 +94,7 @@ async def main():
             car_list = array('H')
 
             # TODO
-            # Следующие 2 строчки - место для БОЛЬШОГО рефакторинга:
+            # Следующие строчки - место для БОЛЬШОГО рефакторинга:
             # Можно (читать-НУЖНО!) проверять, чтобы не было в сессии и в базе
             for element in tqdm(lst):
 
@@ -90,6 +103,8 @@ async def main():
                     await upload_filedata_in_db(element, download_session)
                 )
             logging.info('Завершена загрузка данных из CSV-файла.')
+
+            await deactivate_list_of_special_status_for_car(download_session)
 
             # АРХИВИРОВАНИЕ в рамках одного коммита:
             # Переносим все непереданные (читай-выбывшие) ТС в архив:

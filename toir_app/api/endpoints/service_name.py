@@ -5,14 +5,9 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from toir_app.core.db import get_async_session
-from toir_app.crud.service_name import (
-    get_service_name_with_request_status
-)
-from toir_app.crud.service_status import (
-    check_service_status_by_param
-)
+from toir_app.crud.service_name import get_service_name_with_request_status
+from toir_app.crud.service_status import check_service_status_by_param
 from toir_app.schemas.service_name import ServiceNameBase
-
 
 router = APIRouter()
 

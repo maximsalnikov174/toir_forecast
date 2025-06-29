@@ -34,16 +34,17 @@ def upgrade() -> None:
         sa.Column('car_id', sa.Integer(), nullable=False),
         sa.Column('special_status_id', sa.Integer(), nullable=False),
         sa.Column('assigned_by_user_id', sa.Integer(), nullable=False),
-        sa.Column('id', sa.Integer(), nullable=False),
+        sa.Column('id', sa.Integer(), nullable=False, autoincrement=True),
         sa.ForeignKeyConstraint(['assigned_by_user_id'], ['user.id'], ),
         sa.ForeignKeyConstraint(['car_id'], ['car.id'], ),
         sa.ForeignKeyConstraint(['special_status_id'], ['specialstatus.id'], ),
-        sa.PrimaryKeyConstraint('car_id', 'special_status_id', 'id'),
-        sa.UniqueConstraint(
-            'car_id',
-            'special_status_id',
-            name='uq_special_status_for_car'
-        )
+        sa.PrimaryKeyConstraint('id'),
+        # sa.PrimaryKeyConstraint('car_id', 'special_status_id', 'id'),
+        # sa.UniqueConstraint(
+        #     'car_id',
+        #     'special_status_id',
+        #     name='uq_special_status_for_car'
+        # )
     )
     # ### end Alembic commands ###
 
