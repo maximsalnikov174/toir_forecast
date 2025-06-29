@@ -124,7 +124,8 @@ const handleCarsFetched = (carsData) => {
   overflow-x: auto;
   padding-bottom: 10px;
   flex: 1;
-  position: relative; /* Добавьте это */
+  position: relative;
+  margin-left: 10px;
 }
 
 .data-rows {
@@ -142,7 +143,7 @@ const handleCarsFetched = (carsData) => {
   display: flex;
   gap: 10px;
   overflow-x: auto;
-  
+
 }
 
 .empty-status-card {
