@@ -142,7 +142,7 @@ const handleCarsFetched = (carsData) => {
   display: flex;
   gap: 10px;
   overflow-x: auto;
-  padding-bottom: 10px;
+  
 }
 
 .empty-status-card {

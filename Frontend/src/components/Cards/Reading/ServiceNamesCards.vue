@@ -41,7 +41,6 @@ defineProps({
   overflow: visible; /* Изменено с hidden на visible */
   text-overflow: clip; /* Изменено с ellipsis на clip */
   display: -webkit-box;
-  -webkit-line-clamp: 2; /* Ограничение до 2 строк (можно изменить) */
   -webkit-box-orient: vertical;
   width: 100%;
 }
