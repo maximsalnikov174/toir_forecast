@@ -80,6 +80,7 @@ const handleCarsFetched = (carsData) => {
   position: sticky;
   top: 0; /* Расстояние от верхнего края, можно настроить */
   z-index: 100; /* Чтобы заголовок был поверх других элементов */
+  background-color: #777777;
   padding-top: 10px; /* Отступ сверху для лучшего вида */
   margin-bottom: 10px; /* Отступ снизу */
 }
