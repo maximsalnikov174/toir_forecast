@@ -133,11 +133,11 @@ const handleApply = async () => {
 
 <style scoped>
 .apply-button {
-  border-radius: 9999px;
-  background-color: #1976d2;
+  /* border-radius: 9999px; */
+  background-color: transparent;
   color: white;
   padding: 8px 16px;
-  border: none;
+  border-color:#555555 ;
   cursor: pointer;
   max-width: 300px;
   /* transition: opacity 0.3s; */
