@@ -7,7 +7,7 @@
       />
 
       <q-card-section class="car-content">
-        <div class="characteristic-subtitle">Характеристики</div>
+        <div class="characteristic-subtitle">{{ model }}</div>
         <div class="car-grz">{{ grz }}</div>
         <div class="row items-center">
           <div class="additional-info">Доп.инфо</div>
@@ -27,6 +27,11 @@ export default defineComponent({
     grz: {
       type: String,
       required: true
+    },
+    model: {
+      type: String,
+      required: false,
+      default: '' // значение по умолчанию, если модель не передана
     }
   }
 })

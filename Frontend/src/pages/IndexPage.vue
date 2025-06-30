@@ -13,22 +13,22 @@
     </div>
 
     <div class="data-container">
-  <!-- Заголовок с именами сервисов -->
-  <div class="services-header sticky-header">
-    <div class="cars-header-placeholder"></div>
-    <div class="service-names-row">
-      <ServiceNamesCard
-        v-for="service in services"
-        :key="service.service_name_id"
-        :name="service.name"
-      />
-    </div>
-  </div>
+      <!-- Заголовок с именами сервисов -->
+      <div class="services-header sticky-header">
+        <div class="cars-header-placeholder"></div>
+        <div class="service-names-row">
+          <ServiceNamesCard
+            v-for="service in services"
+            :key="service.service_name_id"
+            :name="service.name"
+          />
+        </div>
+      </div>
 
       <!-- Основные данные - машины и статусы -->
       <div class="data-rows">
         <div v-for="(car, rowIndex) in cars" :key="car.personal_id" class="data-row">
-          <CarCard :grz="car.grz" />
+          <CarCard :grz="car.grz" :model="car.car_model?.name || ''" />
           <div class="status-cards">
             <template v-for="(item, itemIndex) in tableData[rowIndex]" :key="itemIndex">
               <ServiceStatusCard
@@ -47,35 +47,34 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
-import MinimalStatus from '../components/UI/Button/MinimalStatus.vue';
-import DivisionSelect from '../components/UI/Button/DivisionSelect.vue';
-import GroupTs from '../components/UI/Button/GroupTs.vue';
-import HideServiceWorkWithZvr from '../components/UI/Button/HideServiceWorkWithZvr.vue';
-import ToAccept from 'src/components/UI/Button/ToAccept.vue';
-import ServiceNamesCard from '../components/Cards/Reading/ServiceNamesCards.vue';
-import ServiceStatusCard from '../components/Cards/Reading/ServiceStatusCard.vue';
-import CarCard from '../components/Cards/Reading/CarsCard.vue';
+import { ref } from 'vue'
+import MinimalStatus from '../components/UI/Button/MinimalStatus.vue'
+import DivisionSelect from '../components/UI/Button/DivisionSelect.vue'
+import GroupTs from '../components/UI/Button/GroupTs.vue'
+import HideServiceWorkWithZvr from '../components/UI/Button/HideServiceWorkWithZvr.vue'
+import ToAccept from 'src/components/UI/Button/ToAccept.vue'
+import ServiceNamesCard from '../components/Cards/Reading/ServiceNamesCards.vue'
+import ServiceStatusCard from '../components/Cards/Reading/ServiceStatusCard.vue'
+import CarCard from '../components/Cards/Reading/CarsCard.vue'
 
-const tableData = ref([]);
-const services = ref([]);
-const cars = ref([]);
+const tableData = ref([])
+const services = ref([])
+const cars = ref([])
 
 const handleTableDataFetched = (data) => {
-  tableData.value = data;
-};
+  tableData.value = data
+}
 
 const handleServicesFetched = (servicesData) => {
-  services.value = servicesData;
-};
+  services.value = servicesData
+}
 
 const handleCarsFetched = (carsData) => {
-  cars.value = carsData;
-};
+  cars.value = carsData
+}
 </script>
 
 <style scoped>
-
 .sticky-header {
   position: sticky;
   top: 0; /* Расстояние от верхнего края, можно настроить */
@@ -97,9 +96,8 @@ const handleCarsFetched = (carsData) => {
   margin-bottom: 20px;
 }
 
-.buttons-container *{
-  flex:1;
-
+.buttons-container * {
+  flex: 1;
 }
 
 .data-container {
@@ -143,7 +141,6 @@ const handleCarsFetched = (carsData) => {
   display: flex;
   gap: 4px;
   overflow-x: auto;
-
 }
 
 .empty-status-card {
