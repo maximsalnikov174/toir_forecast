@@ -2,7 +2,7 @@
   <div class="service-status-card">
     <div class="vertical-bar top-bar"></div>
     <div class="vertical-bar bottom-bar"></div>
-    <div class="characteristic-title">{{ lastReading }}</div>
+    <div class="characteristic-title">{{ lastReading }} км</div>
     <div class="other-text"> {{ LastServiceDate }}</div>
     <div class="additional-text"> {{ DBSWCAN }}</div>
   </div>
@@ -63,7 +63,7 @@ defineProps({
   font-size: 18px;
   line-height: 100%;
   color: #000000;
-  text-align: right;
+  text-align: center;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
