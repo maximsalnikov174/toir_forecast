@@ -10,8 +10,8 @@
         <div class="characteristic-subtitle">{{ model }}</div>
         <div class="car-grz">{{ grz }}</div>
         <div class="row items-center">
-          <div class="additional-info">Доп.инфо</div>
-          <div class="car-value">123</div>
+          <div class="additional-info">{{ requestReading }} км</div>
+          <div class="car-value">{{ daliDistanse }} км/день </div>
         </div>
       </q-card-section>
     </q-card-section>
@@ -32,6 +32,16 @@ export default defineComponent({
       type: String,
       required: false,
       default: '' // значение по умолчанию, если модель не передана
+    },
+    daliDistanse: {
+      type: Number,
+      required: false,
+
+    },
+    requestReading: {
+      type: Number,
+      required: false,
+
     }
   }
 })
@@ -81,7 +91,7 @@ export default defineComponent({
 }
 
 .additional-info {
-  width: 39px;
+  width: 71px;
   height: 12px;
   font-family: 'Inter', sans-serif;
   font-weight: 400;
@@ -92,7 +102,7 @@ export default defineComponent({
 }
 
 .car-value {
-  width: 22px;
+  width: 71px;
   height: 12px;
   font-family: 'Inter', sans-serif;
   font-weight: 400;
