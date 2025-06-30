@@ -98,7 +98,7 @@ export default defineComponent({
   font-size: 10px;
   line-height: 100%;
   color: #000000;
-  text-align: right;
+
 }
 
 .car-value {
@@ -109,7 +109,7 @@ export default defineComponent({
   font-size: 10px;
   line-height: 100%;
   color: #000000;
-  text-align: right;
+  
   margin-left: 5px;
 }
 </style>
