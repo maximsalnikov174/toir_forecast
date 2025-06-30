@@ -93,7 +93,7 @@ const handleCarsFetched = (carsData) => {
 .buttons-container {
   display: flex;
   gap: 16px;
-  align-items: center;
+  align-items: top;
   margin-bottom: 20px;
 }
 
@@ -121,7 +121,7 @@ const handleCarsFetched = (carsData) => {
 
 .service-names-row {
   display: flex;
-  gap: 10px;
+  gap: 4px;
   overflow-x: auto;
   flex: 1;
   position: relative;
@@ -141,7 +141,7 @@ const handleCarsFetched = (carsData) => {
 
 .status-cards {
   display: flex;
-  gap: 10px;
+  gap: 4px;
   overflow-x: auto;
 
 }

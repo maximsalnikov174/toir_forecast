@@ -140,11 +140,9 @@ const handleApply = async () => {
   border: none;
   cursor: pointer;
   max-width: 300px;
-  transition: opacity 0.3s;
-}
+  /* transition: opacity 0.3s; */
+  height: 56px;
 
-.apply-button:hover {
-  opacity: 0.9;
 }
 
 .apply-button:disabled {
