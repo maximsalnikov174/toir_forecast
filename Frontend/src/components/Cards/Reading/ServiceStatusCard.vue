@@ -45,11 +45,11 @@ defineProps({
 }
 
 .top-bar {
-  top: 3px;
+  top: 8px;
 }
 
 .bottom-bar {
-  top: 35px;
+  top: 43px;
 }
 
 .characteristic-title {
