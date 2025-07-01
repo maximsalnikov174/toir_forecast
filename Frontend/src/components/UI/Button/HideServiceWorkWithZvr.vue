@@ -7,7 +7,7 @@
         :options="yesNoOptions"
         option-label="label"
         option-value="value"
-        label="Обработанные"
+        label="С ЗВР"
         emit-value
         map-options
         clearable
@@ -22,8 +22,8 @@ import { useFilterStore } from '../../Functions/FilterStoreAcceptButton.js'
 
 // Опции для выбора Да/Нет
 const yesNoOptions = [
-  { label: 'Да', value: true },
-  { label: 'Нет', value: false }
+  { label: 'Нет', value: true },
+  { label: 'Да', value: false }
 ]
 
 // Выбранные значения (true/false)
