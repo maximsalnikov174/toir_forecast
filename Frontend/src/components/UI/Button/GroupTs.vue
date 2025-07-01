@@ -1,6 +1,6 @@
 <template>
   <div style="max-width: 300px">
-    <div >
+    <div>
       <q-select
         filled
         v-model="selectedSpecialStatuses"
@@ -19,9 +19,15 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { watch } from 'vue'
 import { useStatusOptions } from '../../Functions/ButtonSelectGroupTs.js'
+import { useFilterStore } from '../../Functions/FilterStoreAcceptButton'
 
-const { statusOptions, loading } = useStatusOptions()
-const selectedSpecialStatuses = ref([])
+const { statusOptions, loading, selectedSpecialStatuses } = useStatusOptions()
+const { selectedSpecialStatuses: storeSelectedStatuses } = useFilterStore()
+
+// Синхронизируем локальное состояние с хранилищем
+watch(selectedSpecialStatuses, (newVal) => {
+  storeSelectedStatuses.value = newVal
+}, { deep: true })
 </script>

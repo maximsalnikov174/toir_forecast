@@ -14,19 +14,29 @@ import { useFilterStore } from '../../Functions/FilterStoreAcceptButton'
 import { ref, watch } from 'vue'
 import { api } from "../../../boot/axios.js";
 
-const { selectedDivId, selectedMinimalStatus, selectedValues } = useFilterStore()
+const {
+  selectedDivId,
+  selectedMinimalStatus,
+  selectedValues,
+  selectedSpecialStatuses // Добавляем
+} = useFilterStore()
 const loading = ref(false)
 
 const emit = defineEmits(['applied', 'servicesFetched', 'carsFetched'])
 
-// Вотчеры для отслеживания изменений фильтров
-watch([selectedDivId, selectedMinimalStatus, selectedValues], ([divId, status, values]) => {
-  console.group('Текущие значения фильтров:')
-  console.log('selectedDivId:', divId)
-  console.log('selectedMinimalStatus:', status)
-  console.log('selectedValues:', values)
-  console.groupEnd()
-}, { immediate: true })
+// Добавляем новый параметр в вотчер
+watch(
+  [selectedDivId, selectedMinimalStatus, selectedValues, selectedSpecialStatuses],
+  ([divId, status, values, specialStatuses]) => {
+    console.group('Текущие значения фильтров:')
+    console.log('selectedDivId:', divId)
+    console.log('selectedMinimalStatus:', status)
+    console.log('selectedValues:', values)
+    console.log('selectedSpecialStatuses:', specialStatuses)
+    console.groupEnd()
+  },
+  { immediate: true }
+)
 
 const showAlert = (message, type = 'info') => {
   alert(`${type.toUpperCase()}: ${message}`)
@@ -52,22 +62,12 @@ const makeRequest = async (endpoint, params, requestBody = [0, null]) => {
 }
 
 const handleApply = async () => {
-  // Выводим текущие значения в консоль перед отправкой
   console.group('Применение фильтров:')
   console.log('selectedDivId:', selectedDivId.value)
   console.log('selectedMinimalStatus:', selectedMinimalStatus.value)
   console.log('selectedValues:', selectedValues.value)
+  console.log('selectedSpecialStatuses:', selectedSpecialStatuses.value) // Добавляем
   console.groupEnd()
-
-  // Проверка, что хотя бы один параметр задан
-  if (
-    selectedMinimalStatus.value === null &&
-    selectedDivId.value === null &&
-    selectedValues.value === null
-  ) {
-    showAlert('Пожалуйста, выберите хотя бы один фильтр', 'warning')
-    return
-  }
 
   loading.value = true
 
@@ -85,6 +85,11 @@ const handleApply = async () => {
 
     if (selectedValues.value !== null && selectedValues.value !== undefined) {
       params.hide_service_work_with_zvr = selectedValues.value
+    }
+
+    // Добавляем обработку специальных статусов
+    if (selectedSpecialStatuses.value && selectedSpecialStatuses.value.length > 0) {
+      params.special_statuses = selectedSpecialStatuses.value.join(',')
     }
 
     // Основной запрос

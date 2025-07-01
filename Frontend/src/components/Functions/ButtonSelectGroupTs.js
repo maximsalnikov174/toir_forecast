@@ -3,11 +3,10 @@ import { api } from "../../boot/axios.js";
 
 export function useStatusOptions() {
   const statusOptions = ref([])
-  const selectedStatuses = ref([]) // Для хранения выбранных статусов
+  const selectedSpecialStatuses = ref([]) // Переименовали для согласованности
   const loading = ref(false)
 
-  // Вотчер для отслеживания выбранных статусов
-  watch(selectedStatuses, (newSelected) => {
+  watch(selectedSpecialStatuses, (newSelected) => {
     console.log('Выбранные статусы изменились:', newSelected)
   }, { deep: true })
 
@@ -15,14 +14,10 @@ export function useStatusOptions() {
     loading.value = true
     try {
       const response = await api.get('/special_status/all')
-
-      // В Axios данные всегда в response.data
       statusOptions.value = response.data
-
     } catch (error) {
       console.error('Ошибка загрузки данных:', error)
-      // Можно добавить обработку ошибки, например:
-      statusOptions.value = [] // Очищаем список в случае ошибки
+      statusOptions.value = []
     } finally {
       loading.value = false
     }
@@ -34,7 +29,7 @@ export function useStatusOptions() {
 
   return {
     statusOptions,
-    selectedStatuses,
+    selectedSpecialStatuses, // Теперь экспортируем это значение
     loading
   }
 }
