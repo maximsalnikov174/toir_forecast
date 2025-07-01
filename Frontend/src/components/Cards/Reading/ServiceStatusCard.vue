@@ -5,7 +5,7 @@
     <div class="status-indicator" :class="indicatorClass"></div>
     <div class="characteristic-title">{{ lastReading }} км</div>
     <div class="other-text">{{ displayDate }}</div>
-    <div class="additional-text"> {{ DBSWCAN }}</div>
+    <div v-if="DBSWCAN" class="additional-text">{{ DBSWCAN }} Дней</div>
   </div>
 </template>
 
