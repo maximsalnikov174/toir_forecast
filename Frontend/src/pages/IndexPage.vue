@@ -101,7 +101,6 @@ const handleCarsFetched = (carsData) => {
   display: flex;
   gap: 16px;
   align-items: top;
-  margin-bottom: 20px;
 }
 
 .buttons-container * {
