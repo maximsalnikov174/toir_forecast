@@ -1,5 +1,5 @@
 <template>
-  <q-card class="car-card">
+  <q-card class="car-card" :class="{ 'bg-pink-2': isLowDistance }">
     <q-card-section horizontal>
       <q-img
         src="your-image-path-here"
@@ -19,7 +19,7 @@
 </template>
 
 <script>
-import { defineComponent } from 'vue'
+import { defineComponent, computed } from 'vue'
 
 export default defineComponent({
   name: 'CarCard',
@@ -36,12 +36,19 @@ export default defineComponent({
     daliDistanse: {
       type: Number,
       required: false,
-
     },
     requestReading: {
       type: Number,
       required: false,
+    }
+  },
+  setup(props) {
+    const isLowDistance = computed(() => {
+      return props.daliDistanse < 1
+    })
 
+    return {
+      isLowDistance
     }
   }
 })
@@ -98,7 +105,6 @@ export default defineComponent({
   font-size: 10px;
   line-height: 100%;
   color: #000000;
-
 }
 
 .car-value {
@@ -109,7 +115,6 @@ export default defineComponent({
   font-size: 10px;
   line-height: 100%;
   color: #000000;
-  
   margin-left: 5px;
 }
 </style>
