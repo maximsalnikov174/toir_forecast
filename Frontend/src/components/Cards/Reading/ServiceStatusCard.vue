@@ -1,6 +1,6 @@
 <template>
   <div class="service-status-card">
-    <div class="vertical-bar top-bar"></div>
+    <div v-if="showTopBar" class="vertical-bar top-bar"></div>
     <div class="vertical-bar bottom-bar"></div>
     <div class="status-indicator" :class="indicatorClass"></div>
     <div class="characteristic-title">{{ lastReading }} км</div>
@@ -29,6 +29,10 @@ const props = defineProps({
     type: Number,
     default: 4, // По умолчанию зеленый
     validator: (value) => [1, 2, 3, 4].includes(value)
+  },
+  zvr_create_date: {
+    type: [Date, String, null],
+    default: null
   }
 });
 
@@ -48,9 +52,14 @@ const indicatorClass = computed(() => {
   };
   return statusMap[props.request_status_id];
 });
+
+const showTopBar = computed(() => {
+  return props.zvr_create_date !== null;
+});
 </script>
 
 <style scoped>
+/* Остальные стили остаются без изменений */
 .service-status-card {
   width: 150px;
   height: 80px;
