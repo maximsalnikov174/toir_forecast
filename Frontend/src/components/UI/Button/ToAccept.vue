@@ -66,7 +66,7 @@ const handleApply = async () => {
   console.log('selectedDivId:', selectedDivId.value)
   console.log('selectedMinimalStatus:', selectedMinimalStatus.value)
   console.log('selectedValues:', selectedValues.value)
-  console.log('selectedSpecialStatuses:', selectedSpecialStatuses.value) // Добавляем
+  console.log('selectedSpecialStatuses:', selectedSpecialStatuses.value)
   console.groupEnd()
 
   loading.value = true
@@ -92,10 +92,18 @@ const handleApply = async () => {
       params.special_statuses = selectedSpecialStatuses.value.join(',')
     }
 
+    // Формируем тело запроса
+    let requestBody = [0, null] // По умолчанию
+
+    if (selectedSpecialStatuses.value && selectedSpecialStatuses.value.length > 0) {
+      requestBody = [0, ...selectedSpecialStatuses.value, null]
+    }
+
     // Основной запрос
     const mainResponse = await makeRequest(
       '/service_work/get_table',
-      params
+      params,
+      requestBody // Передаем сформированное тело запроса
     )
     emit('tableDataFetched', mainResponse);
 
