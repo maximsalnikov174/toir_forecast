@@ -18,13 +18,12 @@ const {
   selectedDivId,
   selectedMinimalStatus,
   selectedValues,
-  selectedSpecialStatuses // Добавляем
+  selectedSpecialStatuses
 } = useFilterStore()
 const loading = ref(false)
 
 const emit = defineEmits(['applied', 'servicesFetched', 'carsFetched'])
 
-// Добавляем новый параметр в вотчер
 watch(
   [selectedDivId, selectedMinimalStatus, selectedValues, selectedSpecialStatuses],
   ([divId, status, values, specialStatuses]) => {
@@ -87,14 +86,11 @@ const handleApply = async () => {
       params.hide_service_work_with_zvr = selectedValues.value
     }
 
-    // Добавляем обработку специальных статусов
     if (selectedSpecialStatuses.value && selectedSpecialStatuses.value.length > 0) {
       params.special_statuses = selectedSpecialStatuses.value.join(',')
     }
 
-    // Формируем тело запроса
-    let requestBody = [0, null] // По умолчанию
-
+    let requestBody = [0, null]
     if (selectedSpecialStatuses.value && selectedSpecialStatuses.value.length > 0) {
       requestBody = [0, ...selectedSpecialStatuses.value, null]
     }
@@ -103,17 +99,25 @@ const handleApply = async () => {
     const mainResponse = await makeRequest(
       '/service_work/get_table',
       params,
-      requestBody // Передаем сформированное тело запроса
+      requestBody
     )
     emit('tableDataFetched', mainResponse);
+
+    // Общие параметры для всех запросов
+    const commonParams = {
+      request_status_param: params.request_status_param || 0,
+      organization_id: params.organization_id || 0
+    }
+
+    // Добавляем selectedValues в общие параметры, если они есть
+    if (selectedValues.value !== null && selectedValues.value !== undefined) {
+      commonParams.hide_service_work_with_zvr = selectedValues.value
+    }
 
     // Дополнительный запрос для сервисных имен
     const servicesResponse = await makeRequest(
       '/service_name/all_service_names',
-      {
-        request_status_param: params.request_status_param || 0,
-        organization_id: params.organization_id || 0
-      },
+      commonParams, // Используем общие параметры
       requestBody
     )
     emit('servicesFetched', servicesResponse)
@@ -121,10 +125,7 @@ const handleApply = async () => {
     // Дополнительный запрос для автомобилей
     const carsResponse = await makeRequest(
       '/car/with_many_statuses',
-      {
-        request_status_param: params.request_status_param || 0,
-        organization_id: params.organization_id || 0
-      },
+      commonParams, // Используем общие параметры
       requestBody
     )
     emit('carsFetched', carsResponse)
@@ -148,16 +149,13 @@ const handleApply = async () => {
 
 <style scoped>
 .apply-button {
-  /* border-radius: 9999px; */
   background-color: transparent;
   color: white;
   padding: 8px 16px;
   border-color:#555555 ;
   cursor: pointer;
   max-width: 300px;
-  /* transition: opacity 0.3s; */
   height: 56px;
-
 }
 
 .apply-button:disabled {
