@@ -22,7 +22,7 @@ const props = defineProps({
     default: 'Н/Д'
   },
   DBSWCAN: {
-    type: [String, Number],
+    type: [Number, String],
     default: 'Н/Д'
   },
   status: {

@@ -28,7 +28,11 @@
       <!-- Основные данные - машины и статусы -->
       <div class="data-rows">
         <div v-for="(car, rowIndex) in cars" :key="car.personal_id" class="data-row">
-          <CarCard :grz="car.grz" :model="car.car_model?.name || ''" :daliDistanse="car.indicators?.daily_distance" :requestReading="car.indicators?.request_reading" />
+          <CarCard :grz="car.grz"
+          :model="car.car_model?.name || ''"
+          :daliDistanse="car.indicators?.daily_distance"
+          :requestReading="car.indicators?.request_reading"
+          />
           <div class="status-cards">
             <template v-for="(item, itemIndex) in tableData[rowIndex]" :key="itemIndex">
               <ServiceStatusCard
