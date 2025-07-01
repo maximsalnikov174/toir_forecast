@@ -113,7 +113,8 @@ const handleApply = async () => {
       {
         request_status_param: params.request_status_param || 0,
         organization_id: params.organization_id || 0
-      }
+      },
+      requestBody
     )
     emit('servicesFetched', servicesResponse)
 
@@ -123,7 +124,8 @@ const handleApply = async () => {
       {
         request_status_param: params.request_status_param || 0,
         organization_id: params.organization_id || 0
-      }
+      },
+      requestBody
     )
     emit('carsFetched', carsResponse)
 
