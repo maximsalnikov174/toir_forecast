@@ -25,6 +25,7 @@ router = APIRouter()
 @router.patch(
     '/add_zvr',
     response_model=ServiceWorkWithZVRNumber,
+    dependencies=[Depends(current_user)],
     name=(
         'Добавление ЗВР + ID участка ТО к конкретному service_work'
         ' (доступно сотруднику подразделения).'
@@ -75,6 +76,7 @@ async def add_zvr_to_service_work(
 @router.patch(
     '/de_facto_completed',
     response_model=ServiceWorkWithZVRNumber,
+    dependencies=[Depends(current_user)],
     name=(
         'Работы выполнены, ждём закрытие ЗВР'
         '(доступно сотруднику подразделения)'
@@ -107,10 +109,9 @@ async def completed_real_service_work(
 
     try:
         service_work.service_work_completed = True
-
         await session.commit()
         await session.refresh(service_work)  # Опционально
-        return service_work
+
     except Exception as e:
         await session.rollback()
         raise HTTPException(
@@ -120,6 +121,7 @@ async def completed_real_service_work(
                 f'о фактическом завершении работ: {str(e)}'
             )
         )
+    return service_work
 
 
 @router.get(

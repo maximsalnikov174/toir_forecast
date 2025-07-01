@@ -223,7 +223,7 @@ async def add_special_status_to_car(
     """
     if date_from_user <= date.today():
         raise HTTPException(HTTPStatus.BAD_REQUEST, 'Укажите дату в будущем!')
-    elif date_from_user + timedelta(MAX_SPECIAL_STATUS_VALID):
+    elif date_from_user >= date.today() + timedelta(MAX_SPECIAL_STATUS_VALID):
         raise HTTPException(
             HTTPStatus.BAD_REQUEST,
             'Давайте так: специальный статус для ТС действует '
@@ -280,7 +280,9 @@ async def add_special_status_to_car(
                 detail=f'Ошибка при обновлении статуса ТС: {str(e)}'
             )
 
+        # car = await get_car_by_pk(car.id, session, expand_data=True)
         return car
+
     return None
 
 

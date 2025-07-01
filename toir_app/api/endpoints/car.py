@@ -77,7 +77,7 @@ async def get_car_in_db_by_grz(
 @router.patch(
     '/{car_id}/add_special_status',
     response_model=CarWithCarModelAndOrganizationIDs,
-    # dependencies=[Depends(current_user)],
+    dependencies=[Depends(current_user)],
     name='Добавление специального статуса ТС (только сотрудник цеха).',
     description=(
         'ТС устанавливается специальный статус, предназначенный для помощи '
