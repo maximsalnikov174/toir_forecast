@@ -1,7 +1,7 @@
 <template>
   <div class="service-status-card">
     <div v-if="showTopBar" class="vertical-bar top-bar"></div>
-    <div class="vertical-bar bottom-bar"></div>
+    <div v-if="showBottomBar" class="vertical-bar bottom-bar"></div>
     <div class="status-indicator" :class="indicatorClass"></div>
     <div class="characteristic-title">{{ lastReading }} км</div>
     <div class="other-text">{{ displayDate }}</div>
@@ -37,6 +37,10 @@ const props = defineProps({
   zvr_number: {
     type: [String, null],
     default: null
+  },
+  service_work_completed_fact: {
+    type: [Date, String, null],
+    default: null
   }
 });
 
@@ -63,6 +67,10 @@ const indicatorClass = computed(() => {
 
 const showTopBar = computed(() => {
   return props.zvr_create_date !== null;
+});
+
+const showBottomBar = computed(() => {
+  return props.service_work_completed_fact !== null;
 });
 </script>
 
