@@ -35,6 +35,7 @@ async def get_all_cars_with_selected_request_status(
     request_status_param: int,
     special_status_ids: list[Optional[int]],
     organization_id: int,
+    hide_service_work_with_zvr: bool = False,
     session: AsyncSession = Depends(get_async_session)
 ):
     """Возвращает список ТС с выбранным Присвоенным Статусом."""
@@ -46,7 +47,11 @@ async def get_all_cars_with_selected_request_status(
     pass
 
     cars = await get_cars_with_request_and_special_status(
-        request_status_param, special_status_ids, organization_id, session
+        request_status_id=request_status_param,
+        special_status_ids=special_status_ids,
+        organization_id=organization_id,
+        session=session,
+        hide_service_work_with_zvr=hide_service_work_with_zvr
     )
     for car in cars:
         car.indicators = await get_last_request_reading_by_car(car.id, session)

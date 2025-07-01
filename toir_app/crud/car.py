@@ -159,8 +159,8 @@ async def get_cars_with_request_and_special_status(
     request_status_id: int,
     special_status_ids: list[Optional[int]],
     organization_id: int,
-    session: AsyncSession
-    # ) -> list[Optional[CarExpandWithIndicators]]:
+    session: AsyncSession,
+    hide_service_work_with_zvr: bool = False
 ) -> list[Optional[Car]]:
     """
     Возврат УНИКАЛЬНЫХ машин c учётом выбранных пользователем фильтров.
@@ -170,7 +170,7 @@ async def get_cars_with_request_and_special_status(
         - все ТС без статусов (FIXME пока обязательно)
         - список специальных статусов (опционально)
     """
-    cars = await session.execute(
+    stmt = (
         select(Car)
         .join(ServiceWork, Car.id == ServiceWork.car_id)
         .outerjoin(Car.status_associations)
@@ -191,6 +191,13 @@ async def get_cars_with_request_and_special_status(
         ).distinct()  # distinct - дедупликация (FIXME не уверен, что так)
         .order_by(Car.grz)
     )
+
+    # Скрыть записи о сервисном обслуживании, если для них уже создан ЗВР:
+    if hide_service_work_with_zvr:
+        stmt = stmt.where(ServiceWork.zvr_number.is_(None))
+
+    cars = await session.execute(stmt)
+
     return list(cars.unique().scalars().all())  # получение уникальных cars
 
 
