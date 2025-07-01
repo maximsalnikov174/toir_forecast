@@ -355,7 +355,8 @@ async def create_main_table(
         special_status_ids=special_status_ids,
         organization_id=organization_id,
         session=session,
-        need_range=True
+        need_range=True,
+        hide_service_work_with_zvr=hide_service_work_with_zvr
     )
 
     # Получение списка ТС (выстраиваем строки):
@@ -363,7 +364,8 @@ async def create_main_table(
         request_status_id=request_status_id,
         special_status_ids=special_status_ids,
         organization_id=organization_id,
-        session=session
+        session=session,
+        hide_service_work_with_zvr=hide_service_work_with_zvr
     )
 
     for car in all_cars:
