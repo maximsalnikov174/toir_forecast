@@ -11,7 +11,8 @@ async def get_service_name_with_request_status(
     special_status_ids: list[Optional[int]],
     organization_id: int,
     session: AsyncSession,
-    need_range: bool = False
+    need_range: bool = False,
+    hide_service_work_with_zvr: bool = False
 ) -> list[Optional[ServiceName]]:
     """Возврат УНИКАЛЬНЫХ видов сервисного обслуживания.
 
@@ -31,7 +32,7 @@ async def get_service_name_with_request_status(
     Order by:
         - asc IDs ServiceName.
     """
-    service_names = await session.execute(
+    stmt = (
         select(ServiceName)
         .join(ServiceWork, ServiceName.id == ServiceWork.next_service_id)
         .join(Car)
@@ -60,6 +61,12 @@ async def get_service_name_with_request_status(
         ).distinct()  # distinct - дедупликация
         .order_by(ServiceName.id)  # сортировка по ID вида работ
     )
+
+    if hide_service_work_with_zvr:
+        stmt = stmt.where(ServiceWork.zvr_number.is_(None))
+
+    service_names = await session.execute(stmt)
+
     return list(service_names.scalars().all())
 
 

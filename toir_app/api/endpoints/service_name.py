@@ -25,7 +25,8 @@ async def get_all_service_names_with_selected_request_status(
     request_status_param: int,
     special_status_ids: list[Optional[int]],
     organization_id: int,
-    session: AsyncSession = Depends(get_async_session)
+    session: AsyncSession = Depends(get_async_session),
+    hide_service_work_with_zvr: bool = False
 ):
     """Возвращает список видов ТО с выбранным Присвоенным Статусом.
 
@@ -43,5 +44,6 @@ async def get_all_service_names_with_selected_request_status(
         special_status_ids=special_status_ids,
         organization_id=organization_id,
         session=session,
-        need_range=True
+        need_range=True,
+        hide_service_work_with_zvr=hide_service_work_with_zvr
     )
