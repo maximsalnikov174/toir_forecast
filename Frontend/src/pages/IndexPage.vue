@@ -40,7 +40,7 @@
                 :lastReading="item.last_service_reading"
                 :LastServiceDate="item.last_service_date"
                 :DBSWCAN="item.days_between_service_work_completed_and_now"
-              />
+                :request_status_id="item.request_status_id"              />
               <div v-else class="empty-status-card"></div>
             </template>
           </div>

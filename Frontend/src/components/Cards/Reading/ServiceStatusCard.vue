@@ -25,10 +25,10 @@ const props = defineProps({
     type: [Number, String],
     default: 'Н/Д'
   },
-  status: {
-    type: String,
-    default: 'normal',
-    validator: (value) => ['exceeded', 'approaching', 'upcoming', 'normal'].includes(value)
+  request_status_id: {
+    type: Number,
+    default: 4, // По умолчанию зеленый
+    validator: (value) => [1, 2, 3, 4].includes(value)
   }
 });
 
@@ -40,12 +40,13 @@ const formattedDate = computed(() => {
 });
 
 const indicatorClass = computed(() => {
-  return {
-    'exceeded': props.status === 'exceeded',
-    'approaching': props.status === 'approaching',
-    'upcoming': props.status === 'upcoming',
-    'normal': props.status === 'normal'
+  const statusMap = {
+    1: 'exceeded',
+    2: 'approaching',
+    3: 'upcoming',
+    4: 'normal'
   };
+  return statusMap[props.request_status_id];
 });
 </script>
 
