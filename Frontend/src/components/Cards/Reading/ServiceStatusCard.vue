@@ -2,26 +2,50 @@
   <div class="service-status-card">
     <div class="vertical-bar top-bar"></div>
     <div class="vertical-bar bottom-bar"></div>
+    <div class="status-indicator" :class="indicatorClass"></div>
     <div class="characteristic-title">{{ lastReading }} км</div>
-    <div class="other-text"> {{ LastServiceDate }}</div>
+    <div class="other-text"> {{ formattedDate }}</div>
     <div class="additional-text"> {{ DBSWCAN }}</div>
   </div>
 </template>
 
 <script setup>
-defineProps({
+import { computed } from 'vue';
+
+const props = defineProps({
   lastReading: {
     type: [String, Number],
     default: 'Н/Д'
   },
   LastServiceDate: {
-    type: [Date],
+    type: [Date, String],
     default: 'Н/Д'
   },
   DBSWCAN: {
     type: [String, Number],
     default: 'Н/Д'
+  },
+  status: {
+    type: String,
+    default: 'normal',
+    validator: (value) => ['exceeded', 'approaching', 'upcoming', 'normal'].includes(value)
   }
+});
+
+const formattedDate = computed(() => {
+  if (props.LastServiceDate instanceof Date) {
+    return props.LastServiceDate.toLocaleDateString();
+  }
+  return props.LastServiceDate;
+});
+
+const indicatorClass = computed(() => {
+  return {
+    'exceeded': props.status === 'exceeded',
+    'approaching': props.status === 'approaching',
+    'upcoming': props.status === 'upcoming',
+    'normal': props.status === 'normal'
+  };
 });
 </script>
 
@@ -93,5 +117,33 @@ defineProps({
   font-size: 10px;
   line-height: 100%;
   color: #000000;
+}
+
+.status-indicator {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 0;
+  height: 0;
+  border-style: solid;
+  border-width: 0 20px 20px 0;
+  border-color: transparent #A5A5A5 transparent transparent;
+  border-radius: 0 8px 0 0;
+}
+
+.status-indicator.exceeded {
+  border-color: transparent #FF0000 transparent transparent;
+}
+
+.status-indicator.approaching {
+  border-color: transparent #FFFF00 transparent transparent;
+}
+
+.status-indicator.upcoming {
+  border-color: transparent #0000FF transparent transparent;
+}
+
+.status-indicator.normal {
+  border-color: transparent #00FF00 transparent transparent;
 }
 </style>
