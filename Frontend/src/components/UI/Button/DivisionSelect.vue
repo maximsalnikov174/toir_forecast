@@ -3,7 +3,7 @@
     standout
     v-model="selectedDivId"
     :options="divisions"
-    option-label="name"
+    option-label="normal_name"
     option-value="id"
     label="Выберите подразделение"
     emit-value
