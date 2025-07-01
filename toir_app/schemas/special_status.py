@@ -34,7 +34,7 @@ class FullSpecialStatusSchemas(BaseModel):
 
 class SpecialStatusForCarSchema(BaseModel):
     special_status_id: int
-    comment: str
+    comment: Optional[str] = None
     date_left: date
     is_active: bool
     assigned_by_user_id: int
