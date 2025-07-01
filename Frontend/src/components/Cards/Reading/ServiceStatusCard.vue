@@ -4,7 +4,7 @@
     <div class="vertical-bar bottom-bar"></div>
     <div class="status-indicator" :class="indicatorClass"></div>
     <div class="characteristic-title">{{ lastReading }} км</div>
-    <div class="other-text"> {{ formattedDate }}</div>
+    <div class="other-text">{{ displayDate }}</div>
     <div class="additional-text"> {{ DBSWCAN }}</div>
   </div>
 </template>
@@ -33,6 +33,10 @@ const props = defineProps({
   zvr_create_date: {
     type: [Date, String, null],
     default: null
+  },
+  zvr_number: {
+    type: [String, null],
+    default: null
   }
 });
 
@@ -41,6 +45,10 @@ const formattedDate = computed(() => {
     return props.LastServiceDate.toLocaleDateString();
   }
   return props.LastServiceDate;
+});
+
+const displayDate = computed(() => {
+  return props.zvr_number !== null ? props.zvr_number : formattedDate.value;
 });
 
 const indicatorClass = computed(() => {
@@ -59,7 +67,7 @@ const showTopBar = computed(() => {
 </script>
 
 <style scoped>
-/* Остальные стили остаются без изменений */
+/* Стили остаются без изменений */
 .service-status-card {
   width: 150px;
   height: 80px;

@@ -42,6 +42,7 @@
                 :DBSWCAN="item.days_between_service_work_completed_and_now"
                 :request_status_id="item.request_status_id"
                 :zvr_create_date="item.zvr_create_date"
+                :zvr_number="item.zvr_number"
                 />
               <div v-else class="empty-status-card"></div>
             </template>
