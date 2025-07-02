@@ -9,6 +9,13 @@
       </button>
     </div>
 
+    <LoginRegisterDialog
+      ref="authDialog"
+      @login="handleLogin"
+      @register="handleRegister"
+      @close="handleDialogClose"
+    />
+
     <div class="buttons-container">
       <division-select />
       <minimal-status />
@@ -73,12 +80,14 @@ import ToAccept from 'src/components/UI/Button/ToAccept.vue'
 import ServiceNamesCard from '../components/Cards/Reading/ServiceNamesCards.vue'
 import ServiceStatusCard from '../components/Cards/Reading/ServiceStatusCard.vue'
 import CarCard from '../components/Cards/Reading/CarsCard.vue'
+import LoginRegisterDialog from 'src/components/UI/Windows/LoginRegisterDialog.vue'
 
 const tableData = ref([])
 const services = ref([])
 const cars = ref([])
 const isLoggedIn = ref(false)
 const userName = ref('')
+const authDialog = ref(null)
 
 const handleTableDataFetched = (data) => {
   tableData.value = data
@@ -93,10 +102,40 @@ const handleCarsFetched = (carsData) => {
 }
 
 const handleAuth = () => {
-  // Здесь будет логика входа/выхода
-  isLoggedIn.value = !isLoggedIn.value
-  // В реальном приложении здесь будет запрос к API и установка имени пользователя
-  userName.value = isLoggedIn.value ? 'Иванов И.И.' : ''
+  if (isLoggedIn.value) {
+    // Выход из системы
+    isLoggedIn.value = false
+    userName.value = ''
+  } else {
+    // Показываем диалог авторизации
+    authDialog.value?.open()
+  }
+}
+
+const handleLogin = (credentials) => {
+  // Здесь должна быть логика входа
+  console.log('Login attempt with:', credentials)
+
+  // Временная заглушка для демонстрации
+  isLoggedIn.value = true
+  userName.value = 'Иванов И.И.'
+
+  authDialog.value?.close()
+}
+
+const handleRegister = (userData) => {
+  // Здесь должна быть логика регистрации
+  console.log('Registration attempt with:', userData)
+
+  // Временная заглушка для демонстрации
+  isLoggedIn.value = true
+  userName.value = userData.name
+
+  authDialog.value?.close()
+}
+
+const handleDialogClose = () => {
+  // Можно добавить дополнительную логику при закрытии диалога
 }
 </script>
 
