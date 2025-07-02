@@ -6,41 +6,70 @@
       <h2>{{ isLoginMode ? 'Вход' : 'Регистрация' }}</h2>
 
       <form @submit.prevent="handleSubmit">
-        <div class="form-group">
-          <label for="email">Email</label>
-          <input
-            id="email"
-            type="email"
-            v-model="form.email"
-            required
-          >
-        </div>
+  <div class="form-group">
+    <label for="email">Email</label>
+    <input
+      id="email"
+      type="email"
+      v-model="form.email"
+      required
+    >
+  </div>
 
-        <div class="form-group">
-          <label for="password">Пароль</label>
-          <input
-            id="password"
-            type="password"
-            v-model="form.password"
-            required
-          >
-        </div>
+  <div class="form-group">
+    <label for="password">Пароль</label>
+    <input
+      id="password"
+      type="password"
+      v-model="form.password"
+      required
+    >
+  </div>
 
-        <div v-if="!isLoginMode" class="form-group">
-          <label for="name">Имя</label>
-          <input
-            id="name"
-            type="text"
-            v-model="form.name"
-            required
-          >
-        </div>
+  <div v-if="!isLoginMode" class="form-group">
+    <label for="name">Имя</label>
+    <input
+      id="name"
+      type="text"
+      v-model="form.name"
+      required
+    >
+  </div>
 
-        <button type="submit" class="submit-button">
-          {{ isLoginMode ? 'Войти' : 'Зарегистрироваться' }}
-        </button>
-      </form>
+  <div v-if="!isLoginMode" class="form-group">
+    <label for="surname">Фамилия</label>
+    <input
+      id="surname"
+      type="text"
+      v-model="form.surname"
+      required
+    >
+  </div>
 
+  <div v-if="!isLoginMode" class="form-group">
+    <label for="organization">Выберите цех</label>
+    <select
+      id="organization"
+      v-model="form.organization"
+      required
+    >
+    </select>
+  </div>
+
+  <div v-if="!isLoginMode && form.organization === 'other'" class="form-group">
+    <label for="customOrganization">Укажите ваш цех</label>
+    <input
+      id="customOrganization"
+      type="text"
+      v-model="form.customOrganization"
+      :required="form.organization === 'other'"
+    >
+  </div>
+
+  <button type="submit" class="submit-button">
+    {{ isLoginMode ? 'Войти' : 'Зарегистрироваться' }}
+  </button>
+</form>
       <div class="mode-switch">
         <button @click="toggleMode" class="switch-button">
           {{ isLoginMode ? 'Нет аккаунта? Зарегистрироваться' : 'Уже есть аккаунт? Войти' }}
@@ -61,7 +90,10 @@ const isLoginMode = ref(true)
 const form = reactive({
   email: '',
   password: '',
-  name: ''
+  name: '',
+  surname:'',
+  organization:'',
+  role_id: 2,
 })
 
 const open = () => {
@@ -190,5 +222,26 @@ input {
 
 .switch-button:hover {
   color: #3a5f8a;
+}
+
+select {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  box-sizing: border-box;
+  background-color: white;
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+  background-repeat: no-repeat;
+  background-position: right 8px center;
+  background-size: 1em;
+}
+
+select:focus {
+  outline: none;
+  border-color: #4a76a8;
 }
 </style>
