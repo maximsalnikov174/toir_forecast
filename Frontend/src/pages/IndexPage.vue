@@ -1,5 +1,14 @@
 <template>
   <div class="index-page">
+    <div class="user-controls">
+      <div class="user-name-placeholder">
+        {{ userName || 'Гость' }}
+      </div>
+      <button class="login-logout-button" @click="handleAuth">
+        {{ isLoggedIn ? 'Выйти' : 'Войти' }}
+      </button>
+    </div>
+
     <div class="buttons-container">
       <division-select />
       <minimal-status />
@@ -68,6 +77,8 @@ import CarCard from '../components/Cards/Reading/CarsCard.vue'
 const tableData = ref([])
 const services = ref([])
 const cars = ref([])
+const isLoggedIn = ref(false)
+const userName = ref('')
 
 const handleTableDataFetched = (data) => {
   tableData.value = data
@@ -80,21 +91,57 @@ const handleServicesFetched = (servicesData) => {
 const handleCarsFetched = (carsData) => {
   cars.value = carsData
 }
+
+const handleAuth = () => {
+  // Здесь будет логика входа/выхода
+  isLoggedIn.value = !isLoggedIn.value
+  // В реальном приложении здесь будет запрос к API и установка имени пользователя
+  userName.value = isLoggedIn.value ? 'Иванов И.И.' : ''
+}
 </script>
 
 <style scoped>
 .sticky-header {
   position: sticky;
-  top: 0; /* Расстояние от верхнего края, можно настроить */
-  z-index: 100; /* Чтобы заголовок был поверх других элементов */
+  top: 0;
+  z-index: 100;
   background-color: #777777;
-  padding-top: 10px; /* Отступ сверху для лучшего вида */
-  margin-bottom: 10px; /* Отступ снизу */
+  padding-top: 10px;
+  margin-bottom: 10px;
 }
 
 .index-page {
   padding: 20px;
   font-family: 'Inter', sans-serif;
+}
+
+.user-controls {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 5px;
+}
+
+.user-name-placeholder {
+  padding: 8px 12px;
+  background-color: #f0f0f0;
+  border-radius: 4px;
+  font-weight: 500;
+}
+
+.login-logout-button {
+  padding: 8px 16px;
+  background-color: #4a76a8;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.login-logout-button:hover {
+  background-color: #3a5f8a;
 }
 
 .buttons-container {
