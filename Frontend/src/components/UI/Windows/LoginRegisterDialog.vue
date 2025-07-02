@@ -123,7 +123,9 @@ const handleSubmit = () => {
   form.email = ''
   form.password = ''
   form.name = ''
-
+  form.surname =''
+  form.organization = ''
+  form.role_id = 0
   close()
 }
 
