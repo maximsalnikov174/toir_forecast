@@ -1,8 +1,12 @@
+import re
+from http import HTTPStatus
 from typing import Optional
-from fastapi_users import schemas
-from pydantic import Field
 
-from toir_app.constants import PERSON_FULL_NAME_LEN
+from fastapi import HTTPException
+from fastapi_users import schemas
+from pydantic import Field, field_validator
+
+from toir_app.constants import COMPANY_DOMAIN, PERSON_FULL_NAME_LEN
 
 
 class UserRead(schemas.BaseUser[int]):
@@ -39,6 +43,22 @@ class UserCreate(schemas.BaseUserCreate):
     role_id: int = Field(
         ..., title='ID из таблицы ролей в системе.'
     )
+
+    @field_validator('email', mode='before')
+    @classmethod
+    def validate_email(cls, value: str) -> None:
+        """Валидатор электронного ящика при регистрации пользователя."""
+        if not re.search(COMPANY_DOMAIN, value):
+            raise HTTPException(
+                status_code=HTTPStatus.BAD_REQUEST,
+                detail={
+                    "code": 'BAD_EMAIL',
+                    "reason": (
+                        'Емэйл должен быть вида '
+                        'ivanov.ii@atu.mmk.ru или petrov@mmk.ru'
+                    )
+                }
+            )
 
 
 class UserUpdate(schemas.BaseUserUpdate):
