@@ -86,7 +86,7 @@ import { LoginPerson } from '../../Functions/LoginPerson.js'
 
 const emit = defineEmits(['login', 'register', 'close'])
 
-const isOpen = ref(true)
+const isOpen = ref(false)
 const isLoginMode = ref(true)
 
 const { divisions } = DivisionFuctionSelect();
