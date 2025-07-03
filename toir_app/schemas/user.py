@@ -46,19 +46,20 @@ class UserCreate(schemas.BaseUserCreate):
 
     @field_validator('email', mode='before')
     @classmethod
-    def validate_email(cls, value: str) -> None:
+    def validate_email(cls, value: str) -> str:
         """Валидатор электронного ящика при регистрации пользователя."""
         if not re.search(COMPANY_DOMAIN, value):
             raise HTTPException(
                 status_code=HTTPStatus.BAD_REQUEST,
                 detail={
-                    "code": 'BAD_EMAIL',
-                    "reason": (
+                    'code': HTTPStatus.BAD_REQUEST,
+                    'reason': (
                         'Емэйл должен быть вида '
                         'ivanov.ii@atu.mmk.ru или petrov@mmk.ru'
                     )
                 }
             )
+        return value
 
 
 class UserUpdate(schemas.BaseUserUpdate):

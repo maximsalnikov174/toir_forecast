@@ -22,7 +22,10 @@ router.include_router(
 # Регистрационный роутер предоставляет доступ к эндпоинту:
 # /register (для регистрации нового пользователя)
 router.include_router(
-    fastapi_users.get_register_router(UserRead, UserCreate),
+    fastapi_users.get_register_router(
+        user_schema=UserRead,
+        user_create_schema=UserCreate
+    ),
     prefix=ENDPOINT_URL_FOR_REGISTRATION,
     tags=['user_registration'],
 )
