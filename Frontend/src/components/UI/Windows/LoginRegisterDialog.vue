@@ -6,70 +6,79 @@
       <h2>{{ isLoginMode ? 'Вход' : 'Регистрация' }}</h2>
 
       <form @submit.prevent="handleSubmit">
-  <div class="form-group">
-    <label for="email">Email</label>
-    <input
-      id="email"
-      type="email"
-      v-model="form.email"
-      required
-    >
-  </div>
+        <div class="form-group">
+          <label for="email">Email</label>
+          <input
+            id="email"
+            type="email"
+            v-model="form.email"
+            required
+          >
+        </div>
 
-  <div class="form-group">
-    <label for="password">Пароль</label>
-    <input
-      id="password"
-      type="password"
-      v-model="form.password"
-      required
-    >
-  </div>
+        <div class="form-group">
+          <label for="password">Пароль</label>
+          <input
+            id="password"
+            type="password"
+            v-model="form.password"
+            required
+          >
+        </div>
 
-  <div v-if="!isLoginMode" class="form-group">
-    <label for="name">Имя</label>
-    <input
-      id="name"
-      type="text"
-      v-model="form.name"
-      required
-    >
-  </div>
+        <div v-if="!isLoginMode" class="form-group">
+          <label for="name">Имя</label>
+          <input
+            id="name"
+            type="text"
+            v-model="form.name"
+            required
+          >
+        </div>
 
-  <div v-if="!isLoginMode" class="form-group">
-    <label for="surname">Фамилия</label>
-    <input
-      id="surname"
-      type="text"
-      v-model="form.surname"
-      required
-    >
-  </div>
+        <div v-if="!isLoginMode" class="form-group">
+          <label for="surname">Фамилия</label>
+          <input
+            id="surname"
+            type="text"
+            v-model="form.surname"
+            required
+          >
+        </div>
 
-  <div v-if="!isLoginMode" class="form-group">
-    <label for="organization">Выберите цех</label>
-    <select
-      id="organization"
-      v-model="form.organization"
-      required
-    >
-    </select>
-  </div>
+        <div v-if="!isLoginMode" class="form-group">
+          <label for="organization">Выберите цех</label>
+          <select
+            id="organization"
+            v-model="form.organization"
+            required
+          >
+            <option value="" disabled selected>Выберите цех</option>
+            <option
+              v-for="division in divisions"
+              :key="division.id"
+              :value="division.id"
+            >
+              {{ division.normal_name }}
+            </option>
+            <option value="other">Другой</option>
+          </select>
+        </div>
 
-  <div v-if="!isLoginMode && form.organization === 'other'" class="form-group">
-    <label for="customOrganization">Укажите ваш цех</label>
-    <input
-      id="customOrganization"
-      type="text"
-      v-model="form.customOrganization"
-      :required="form.organization === 'other'"
-    >
-  </div>
+        <div v-if="!isLoginMode && form.organization === 'other'" class="form-group">
+          <label for="customOrganization">Укажите ваш цех</label>
+          <input
+            id="customOrganization"
+            type="text"
+            v-model="form.customOrganization"
+            :required="form.organization === 'other'"
+          >
+        </div>
 
-  <button type="submit" class="submit-button">
-    {{ isLoginMode ? 'Войти' : 'Зарегистрироваться' }}
-  </button>
-</form>
+        <button type="submit" class="submit-button">
+          {{ isLoginMode ? 'Войти' : 'Зарегистрироваться' }}
+        </button>
+      </form>
       <div class="mode-switch">
         <button @click="toggleMode" class="switch-button">
           {{ isLoginMode ? 'Нет аккаунта? Зарегистрироваться' : 'Уже есть аккаунт? Войти' }}
@@ -81,11 +90,15 @@
 
 <script setup>
 import { ref, reactive } from 'vue'
+import { DivisionFuctionSelect } from '../../Functions/ButtonSelectDivision.js'
+
 
 const emit = defineEmits(['login', 'register', 'close'])
 
 const isOpen = ref(false)
 const isLoginMode = ref(true)
+
+const { divisions } = DivisionFuctionSelect();
 
 const form = reactive({
   email: '',
