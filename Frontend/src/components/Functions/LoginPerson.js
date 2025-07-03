@@ -3,13 +3,12 @@ import { api } from "../../boot/axios.js";
 export const LoginPerson = async (formData) => {
   try {
     const response = await api.post('/auth/jwt/login', {
-      email: formData.email,
+      username: formData.email,
       password: formData.password,
-      
+
     }, {
       headers: {
-        'accept': 'application/json',
-        'Content-Type': 'application/json',
+        'Content-Type': 'application/x-www-form-urlencoded',
       }
     });
 
