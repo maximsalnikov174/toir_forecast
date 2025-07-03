@@ -61,19 +61,9 @@
             >
               {{ division.normal_name }}
             </option>
-            <option value="other">Другой</option>
           </select>
         </div>
 
-        <div v-if="!isLoginMode && form.organization === 'other'" class="form-group">
-          <label for="customOrganization">Укажите ваш цех</label>
-          <input
-            id="customOrganization"
-            type="text"
-            v-model="form.customOrganization"
-            :required="form.organization === 'other'"
-          >
-        </div>
 
         <button type="submit" class="submit-button">
           {{ isLoginMode ? 'Войти' : 'Зарегистрироваться' }}
