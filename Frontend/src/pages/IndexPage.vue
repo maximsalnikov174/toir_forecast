@@ -112,14 +112,6 @@ const handleAuth = () => {
   }
 }
 
-const handleLogin = (credentials) => {
-  // Здесь должна быть логика входа
-  console.log('Login attempt with:', credentials)
-
-  authDialog.value?.close()
-}
-
-
 const handleDialogClose = () => {
   // Можно добавить дополнительную логику при закрытии диалога
 }

@@ -1,11 +1,13 @@
 import { api } from "../../boot/axios.js";
+import { useAuthStore } from "src/stores/store.js"; // Укажите правильный путь
 
 export const LoginPerson = async (formData) => {
+  const authStore = useAuthStore();
+
   try {
     const response = await api.post('/auth/jwt/login', {
       username: formData.email,
       password: formData.password,
-
     }, {
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded',
@@ -16,10 +18,8 @@ export const LoginPerson = async (formData) => {
       throw new Error('Не удалось получить ответ от сервера');
     }
 
-    // В axios response.data уже содержит распарсенный JSON
     const data = response.data;
 
-    // В axios статус проверяется через response.status
     if (response.status < 200 || response.status >= 300) {
       throw {
         status: response.status,
@@ -28,17 +28,26 @@ export const LoginPerson = async (formData) => {
       };
     }
 
+    // Сохраняем данные аутентификации в хранилище
+    authStore.setAuthData({
+      access_token: data.access_token,
+      user: { email: formData.email } // или другие данные пользователя из ответа
+    });
+
+    console.log('Token:', authStore.token);
+console.log('User:', authStore.user);
+console.log('Is authenticated:', authStore.isAuthenticated);
+
     return data;
   } catch (error) {
     console.error('Ошибка при регистрации:', error);
+    authStore.clearAuthData(); // Очищаем хранилище при ошибке
 
     let errorMessage = 'Произошла ошибка при регистрации';
 
-    // Обработка случая, когда ошибка содержит detail с code и reason
     if (error.response?.data?.detail?.reason) {
       errorMessage = error.response.data.detail.reason;
     }
-    // Остальные случаи обработки ошибок (оставляем как было)
     else if (error.response?.data?.errors) {
       errorMessage = Object.entries(error.response.data.errors)
         .map(([field, messages]) => `${field}: ${messages.join(', ')}`)
