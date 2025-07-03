@@ -53,7 +53,7 @@
             <template v-for="(item, itemIndex) in tableData[rowIndex]" :key="itemIndex">
               <ServiceStatusCard
                 v-if="item"
-                :lastReading="item.last_service_reading"
+                :Divergence="item.divergence"
                 :LastServiceDate="item.last_service_date"
                 :DBSWCAN="item.days_between_service_work_completed_and_now"
                 :request_status_id="item.request_status_id"

@@ -3,7 +3,7 @@
     <div v-if="showTopBar" class="vertical-bar top-bar"></div>
     <div v-if="showBottomBar" class="vertical-bar bottom-bar"></div>
     <div class="status-indicator" :class="indicatorClass"></div>
-    <div class="characteristic-title">{{ lastReading }} км</div>
+    <div class="characteristic-title">{{ Divergence }} км</div>
     <div class="other-text">{{ displayDate }}</div>
     <div v-if="DBSWCAN" class="additional-text">{{ DBSWCAN }} Дней</div>
   </div>
@@ -13,7 +13,7 @@
 import { computed } from 'vue';
 
 const props = defineProps({
-  lastReading: {
+  Divergence: {
     type: [String, Number],
     default: 'Н/Д'
   },
