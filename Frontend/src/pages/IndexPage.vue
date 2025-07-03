@@ -116,23 +116,9 @@ const handleLogin = (credentials) => {
   // Здесь должна быть логика входа
   console.log('Login attempt with:', credentials)
 
-  // Временная заглушка для демонстрации
-  isLoggedIn.value = true
-  userName.value = 'Иванов И.И.'
-
   authDialog.value?.close()
 }
 
-const handleRegister = (userData) => {
-  // Здесь должна быть логика регистрации
-  console.log('Registration attempt with:', userData)
-
-  // Временная заглушка для демонстрации
-  isLoggedIn.value = true
-  userName.value = userData.name
-
-  authDialog.value?.close()
-}
 
 const handleDialogClose = () => {
   // Можно добавить дополнительную логику при закрытии диалога
