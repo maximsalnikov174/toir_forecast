@@ -82,11 +82,11 @@
 import { ref, reactive } from 'vue'
 import { DivisionFuctionSelect } from '../../Functions/ButtonSelectDivision.js'
 import { registerPerson } from '../../Functions/RegistrationPerson.js'
-
+import { LoginPerson } from '../../Functions/LoginPerson.js'
 
 const emit = defineEmits(['login', 'register', 'close'])
 
-const isOpen = ref(false)
+const isOpen = ref(true)
 const isLoginMode = ref(true)
 
 const { divisions } = DivisionFuctionSelect();
@@ -116,10 +116,18 @@ const toggleMode = () => {
 
 const handleSubmit = async () => {
   if (isLoginMode.value) {
-    emit('login', {
-      email: form.email,
-      password: form.password
-    });
+    try {
+      const response = await LoginPerson({
+        email: form.email,
+        password: form.password
+      });
+      console.log('Успешный вход:', response);
+      emit('login', response);
+      close();
+    } catch (error) {
+      alert(error.message);
+      console.error('Ошибка входа:', error);
+    }
   } else {
     try {
       const response = await registerPerson(form);
@@ -134,8 +142,7 @@ const handleSubmit = async () => {
       form.organization = '';
       close();
     } catch (error) {
-      // Показываем сообщение об ошибке пользователю
-      alert(error.message); // Или используйте красивый toast/модальное окно
+      alert(error.message);
       console.error('Ошибка регистрации:', error);
     }
   }
