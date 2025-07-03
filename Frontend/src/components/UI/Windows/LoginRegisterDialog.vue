@@ -81,6 +81,7 @@
 <script setup>
 import { ref, reactive } from 'vue'
 import { DivisionFuctionSelect } from '../../Functions/ButtonSelectDivision.js'
+import { registerPerson } from '../../Functions/RegistrationPerson.js'
 
 
 const emit = defineEmits(['login', 'register', 'close'])
@@ -97,6 +98,7 @@ const form = reactive({
   surname:'',
   organization:'',
   role_id: 2,
+  is_verified: false,
 })
 
 const open = () => {
@@ -112,24 +114,31 @@ const toggleMode = () => {
   isLoginMode.value = !isLoginMode.value
 }
 
-const handleSubmit = () => {
+const handleSubmit = async () => {
   if (isLoginMode.value) {
     emit('login', {
       email: form.email,
       password: form.password
-    })
+    });
   } else {
-    emit('register', form)
-  }
+    try {
+      const response = await registerPerson(form);
+      console.log('Успешная регистрация:', response);
+      emit('register', response);
 
-  // Очищаем форму после отправки
-  form.email = ''
-  form.password = ''
-  form.name = ''
-  form.surname =''
-  form.organization = ''
-  form.role_id = 0
-  close()
+      // Очистка формы после успешной регистрации
+      form.email = '';
+      form.password = '';
+      form.name = '';
+      form.surname = '';
+      form.organization = '';
+      close();
+    } catch (error) {
+      // Показываем сообщение об ошибке пользователю
+      alert(error.message); // Или используйте красивый toast/модальное окно
+      console.error('Ошибка регистрации:', error);
+    }
+  }
 }
 
 defineExpose({
