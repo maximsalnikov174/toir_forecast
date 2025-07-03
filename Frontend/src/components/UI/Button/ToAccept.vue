@@ -130,12 +130,12 @@ const handleApply = async () => {
     )
     emit('carsFetched', carsResponse)
 
-    showAlert('Фильтры успешно применены', 'success')
-    return {
-      main: mainResponse,
-      services: servicesResponse,
-      cars: carsResponse
-    }
+    // showAlert('Фильтры успешно применены', 'success')
+    // return {
+    //   main: mainResponse,
+    //   services: servicesResponse,
+    //   cars: carsResponse
+    // }
 
   } catch (error) {
     console.error('Ошибка при выполнении запроса:', error)
