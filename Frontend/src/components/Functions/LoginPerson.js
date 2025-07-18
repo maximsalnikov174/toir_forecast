@@ -1,5 +1,5 @@
 import { api } from "../../boot/axios.js";
-import { useAuthStore } from "src/stores/store.js"; // Укажите правильный путь
+import { useAuthStore } from "src/stores/useAuthStore.js"; // Укажите правильный путь
 
 export const LoginPerson = async (formData) => {
   const authStore = useAuthStore();
