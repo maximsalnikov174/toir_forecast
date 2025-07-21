@@ -1,5 +1,5 @@
 import { api } from "../../boot/axios.js";
-import { useAuthStore } from "src/stores/useAuthStore.js"; // Укажите правильный путь
+import { useAuthStore } from "src/stores/useAuthStore.js";
 
 export const LoginPerson = async (formData) => {
   const authStore = useAuthStore();
@@ -31,17 +31,21 @@ export const LoginPerson = async (formData) => {
     // Сохраняем данные аутентификации в хранилище
     authStore.setAuthData({
       access_token: data.access_token,
-      user: { email: formData.email } // или другие данные пользователя из ответа
+      user: {
+        email: formData.email,
+        access_token: formData.access_token,
+        // добавьте другие поля пользователя, если они есть в ответе
+      }
     });
 
     console.log('Token:', authStore.token);
-console.log('User:', authStore.user);
-console.log('Is authenticated:', authStore.isAuthenticated);
+    console.log('User:', authStore.user);
+    console.log('Is authenticated:', authStore.isAuthenticated);
 
     return data;
   } catch (error) {
     console.error('Ошибка при регистрации:', error);
-    authStore.clearAuthData(); // Очищаем хранилище при ошибке
+    authStore.clearAuthData();
 
     let errorMessage = 'Произошла ошибка при регистрации';
 

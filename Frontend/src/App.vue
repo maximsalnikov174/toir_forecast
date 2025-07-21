@@ -2,6 +2,14 @@
   <router-view />
 </template>
 
-<script setup>
-//
+<script>
+import { useAuthStore } from 'src/stores/useAuthStore';
+
+export default {
+  setup() {
+    const authStore = useAuthStore();
+    authStore.initializeStore();
+    // ...
+  }
+}
 </script>
