@@ -1,5 +1,5 @@
 from http import HTTPStatus
-from typing import Annotated, Optional
+from typing import Annotated, Optional, Sequence
 
 from fastapi import HTTPException
 from sqlalchemy import select
@@ -9,7 +9,9 @@ from toir_app.exception import StaticDataInDBNotFoundException
 from toir_app.models import Organization
 
 
-async def get_organization_list(session: AsyncSession) -> list[Organization]:
+async def get_organization_list(
+        session: AsyncSession
+) -> Sequence[Organization]:
     """Возврат списка подразделений."""
     organization_list = await session.scalars(
         select(Organization)

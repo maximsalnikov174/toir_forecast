@@ -217,7 +217,7 @@ async def get_count_all_active_service_work_with_open_zvr(
         ' hide_service_work_with_zvr=True.'
     ),
     response_model=list[list[Optional[ServiceWorkWithZVRNumber]]],
-    response_model_exclude_none=False
+    response_model_exclude_none=True
 )
 async def get_table(
     special_status_ids: list[Optional[int]] = Body(

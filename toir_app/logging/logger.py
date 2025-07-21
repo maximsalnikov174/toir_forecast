@@ -3,7 +3,7 @@ from datetime import datetime, timezone
 from logging.handlers import RotatingFileHandler
 from zoneinfo import ZoneInfo
 
-from ..constants import (BACKUP_COUNT, CUSTOM_TIME_FORMAT, LOG_DIR, LOG_FILE,
+from constants import (BACKUP_COUNT, CUSTOM_TIME_FORMAT, LOG_DIR, LOG_FILE,
                        LOGGER_FORMAT, MAX_BYTES_FOR_LOG_FILE, TIMEZONE_AE)
 
 
@@ -11,7 +11,7 @@ class TimezoneFormatter(logging.Formatter):
     """Форматтер, задающий время в нужной часовой зоне."""
     def __init__(self, fmt=None, datefmt=None, tz=None):
         super().__init__(fmt, datefmt)
-        # self.tz = ZoneInfo(TIMEZONE_AE)
+        self.tz = ZoneInfo(TIMEZONE_AE)
 
     def converter(self, timestamp):
         """Конвертирует timestamp в формат timezone-aware datetime."""
@@ -61,9 +61,9 @@ def configure_logging():
     root_logger.propagate = False
 
     # Тестовый лог с проверкой временной зоны
-    # test_time = datetime.now(ZoneInfo(TIMEZONE_AE))
-    # test_time_now = test_time.strftime(CUSTOM_TIME_FORMAT)
-    # logging.info(
-    #     f'Проверка часовой зоны - текущее время {test_time_now} '
-    #     f'(часовая зона: {TIMEZONE_AE})'
-    # )
+    test_time = datetime.now(ZoneInfo(TIMEZONE_AE))
+    test_time_now = test_time.strftime(CUSTOM_TIME_FORMAT)
+    logging.info(
+        f'Проверка часовой зоны - текущее время {test_time_now} '
+        f'(часовая зона: {TIMEZONE_AE})'
+    )

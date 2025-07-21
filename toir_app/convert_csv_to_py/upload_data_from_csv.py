@@ -71,8 +71,6 @@ async def create_service_work(
         session=session
     )
     # Попробовать передавать еще и базовый интервал
-    if car_id == 573:
-        print('Вот он')
 
     # Валидация pydentic-схемой:
     validated_service_work = ServiceWorkBase(
@@ -130,7 +128,7 @@ async def create_service_work(
             logging.warning(
                 f'⛔ На ТС «{kwargs["car_grz"]}» показатель пробега последнего '
                 f'обслуживания ({validated_service_work.last_service_reading})'
-                'стал ниже предыдущего ({service.last_service_reading})! '
+                f' стал ниже предыдущего ({service.last_service_reading})! '
                 'Странно, да?!'
             )
             # TODO Происходит подмена данных о последнем обслуживании, странно
