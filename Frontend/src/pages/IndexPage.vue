@@ -2,10 +2,10 @@
   <div class="index-page">
     <div class="user-controls">
       <div class="user-name-placeholder">
-        {{ userName || 'Гость' }}
+        {{ authStore.user?.name || 'Гость' }}
       </div>
       <button class="login-logout-button" @click="handleAuth">
-        {{ isLoggedIn ? 'Выйти' : 'Войти' }}
+        {{ authStore.isAuth ? 'Выйти' : 'Войти' }}
       </button>
     </div>
 
@@ -81,12 +81,12 @@ import ServiceNamesCard from '../components/Cards/Reading/ServiceNamesCards.vue'
 import ServiceStatusCard from '../components/Cards/Reading/ServiceStatusCard.vue'
 import CarCard from '../components/Cards/Reading/CarsCard.vue'
 import LoginRegisterDialog from 'src/components/UI/Windows/LoginRegisterDialog.vue'
+import { useAuthStore } from 'src/stores/useAuthStore'
 
 const tableData = ref([])
 const services = ref([])
 const cars = ref([])
-const isLoggedIn = ref(false)
-const userName = ref('')
+const authStore = useAuthStore()
 const authDialog = ref(null)
 
 const handleTableDataFetched = (data) => {
@@ -102,10 +102,9 @@ const handleCarsFetched = (carsData) => {
 }
 
 const handleAuth = () => {
-  if (isLoggedIn.value) {
+  if (authStore.isAuth) {
     // Выход из системы
-    isLoggedIn.value = false
-    userName.value = ''
+    authStore.clearAuthData()
   } else {
     // Показываем диалог авторизации
     authDialog.value?.open()
