@@ -5,6 +5,7 @@ export const LoginPerson = async (formData) => {
   const authStore = useAuthStore();
 
   try {
+    // Шаг 1: Получаем токен
     const response = await api.post('/auth/jwt/login', {
       username: formData.email,
       password: formData.password,
@@ -28,21 +29,42 @@ export const LoginPerson = async (formData) => {
       };
     }
 
-    // Сохраняем данные аутентификации в хранилище
+    // Сохраняем токен в хранилище
     authStore.setAuthData({
       access_token: data.access_token,
       user: {
         email: formData.email,
-        access_token: formData.access_token,
-        // добавьте другие поля пользователя, если они есть в ответе
+        // временно сохраняем только email, остальные данные получим ниже
       }
     });
+
+    // Шаг 2: Получаем данные пользователя с использованием токена
+    const userResponse = await api.get('/users/me', {
+      headers: {
+        'Authorization': `Bearer ${data.access_token}`,
+        'accept': 'application/json'
+      }
+    });
+
+    if (userResponse.data) {
+      // Обновляем данные пользователя в хранилище
+      authStore.setAuthData({
+        access_token: data.access_token,
+        user: {
+          ...userResponse.data, // все данные пользователя из /users/me
+          email: formData.email // сохраняем email из формы, если его нет в ответе
+        }
+      });
+    }
 
     console.log('Token:', authStore.token);
     console.log('User:', authStore.user);
     console.log('Is authenticated:', authStore.isAuthenticated);
 
-    return data;
+    return {
+      token: data.access_token,
+      user: authStore.user
+    };
   } catch (error) {
     console.error('Ошибка при регистрации:', error);
     authStore.clearAuthData();

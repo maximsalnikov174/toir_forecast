@@ -2,8 +2,10 @@
   <div class="index-page">
     <div class="user-controls">
       <div class="user-name-placeholder">
-        {{ authStore.user?.name || 'Гость' }}
-      </div>
+  {{ authStore.user?.name && authStore.user?.surname
+     ? `${authStore.user.name} ${authStore.user.surname}`
+     : 'Гость' }}
+</div>
       <button class="login-logout-button" @click="handleAuth">
         {{ authStore.isAuth ? 'Выйти' : 'Войти' }}
       </button>
