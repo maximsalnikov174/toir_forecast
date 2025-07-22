@@ -3,7 +3,7 @@ from datetime import datetime, timezone
 from logging.handlers import RotatingFileHandler
 from zoneinfo import ZoneInfo
 
-from constants import (BACKUP_COUNT, CUSTOM_TIME_FORMAT, LOG_DIR, LOG_FILE,
+from toir_app.constants import (BACKUP_COUNT, CUSTOM_TIME_FORMAT, LOG_DIR, LOG_FILE,
                        LOGGER_FORMAT, MAX_BYTES_FOR_LOG_FILE, TIMEZONE_AE)
 
 
