@@ -4,6 +4,7 @@ import os
 from array import array
 
 import uvicorn
+from fastapi.middleware.cors import CORSMiddleware  # Импортируем CORS middleware
 from dotenv import load_dotenv
 from fastapi import FastAPI
 from tqdm import tqdm
@@ -33,7 +34,14 @@ from toir_app.models import StaticOrganization
 load_dotenv()  # подгружаем переменные из env
 
 toir_app = FastAPI(title=settings.app_title)
-
+# Добавляем CORS middleware
+toir_app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Разрешаем запросы от всех доменов
+    allow_credentials=True,
+    allow_methods=["*"],  # Разрешаем все методы
+    allow_headers=["*"],  # Разрешаем все заголовки
+)
 # Подключаем роутер к приложению:
 toir_app.include_router(main_router)
 
