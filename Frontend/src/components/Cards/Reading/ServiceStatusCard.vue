@@ -1,16 +1,23 @@
 <template>
-  <div class="service-status-card">
+  <div class="service-status-card" @mouseover="hover = true" @mouseleave="hover = false">
     <div v-if="showTopBar" class="vertical-bar top-bar"></div>
     <div v-if="showBottomBar" class="vertical-bar bottom-bar"></div>
     <div class="status-indicator" :class="indicatorClass"></div>
     <div class="characteristic-title">{{ Divergence }} км</div>
     <div class="other-text">{{ displayDate }}</div>
     <div v-if="DBSWCAN" class="additional-text">{{ DBSWCAN }} Дней</div>
+
+    <!-- Элемент, появляющийся при наведении -->
+    <div v-if="hover" class="hover-overlay">
+      <div class="plus-icon">+</div>
+    </div>
   </div>
 </template>
 
 <script setup>
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
+
+const hover = ref(false);
 
 const props = defineProps({
   Divergence: {
@@ -44,6 +51,7 @@ const props = defineProps({
   }
 });
 
+// Остальные вычисляемые свойства остаются без изменений
 const formattedDate = computed(() => {
   if (props.LastServiceDate instanceof Date) {
     return props.LastServiceDate.toLocaleDateString();
@@ -75,7 +83,6 @@ const showBottomBar = computed(() => {
 </script>
 
 <style scoped>
-/* Стили остаются без изменений */
 .service-status-card {
   width: 150px;
   height: 80px;
@@ -84,6 +91,7 @@ const showBottomBar = computed(() => {
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   position: relative;
   flex-shrink: 0;
+  cursor: pointer;
 }
 
 .vertical-bar {
@@ -171,5 +179,26 @@ const showBottomBar = computed(() => {
 
 .status-indicator.normal {
   border-color: transparent #00FF00 transparent transparent;
+}
+
+/* Стили для эффекта при наведении */
+.hover-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(128, 0, 128, 0.3); /* Полупрозрачный фиолетовый */
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.plus-icon {
+  font-size: 24px;
+  font-weight: bold;
+  color: white;
+  text-shadow: 0 0 3px rgba(0, 0, 0, 0.5);
 }
 </style>
