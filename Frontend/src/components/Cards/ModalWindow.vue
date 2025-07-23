@@ -4,7 +4,7 @@
       <div class="modal-close" @click="close">×</div>
       <slot>
         <!-- Содержимое модального окна по умолчанию -->
-        
+
       </slot>
     </div>
   </div>
@@ -53,7 +53,7 @@ const close = () => {
   position: absolute;
   top: 5px;
   right: 10px;
-  font-size: 20px;
+  font-size: 28px;
   cursor: pointer;
   color: #A5A5A5;
 }
