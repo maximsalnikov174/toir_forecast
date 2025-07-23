@@ -1,4 +1,3 @@
-<!-- ServiceStatusCard.vue -->
 <template>
   <div
     class="service-status-card"
@@ -18,10 +17,10 @@
       <div class="plus-icon">+</div>
     </div>
 
-    <!-- Модальное окно -->
+    <!-- Модальное окно (теперь отдельный компонент) -->
     <ModalWindow :show="showModal" @close="closeModal">
-      <!-- Содержимое модального окна можно передать через слот -->
-      <p>Это модальное окно</p>
+      <!-- Можно передать кастомное содержимое через слот -->
+      <slot name="modal-content"></slot>
     </ModalWindow>
   </div>
 </template>
@@ -30,7 +29,7 @@
 import { computed, ref } from 'vue';
 import { useFilterStore } from 'src/components/Functions/FilterStoreAcceptButton';
 import { useAuthStore } from 'src/stores/useAuthStore';
-import ModalWindow from '../ModalWindow.vue'; // Импортируем модальное окно
+import ModalWindow from '../ModalWindow.vue'; // Импортируем компонент модального окна
 
 const hover = ref(false);
 const showModal = ref(false);

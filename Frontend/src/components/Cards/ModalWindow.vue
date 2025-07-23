@@ -4,7 +4,7 @@
       <div class="modal-close" @click="close">×</div>
       <slot>
         <!-- Содержимое модального окна по умолчанию -->
-        <p>Это модальное окно</p>
+        
       </slot>
     </div>
   </div>
@@ -14,7 +14,7 @@
 defineProps({
   show: {
     type: Boolean,
-    required: true
+    default: false
   }
 });
 
