@@ -22,7 +22,7 @@
 <script setup>
 import { computed, ref } from 'vue';
 import { useFilterStore } from 'src/components/Functions/FilterStoreAcceptButton';
-import { useAuthStore } from 'src/stores/useAuthStore'; // Убедитесь в правильности пути
+import { useAuthStore } from 'src/stores/useAuthStore'; 
 
 const hover = ref(false);
 const { selectedDivId } = useFilterStore();
