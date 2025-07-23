@@ -13,8 +13,19 @@
     <div v-if="DBSWCAN" class="additional-text">{{ DBSWCAN }} Дней</div>
 
     <!-- Элемент появляется только при наведении и совпадении organization_id с selectedDivId -->
-    <div v-if="shouldShowHover" class="hover-overlay">
+    <div v-if="shouldShowHover" class="hover-overlay" @click.stop="openModal">
       <div class="plus-icon">+</div>
+    </div>
+
+    <!-- Модальное окно -->
+    <div v-if="showModal" class="modal-overlay" @click.self="closeModal">
+      <div class="modal-content">
+        <div class="modal-close" @click="closeModal">×</div>
+        <slot name="modal-content">
+          <!-- Содержимое модального окна можно передать через слот -->
+          <p>Это модальное окно</p>
+        </slot>
+      </div>
     </div>
   </div>
 </template>
@@ -22,9 +33,10 @@
 <script setup>
 import { computed, ref } from 'vue';
 import { useFilterStore } from 'src/components/Functions/FilterStoreAcceptButton';
-import { useAuthStore } from 'src/stores/useAuthStore'; 
+import { useAuthStore } from 'src/stores/useAuthStore';
 
 const hover = ref(false);
+const showModal = ref(false);
 const { selectedDivId } = useFilterStore();
 const authStore = useAuthStore();
 
@@ -74,6 +86,17 @@ const handleClick = () => {
   if (props.divId) {
     selectedDivId.value = props.divId;
   }
+};
+
+// Открытие модального окна
+const openModal = () => {
+  showModal.value = true;
+};
+
+// Закрытие модального окна с сбросом hover
+const closeModal = () => {
+  showModal.value = false;
+  hover.value = false; // Сбрасываем состояние hover
 };
 
 // Форматирование даты
@@ -220,6 +243,7 @@ const showBottomBar = computed(() => {
   display: flex;
   align-items: center;
   justify-content: center;
+  cursor: pointer;
 }
 
 .plus-icon {
@@ -227,5 +251,42 @@ const showBottomBar = computed(() => {
   font-weight: bold;
   color: white;
   text-shadow: 0 0 3px rgba(0, 0, 0, 0.5);
+}
+
+/* Стили для модального окна */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal-content {
+  width: 400px;
+  height: 250px;
+  background: #FFFFFF;
+  border-radius: 8px;
+  padding: 15px;
+  position: relative;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+}
+
+.modal-close {
+  position: absolute;
+  top: 5px;
+  right: 10px;
+  font-size: 20px;
+  cursor: pointer;
+  color: #A5A5A5;
+}
+
+.modal-close:hover {
+  color: #000000;
 }
 </style>
