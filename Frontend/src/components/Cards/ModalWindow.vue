@@ -4,16 +4,30 @@
       <div class="modal-close" @click="close">×</div>
       <slot>
         <div v-if="loading" class="loading">Загрузка...</div>
-        <div v-else class="checkbox-container">
-          <div v-for="station in stations" :key="station.id" class="checkbox-wrapper">
-            <input
-              type="checkbox"
-              :id="'station-' + station.id"
-              :value="station.id"
-              v-model="selectedStations"
-              class="round-checkbox"
-            />
-            <label :for="'station-' + station.id" class="checkbox-label">{{ station.name }}</label>
+        <div v-else>
+          <div class="checkbox-container">
+            <div v-for="station in stations" :key="station.id" class="checkbox-wrapper">
+              <input
+                type="checkbox"
+                :id="'station-' + station.id"
+                :value="station.id"
+                v-model="selectedStations"
+                class="round-checkbox"
+              />
+              <label :for="'station-' + station.id" class="checkbox-label">{{ station.name }}</label>
+            </div>
+          </div>
+
+          <div class="q-pa-md input-container">
+            <div class="q-gutter-md">
+              <q-input
+                filled
+                v-model='zvr_number'
+                label="Укажите 7 последних цифр №ЗВР"
+                mask="# # # # # # #"
+                fill-mask
+              />
+            </div>
           </div>
         </div>
       </slot>
@@ -24,7 +38,6 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { api } from "../../boot/axios.js";
-
 
 const { show } = defineProps({
   show: {
@@ -37,6 +50,7 @@ const emit = defineEmits(['close', 'update:selected'])
 const stations = ref([])
 const selectedStations = ref([])
 const loading = ref(false)
+const specialId = ref('') // Добавлено для поля ввода
 
 const fetchStationID = async () => {
   try {
@@ -61,7 +75,10 @@ onMounted(() => {
 
 const close = () => {
   emit('close')
-  emit('update:selected', selectedStations.value)
+  emit('update:selected', {
+    stations: selectedStations.value,
+    specialId: specialId.value // Добавляем specialId в данные при закрытии
+  })
 }
 </script>
 
@@ -146,8 +163,6 @@ const close = () => {
   background: rgb(22, 7, 228);
 }
 
-
-
 .checkbox-label {
   cursor: pointer;
   user-select: none;
@@ -158,5 +173,10 @@ const close = () => {
   margin-top: 20px;
   font-size: 16px;
   color: #666;
+}
+
+.input-container {
+  margin-top: 20px;
+  padding: 0 10px;
 }
 </style>
