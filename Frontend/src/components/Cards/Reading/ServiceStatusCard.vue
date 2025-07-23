@@ -18,7 +18,9 @@
     </div>
 
     <!-- Модальное окно (теперь отдельный компонент) -->
-    <ModalWindow :show="showModal" @close="closeModal">
+    <ModalWindow  v-model:show="showModal"
+    @update:selected="handleSelectedStations"
+     @close="closeModal">
       <!-- Можно передать кастомное содержимое через слот -->
       <slot name="modal-content"></slot>
     </ModalWindow>
