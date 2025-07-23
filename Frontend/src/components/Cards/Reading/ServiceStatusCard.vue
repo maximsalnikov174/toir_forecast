@@ -1,5 +1,10 @@
 <template>
-  <div class="service-status-card" @mouseover="hover = true" @mouseleave="hover = false">
+  <div
+    class="service-status-card"
+    @mouseover="hover = true"
+    @mouseleave="hover = false"
+    @click="handleClick"
+  >
     <div v-if="showTopBar" class="vertical-bar top-bar"></div>
     <div v-if="showBottomBar" class="vertical-bar bottom-bar"></div>
     <div class="status-indicator" :class="indicatorClass"></div>
@@ -7,8 +12,8 @@
     <div class="other-text">{{ displayDate }}</div>
     <div v-if="DBSWCAN" class="additional-text">{{ DBSWCAN }} Дней</div>
 
-    <!-- Элемент, появляющийся при наведении -->
-    <div v-if="hover" class="hover-overlay">
+    <!-- Элемент появляется только при наведении и совпадении organization_id с selectedDivId -->
+    <div v-if="shouldShowHover" class="hover-overlay">
       <div class="plus-icon">+</div>
     </div>
   </div>
@@ -16,8 +21,12 @@
 
 <script setup>
 import { computed, ref } from 'vue';
+import { useFilterStore } from 'src/components/Functions/FilterStoreAcceptButton';
+import { useAuthStore } from 'src/stores/useAuthStore'; // Убедитесь в правильности пути
 
 const hover = ref(false);
+const { selectedDivId } = useFilterStore();
+const authStore = useAuthStore();
 
 const props = defineProps({
   Divergence: {
@@ -34,7 +43,7 @@ const props = defineProps({
   },
   request_status_id: {
     type: Number,
-    default: 4, // По умолчанию зеленый
+    default: 4,
     validator: (value) => [1, 2, 3, 4].includes(value)
   },
   zvr_create_date: {
@@ -48,10 +57,26 @@ const props = defineProps({
   service_work_completed_fact: {
     type: [Date, String, null],
     default: null
+  },
+  divId: {
+    type: [String, Number],
+    default: null
   }
 });
 
-// Остальные вычисляемые свойства остаются без изменений
+// Проверяем условия для отображения hover-эффекта
+const shouldShowHover = computed(() => {
+  return hover.value &&
+         authStore.user?.organization_id === selectedDivId.value;
+});
+
+const handleClick = () => {
+  if (props.divId) {
+    selectedDivId.value = props.divId;
+  }
+};
+
+// Форматирование даты
 const formattedDate = computed(() => {
   if (props.LastServiceDate instanceof Date) {
     return props.LastServiceDate.toLocaleDateString();
@@ -63,6 +88,7 @@ const displayDate = computed(() => {
   return props.zvr_number !== null ? props.zvr_number : formattedDate.value;
 });
 
+// Класс для индикатора статуса
 const indicatorClass = computed(() => {
   const statusMap = {
     1: 'exceeded',
@@ -73,10 +99,12 @@ const indicatorClass = computed(() => {
   return statusMap[props.request_status_id];
 });
 
+// Показывать верхнюю полосу?
 const showTopBar = computed(() => {
   return props.zvr_create_date !== null;
 });
 
+// Показывать нижнюю полосу?
 const showBottomBar = computed(() => {
   return props.service_work_completed_fact !== null;
 });
@@ -181,14 +209,13 @@ const showBottomBar = computed(() => {
   border-color: transparent #00FF00 transparent transparent;
 }
 
-/* Стили для эффекта при наведении */
 .hover-overlay {
   position: absolute;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
-  background-color: rgba(128, 0, 128, 0.3); /* Полупрозрачный фиолетовый */
+  background-color: rgba(128, 0, 128, 0.3);
   border-radius: 8px;
   display: flex;
   align-items: center;
