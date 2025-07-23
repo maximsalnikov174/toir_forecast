@@ -4,6 +4,7 @@ from toir_app.api.endpoints import (service_name_router,
                                     car_router,
                                     service_work_router,
                                     special_status_router,
+                                    station_router,
                                     stats_router,
                                     organization_router,
                                     service_status_router,
@@ -48,4 +49,9 @@ main_router.include_router(
     stats_router,
     prefix='/stats',
     tags=['stats']
+)
+main_router.include_router(
+    station_router,
+    prefix='/station',
+    tags=['station']
 )
