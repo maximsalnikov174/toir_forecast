@@ -1,3 +1,4 @@
+<!-- ServiceStatusCard.vue -->
 <template>
   <div
     class="service-status-card"
@@ -18,15 +19,10 @@
     </div>
 
     <!-- Модальное окно -->
-    <div v-if="showModal" class="modal-overlay" @click.self="closeModal">
-      <div class="modal-content">
-        <div class="modal-close" @click="closeModal">×</div>
-        <slot name="modal-content">
-          <!-- Содержимое модального окна можно передать через слот -->
-          <p>Это модальное окно</p>
-        </slot>
-      </div>
-    </div>
+    <ModalWindow :show="showModal" @close="closeModal">
+      <!-- Содержимое модального окна можно передать через слот -->
+      <p>Это модальное окно</p>
+    </ModalWindow>
   </div>
 </template>
 
@@ -34,6 +30,7 @@
 import { computed, ref } from 'vue';
 import { useFilterStore } from 'src/components/Functions/FilterStoreAcceptButton';
 import { useAuthStore } from 'src/stores/useAuthStore';
+import ModalWindow from '../ModalWindow.vue'; // Импортируем модальное окно
 
 const hover = ref(false);
 const showModal = ref(false);
@@ -251,42 +248,5 @@ const showBottomBar = computed(() => {
   font-weight: bold;
   color: white;
   text-shadow: 0 0 3px rgba(0, 0, 0, 0.5);
-}
-
-/* Стили для модального окна */
-.modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: rgba(0, 0, 0, 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-}
-
-.modal-content {
-  width: 400px;
-  height: 250px;
-  background: #FFFFFF;
-  border-radius: 8px;
-  padding: 15px;
-  position: relative;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
-}
-
-.modal-close {
-  position: absolute;
-  top: 5px;
-  right: 10px;
-  font-size: 20px;
-  cursor: pointer;
-  color: #A5A5A5;
-}
-
-.modal-close:hover {
-  color: #000000;
 }
 </style>
