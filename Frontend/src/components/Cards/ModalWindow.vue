@@ -45,7 +45,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, watch } from 'vue' // Убрали onMounted, добавили watch
 import { api } from '../../boot/axios.js'
 import { useQuasar } from 'quasar'
 import { useAuthStore } from 'src/stores/useAuthStore'
@@ -66,10 +66,17 @@ const { show, serviceWorkId } = defineProps({
 
 const emit = defineEmits(['close', 'update:selected', 'submitted'])
 const stations = ref([])
-const selectedStation = ref(null) // Теперь храним только один выбранный ID
+const selectedStation = ref(null)
 const loading = ref(false)
 const submitting = ref(false)
 const zvr_number = ref('')
+
+// Добавляем watcher для пропса show
+watch(() => show, (newVal) => {
+  if (newVal) {
+    fetchStationID()
+  }
+})
 
 const fetchStationID = async () => {
   try {
@@ -146,9 +153,6 @@ const submit = async () => {
   }
 }
 
-onMounted(() => {
-  fetchStationID()
-})
 
 const close = () => {
   selectedStation.value = null
