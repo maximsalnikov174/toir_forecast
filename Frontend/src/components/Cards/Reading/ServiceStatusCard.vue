@@ -12,7 +12,7 @@
     <div class="other-text">{{ displayDate }}</div>
     <div v-if="DBSWCAN" class="additional-text">{{ DBSWCAN }} Дней</div>
 
-    <div v-if="shouldShowHover" class="hover-overlay" @click.stop="openModal">
+    <div v-if="shouldShowHover && shouldShowPlusIcon" class="hover-overlay" @click.stop="openModal">
       <div class="plus-icon">+</div>
     </div>
 
@@ -79,9 +79,15 @@ const props = defineProps({
 
 const serviceWorkId = ref(props.id);
 
+// Добавляем проверку на отсутствие zvr_number или пустое значение
+const shouldShowPlusIcon = computed(() => {
+  return props.zvr_number === null || props.zvr_number === '';
+});
+
 const shouldShowHover = computed(() => {
   return hover.value &&
-         authStore.user?.organization_id === selectedDivId.value;
+         authStore.user?.organization_id === selectedDivId.value &&
+         shouldShowPlusIcon.value; // Добавляем это условие
 });
 
 const handleClick = () => {
@@ -130,6 +136,7 @@ const showBottomBar = computed(() => {
 </script>
 
 <style scoped>
+/* Стили остаются без изменений */
 .service-status-card {
   width: 150px;
   height: 80px;
