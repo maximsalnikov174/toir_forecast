@@ -24,6 +24,7 @@
       <GroupTs />
       <HideServiceWorkWithZvr />
       <ToAccept
+        ref="toAcceptRef"
         @tableDataFetched="handleTableDataFetched"
         @servicesFetched="handleServicesFetched"
         @carsFetched="handleCarsFetched"
@@ -63,6 +64,7 @@
                 :zvr_number="item.zvr_number"
                 :service_work_completed_fact="item.service_work_completed_fact"
                 :id="item.id"
+                @submitted="handleApply"
                 />
               <div v-else class="empty-status-card"></div>
             </template>
@@ -117,6 +119,13 @@ const handleAuth = () => {
 const handleDialogClose = () => {
   // Можно добавить дополнительную логику при закрытии диалога
 }
+
+const toAcceptRef = ref(null)
+
+const handleApply = () => {
+  toAcceptRef.value?.handleApply()
+}
+
 </script>
 
 <style scoped>

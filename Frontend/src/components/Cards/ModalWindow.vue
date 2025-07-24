@@ -137,7 +137,7 @@ const submit = async () => {
     })
 
     emit('submitted')
-    props.onSubmitSuccess()
+    props.onSubmitSuccess()  // Вызываем переданную функцию
     close()
   } catch (error) {
     console.error('Ошибка при отправке данных:', error)
@@ -153,7 +153,6 @@ const submit = async () => {
     submitting.value = false
   }
 }
-
 const close = () => {
   selectedStation.value = null
   zvr_number.value = ''

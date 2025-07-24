@@ -136,6 +136,10 @@ const handleApply = async () => {
     loading.value = false
   }
 }
+
+defineExpose({
+  handleApply
+})
 </script>
 
 <style scoped>
