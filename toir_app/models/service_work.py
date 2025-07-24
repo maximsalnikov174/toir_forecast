@@ -60,9 +60,9 @@ class ServiceWork(Base):
         comment='Дата создания ЗВР'
     )
     service_work_completed = Column(
-        Boolean,
-        default=False,
-        comment='Работы завершены, но ЗВР пока не закрыт'
+        DateTime,
+        default=None,
+        comment='Дата фактического завершения работ (но ЗВР пока не закрыт)'
     )
     in_archive = Column(
         Boolean,
