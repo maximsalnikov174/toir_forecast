@@ -47,8 +47,10 @@
 import { ref, onMounted } from 'vue'
 import { api } from "../../boot/axios.js";
 import { useQuasar } from 'quasar'
+import { useAuthStore } from 'src/stores/useAuthStore' // Импортируем хранилище Pinia
 
 const $q = useQuasar()
+const authStore = useAuthStore() // Получаем экземпляр хранилища
 
 const { show, serviceWorkId } = defineProps({
   show: {
@@ -73,7 +75,8 @@ const fetchStationID = async () => {
     loading.value = true
     const response = await api.get('/station', {
       headers: {
-        'accept': 'application/json'
+        'accept': 'application/json',
+        'Authorization': `Bearer ${authStore.token}` // Добавляем токен в заголовок
       }
     })
     stations.value = response.data
@@ -106,11 +109,16 @@ const submit = async () => {
 
     // Отправляем запрос для каждой выбранной станции
     const requests = selectedStations.value.map(stationId =>
-      api.patch(`/service_work/add_zvr?service_work_id=${serviceWorkId}&zvr_number=${cleanZvrNumber}&station_id=${stationId}`, null, {
-        headers: {
-          'accept': 'application/json'
+      api.patch(
+        `/service_work/add_zvr?service_work_id=${serviceWorkId}&zvr_number=${cleanZvrNumber}&station_id=${stationId}`,
+        null,
+        {
+          headers: {
+            'accept': 'application/json',
+            'Authorization': `Bearer ${authStore.token}` // Добавляем токен в заголовок
+          }
         }
-      })
+      )
     )
 
     await Promise.all(requests)
@@ -128,6 +136,12 @@ const submit = async () => {
       type: 'negative',
       message: 'Ошибка при сохранении данных'
     })
+
+    // Если ошибка связана с аутентификацией
+    if (error.response && error.response.status === 401) {
+      authStore.clearAuthData()
+      // Можно перенаправить на страницу входа или показать модальное окно входа
+    }
   } finally {
     submitting.value = false
   }
