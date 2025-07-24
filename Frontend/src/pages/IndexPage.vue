@@ -62,7 +62,7 @@
                 :request_status_id="item.request_status_id"
                 :zvr_create_date="item.zvr_create_date"
                 :zvr_number="item.zvr_number"
-                :service_work_completed_fact="item.service_work_completed_fact"
+                :service_work_completed="item.service_work_completed"
                 :id="item.id"
                 @submitted="handleApply"
                 />

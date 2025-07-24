@@ -63,7 +63,7 @@ const props = defineProps({
     type: [String, null],
     default: null
   },
-  service_work_completed_fact: {
+  service_work_completed: {
     type: [Date, String, null],
     default: null
   },
@@ -131,7 +131,7 @@ const showTopBar = computed(() => {
 });
 
 const showBottomBar = computed(() => {
-  return props.service_work_completed_fact !== null;
+  return props.service_work_completed !== null;
 });
 </script>
 
