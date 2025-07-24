@@ -5,16 +5,17 @@
       <slot>
         <div v-if="loading" class="loading">Загрузка...</div>
         <div v-else>
-          <div class="checkbox-container">
-            <div v-for="station in stations" :key="station.id" class="checkbox-wrapper">
+          <div class="radio-container">
+            <div v-for="station in stations" :key="station.id" class="radio-wrapper">
               <input
-                type="checkbox"
+                type="radio"
                 :id="'station-' + station.id"
                 :value="station.id"
-                v-model="selectedStations"
-                class="round-checkbox"
+                v-model="selectedStation"
+                class="round-radio"
+                name="station"
               />
-              <label :for="'station-' + station.id" class="checkbox-label">{{ station.name }}</label>
+              <label :for="'station-' + station.id" class="radio-label">{{ station.name }}</label>
             </div>
           </div>
 
@@ -65,7 +66,7 @@ const { show, serviceWorkId } = defineProps({
 
 const emit = defineEmits(['close', 'update:selected', 'submitted'])
 const stations = ref([])
-const selectedStations = ref([])
+const selectedStation = ref(null) // Теперь храним только один выбранный ID
 const loading = ref(false)
 const submitting = ref(false)
 const zvr_number = ref('')
@@ -76,7 +77,6 @@ const fetchStationID = async () => {
     const response = await api.get('/station', {
       headers: {
         'accept': 'application/json',
-
       }
     })
     stations.value = response.data
@@ -93,7 +93,7 @@ const fetchStationID = async () => {
 }
 
 const submit = async () => {
-  if (!zvr_number.value || selectedStations.value.length === 0) {
+  if (!zvr_number.value || !selectedStation.value) {
     $q.notify({
       type: 'warning',
       message: 'Заполните все поля'
@@ -107,18 +107,18 @@ const submit = async () => {
     // Убираем пробелы из номера ЗВР
     const cleanZvrNumber = zvr_number.value.replace(/\s/g, '')
 
-    // Отправляем один запрос со всеми данными
+    // Отправляем запрос с выбранной станцией
     await api.patch(
-  `/service_work/add_zvr?service_work_id=${serviceWorkId}&zvr_number=${cleanZvrNumber}&station_id=${selectedStations.value.join(',')}`,
-  null, // Тело запроса пустое, так как все данные в URL
-  {
-    headers: {
-      'accept': 'application/json',
-      'Authorization': `Bearer ${authStore.token}`,
-      'Content-Type': 'application/json'
-    }
-  }
-)
+      `/service_work/add_zvr?service_work_id=${serviceWorkId}&zvr_number=${cleanZvrNumber}&station_id=${selectedStation.value}`,
+      null,
+      {
+        headers: {
+          'accept': 'application/json',
+          'Authorization': `Bearer ${authStore.token}`,
+          'Content-Type': 'application/json'
+        }
+      }
+    )
 
     $q.notify({
       type: 'positive',
@@ -147,7 +147,7 @@ onMounted(() => {
 })
 
 const close = () => {
-  selectedStations.value = []
+  selectedStation.value = null
   zvr_number.value = ''
   emit('close')
 }
@@ -191,20 +191,20 @@ const close = () => {
   color: #000000;
 }
 
-.checkbox-container {
+.radio-container {
   display: flex;
   flex-wrap: wrap;
   gap: 15px;
   margin-top: 20px;
 }
 
-.checkbox-wrapper {
+.radio-wrapper {
   display: flex;
   align-items: center;
   gap: 8px;
 }
 
-.round-checkbox {
+.round-radio {
   -webkit-appearance: none;
   -moz-appearance: none;
   appearance: none;
@@ -218,12 +218,11 @@ const close = () => {
   transition: all 0.2s ease;
 }
 
-.round-checkbox:checked {
-  background-color: #f4f4f5;
+.round-radio:checked {
   border-color: #5c5c5c;
 }
 
-.round-checkbox:checked::after {
+.round-radio:checked::after {
   content: '';
   position: absolute;
   top: 3px;
@@ -234,7 +233,7 @@ const close = () => {
   background: rgb(22, 7, 228);
 }
 
-.checkbox-label {
+.radio-label {
   cursor: pointer;
   user-select: none;
 }
