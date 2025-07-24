@@ -108,21 +108,17 @@ const submit = async () => {
     const cleanZvrNumber = zvr_number.value.replace(/\s/g, '')
 
     // Отправляем один запрос со всеми данными
-     await api.patch(
-      `/service_work/add_zvr`,
-      {
-        service_work_id: serviceWorkId,
-        zvr_number: cleanZvrNumber,
-        station_ids: selectedStations.value // Массив выбранных станций
-      },
-      {
-        headers: {
-          'accept': 'application/json',
-          'Authorization': `Bearer ${authStore.token}`,
-          'Content-Type': 'application/json'
-        }
-      }
-    )
+    await api.patch(
+  `/service_work/add_zvr?service_work_id=${serviceWorkId}&zvr_number=${cleanZvrNumber}&station_id=${selectedStations.value.join(',')}`,
+  null, // Тело запроса пустое, так как все данные в URL
+  {
+    headers: {
+      'accept': 'application/json',
+      'Authorization': `Bearer ${authStore.token}`,
+      'Content-Type': 'application/json'
+    }
+  }
+)
 
     $q.notify({
       type: 'positive',
