@@ -33,6 +33,8 @@
               color="primary"
               label="Внести"
               @click="submit"
+              :loading="submitting"
+              :disable="submitting"
             />
           </div>
         </div>
@@ -44,19 +46,27 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { api } from "../../boot/axios.js";
+import { useQuasar } from 'quasar'
 
-const { show } = defineProps({
+const $q = useQuasar()
+
+const { show, serviceWorkId } = defineProps({
   show: {
     type: Boolean,
     default: false
+  },
+  serviceWorkId: {
+    type: [String, Number],
+    required: true
   }
 })
 
-const emit = defineEmits(['close', 'update:selected'])
+const emit = defineEmits(['close', 'update:selected', 'submitted'])
 const stations = ref([])
 const selectedStations = ref([])
 const loading = ref(false)
-const zvr_number = ref('') // Изменено название переменной для номера ЗВР
+const submitting = ref(false)
+const zvr_number = ref('')
 
 const fetchStationID = async () => {
   try {
@@ -70,17 +80,57 @@ const fetchStationID = async () => {
   } catch (error) {
     console.error('Ошибка:', error)
     stations.value = []
+    $q.notify({
+      type: 'negative',
+      message: 'Ошибка при загрузке станций'
+    })
   } finally {
     loading.value = false
   }
 }
 
-const submit = () => {
-  emit('update:selected', {
-    stations: selectedStations.value,
-    zvr_number: zvr_number.value
-  })
-  close()
+const submit = async () => {
+  if (!zvr_number.value || selectedStations.value.length === 0) {
+    $q.notify({
+      type: 'warning',
+      message: 'Заполните все поля'
+    })
+    return
+  }
+
+  try {
+    submitting.value = true
+
+    // Убираем пробелы из номера ЗВР
+    const cleanZvrNumber = zvr_number.value.replace(/\s/g, '')
+
+    // Отправляем запрос для каждой выбранной станции
+    const requests = selectedStations.value.map(stationId =>
+      api.patch(`/service_work/add_zvr?service_work_id=${serviceWorkId}&zvr_number=${cleanZvrNumber}&station_id=${stationId}`, null, {
+        headers: {
+          'accept': 'application/json'
+        }
+      })
+    )
+
+    await Promise.all(requests)
+
+    $q.notify({
+      type: 'positive',
+      message: 'Данные успешно сохранены'
+    })
+
+    emit('submitted')
+    close()
+  } catch (error) {
+    console.error('Ошибка при отправке данных:', error)
+    $q.notify({
+      type: 'negative',
+      message: 'Ошибка при сохранении данных'
+    })
+  } finally {
+    submitting.value = false
+  }
 }
 
 onMounted(() => {
@@ -88,6 +138,8 @@ onMounted(() => {
 })
 
 const close = () => {
+  selectedStations.value = []
+  zvr_number.value = ''
   emit('close')
 }
 </script>
