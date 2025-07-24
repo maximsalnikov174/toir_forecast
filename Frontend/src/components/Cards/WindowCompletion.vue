@@ -3,7 +3,7 @@
     <div class="window-container">
       <div class="window-header">
         <h3>Завершение работы</h3>
-        <button class="close-btn" @click="close">&times;</button>
+        <button class="close-btn" @click="close"></button>
       </div>
 
       <div class="window-content">
@@ -39,10 +39,10 @@ const close = () => {
 };
 
 const complete = () => {
-  // Здесь можно добавить логику завершения работы
+
   console.log('Завершение работы с ID:', props.serviceWorkId);
 
-  // После завершения:
+
   emit('submitted');
   close();
 };

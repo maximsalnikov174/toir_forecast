@@ -3,7 +3,7 @@
     class="service-status-card"
     @mouseover="hover = true"
     @mouseleave="hover = false"
-    @click="handleClick"
+    @click="handleCardClick"
   >
     <div v-if="showTopBar" class="vertical-bar top-bar"></div>
     <div v-if="showBottomBar" class="vertical-bar bottom-bar"></div>
@@ -12,8 +12,8 @@
     <div class="other-text">{{ displayDate }}</div>
     <div v-if="DBSWCAN" class="additional-text">{{ DBSWCAN }} Дней</div>
 
-    <div v-if="shouldShowHover && shouldShowPlusIcon" class="hover-overlay" @click.stop="openModal">
-      <div class="plus-icon">+</div>
+    <div v-if="shouldShowHover" class="hover-overlay" @click.stop="handleOverlayClick">
+      <div v-if="shouldShowPlusIcon" class="plus-icon">+</div>
     </div>
 
     <ModalWindow
@@ -38,11 +38,11 @@ import { computed, ref } from 'vue';
 import { useFilterStore } from 'src/components/Functions/FilterStoreAcceptButton';
 import { useAuthStore } from 'src/stores/useAuthStore';
 import ModalWindow from '../ModalWindow.vue';
-import WindowCompletion from '../WindowCompletion.vue'; // Импортируем новый компонент
+import WindowCompletion from '../WindowCompletion.vue';
 
 const hover = ref(false);
 const showModal = ref(false);
-const showCompletionModal = ref(false); // Добавляем состояние для нового модального окна
+const showCompletionModal = ref(false);
 const { selectedDivId } = useFilterStore();
 const authStore = useAuthStore();
 
@@ -94,18 +94,20 @@ const shouldShowPlusIcon = computed(() => {
 
 const shouldShowHover = computed(() => {
   return hover.value &&
-         authStore.user?.organization_id === selectedDivId.value &&
-         shouldShowPlusIcon.value;
+         authStore.user?.organization_id === selectedDivId.value;
 });
 
-const handleClick = () => {
+const handleCardClick = () => {
   if (props.divId) {
     selectedDivId.value = props.divId;
   }
+};
 
-  // Если есть zvr_number, открываем окно завершения
+const handleOverlayClick = () => {
   if (props.zvr_number) {
     openCompletionModal();
+  } else {
+    openModal();
   }
 };
 
@@ -158,7 +160,7 @@ const showBottomBar = computed(() => {
 </script>
 
 <style scoped>
-/* Стили остаются без изменений */
+/* Your existing styles remain unchanged */
 .service-status-card {
   width: 150px;
   height: 80px;
