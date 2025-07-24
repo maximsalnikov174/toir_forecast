@@ -22,12 +22,18 @@
             <div class="q-gutter-md">
               <q-input
                 filled
-                v-model='zvr_number'
+                v-model="zvr_number"
                 label="Укажите 7 последних цифр №ЗВР"
                 mask="# # # # # # #"
                 fill-mask
               />
             </div>
+            <q-btn
+              class="submit-btn"
+              color="primary"
+              label="Внести"
+              @click="submit"
+            />
           </div>
         </div>
       </slot>
@@ -50,7 +56,7 @@ const emit = defineEmits(['close', 'update:selected'])
 const stations = ref([])
 const selectedStations = ref([])
 const loading = ref(false)
-const specialId = ref('') // Добавлено для поля ввода
+const zvr_number = ref('') // Изменено название переменной для номера ЗВР
 
 const fetchStationID = async () => {
   try {
@@ -69,16 +75,20 @@ const fetchStationID = async () => {
   }
 }
 
+const submit = () => {
+  emit('update:selected', {
+    stations: selectedStations.value,
+    zvr_number: zvr_number.value
+  })
+  close()
+}
+
 onMounted(() => {
   fetchStationID()
 })
 
 const close = () => {
   emit('close')
-  emit('update:selected', {
-    stations: selectedStations.value,
-    specialId: specialId.value // Добавляем specialId в данные при закрытии
-  })
 }
 </script>
 
@@ -178,5 +188,10 @@ const close = () => {
 .input-container {
   margin-top: 20px;
   padding: 0 10px;
+}
+
+.submit-btn {
+  margin-top: 15px;
+  width: 100%;
 }
 </style>
