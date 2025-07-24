@@ -1,5 +1,6 @@
 import logging
 from collections.abc import Sequence
+from datetime import datetime as dt
 from http import HTTPStatus
 from typing import Annotated, List, Optional
 
@@ -179,7 +180,7 @@ async def add_service_works_in_archive(
     """Архивирование (без коммита) записей о ServiceWork."""
     for service_work in service_work_list:
         service_work.in_archive = True
-        service_work.service_work_completed = True
+        service_work.service_work_completed = dt.now()
         # TODO Подумать, нужно ли перезаписывать пробег для старой записи
         # Скорее всего НЕТ, поскольку с момента закрытия ЗВР по документам до
         # момента включения в отчет - пройдет некоторое время (и пробег).
@@ -239,7 +240,7 @@ async def _get_active_service_work_with_service_status(
         )
         zvr_create_stmt = stmt.where(
             ServiceWork.zvr_number,
-            ServiceWork.service_work_completed.is_(False)
+            ServiceWork.service_work_completed.is_(None)
         )
         de_facto_completed_result = (
             await session.scalars(de_facto_completed_stmt)
@@ -307,7 +308,7 @@ async def _get_service_work_for_car_and_service_name(
         special_status_ids: list[Optional[int]],
         session: AsyncSession,
         hide_service_work_with_zvr: bool = False
-) -> Optional[int]:
+) -> Optional[ServiceWork]:
     """Получение ID записи ServiceWork если оно соответствует условиям.
 
     Опция:

@@ -111,7 +111,7 @@ async def completed_real_service_work(
             )
 
     try:
-        service_work.service_work_completed = True
+        service_work.service_work_completed = dt.now()
         await session.commit()
         await session.refresh(service_work)  # Опционально
 

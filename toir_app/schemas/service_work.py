@@ -126,9 +126,9 @@ class ServiceWorkWithZVRNumber(ServiceWorkWithDivergence):
         title='Дата создания ЗВР (автодата)',
         description='Дата, когда была создана заявка (ЗВР)',
     )
-    service_work_completed_fact: Optional[bool] = Field(
+    service_work_completed: Optional[dt] = Field(
         None,
-        title='Работы завершены по факту',
+        title='Дата завершения работ по факту',
         description='Флаг фактического завершения сервисных работ',
     )
     request_status_id: int = Field(..., title='id расчётного статуса')
@@ -141,8 +141,8 @@ class ServiceWorkWithZVRNumber(ServiceWorkWithDivergence):
         Returns:
         - some days
         """
-        if self.zvr_create_date:
-            return (dt.now()-self.zvr_create_date).days
+        if self.service_work_completed:
+            return (dt.now()-self.service_work_completed).days
         return None
 
 
