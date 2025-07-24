@@ -116,7 +116,7 @@ class ServiceWorkWithZVRNumber(ServiceWorkWithDivergence):
     """
     Схема записи о Сервисном Обслуживании с номером ЗВР.
     """
-    zvr_number: Optional[int] = Field(
+    zvr_number: Optional[str] = Field(
         None,
         title='Номер ЗВР',
         description='Уникальный номер заявки на сервисное обслуживание',
