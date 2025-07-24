@@ -98,7 +98,7 @@ class ServiceWorkWithDivergence(ServiceWorkBase):
         """
         if (
             self.request_reading
-            and self.last_service_reading
+            and self.last_service_reading is not None
             and self.base_interval
         ):
             return round(
