@@ -47,10 +47,10 @@
 import { ref, onMounted } from 'vue'
 import { api } from "../../boot/axios.js";
 import { useQuasar } from 'quasar'
-import { useAuthStore } from 'src/stores/useAuthStore' // Импортируем хранилище Pinia
+import { useAuthStore } from 'src/stores/useAuthStore'
 
 const $q = useQuasar()
-const authStore = useAuthStore() // Получаем экземпляр хранилища
+const authStore = useAuthStore()
 
 const { show, serviceWorkId } = defineProps({
   show: {
@@ -76,7 +76,7 @@ const fetchStationID = async () => {
     const response = await api.get('/station', {
       headers: {
         'accept': 'application/json',
-        'Authorization': `Bearer ${authStore.token}` // Добавляем токен в заголовок
+
       }
     })
     stations.value = response.data
@@ -107,21 +107,22 @@ const submit = async () => {
     // Убираем пробелы из номера ЗВР
     const cleanZvrNumber = zvr_number.value.replace(/\s/g, '')
 
-    // Отправляем запрос для каждой выбранной станции
-    const requests = selectedStations.value.map(stationId =>
-      api.patch(
-        `/service_work/add_zvr?service_work_id=${serviceWorkId}&zvr_number=${cleanZvrNumber}&station_id=${stationId}`,
-        null,
-        {
-          headers: {
-            'accept': 'application/json',
-            'Authorization': `Bearer ${authStore.token}` // Добавляем токен в заголовок
-          }
+    // Отправляем один запрос со всеми данными
+     await api.patch(
+      `/service_work/add_zvr`,
+      {
+        service_work_id: serviceWorkId,
+        zvr_number: cleanZvrNumber,
+        station_ids: selectedStations.value // Массив выбранных станций
+      },
+      {
+        headers: {
+          'accept': 'application/json',
+          'Authorization': `Bearer ${authStore.token}`,
+          'Content-Type': 'application/json'
         }
-      )
+      }
     )
-
-    await Promise.all(requests)
 
     $q.notify({
       type: 'positive',
@@ -134,13 +135,11 @@ const submit = async () => {
     console.error('Ошибка при отправке данных:', error)
     $q.notify({
       type: 'negative',
-      message: 'Ошибка при сохранении данных'
+      message: error.response?.data?.detail || 'Ошибка при сохранении данных'
     })
 
-    // Если ошибка связана с аутентификацией
     if (error.response && error.response.status === 401) {
       authStore.clearAuthData()
-      // Можно перенаправить на страницу входа или показать модальное окно входа
     }
   } finally {
     submitting.value = false
