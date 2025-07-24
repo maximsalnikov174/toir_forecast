@@ -7,7 +7,6 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 class Settings(BaseSettings):
     """Класс для работы с переменными окружения."""
     app_title: str = 'Приложение ТОиР'
-    database_url: str  # Обязательный параметр без значения по умолчанию
     secret: str = 'SECRET'
     first_superuser_email: Optional[EmailStr] = None
     first_superuser_password: Optional[str] = None
@@ -21,6 +20,24 @@ class Settings(BaseSettings):
         env_file_encoding='utf-8',  # Рекомендуется явно указать кодировку
         extra='ignore'  # Игнорировать лишние переменные
     )
+
+    db_type: str = 'pg_or_sqlite'
+    postgres_db: str = 'toir_db'
+    postgres_user: str = 'user'
+    postgres_password: str = 'password'
+    db_host: str = 'db_host'
+    db_port: int = 5432
+
+    @property
+    def database_url(self) -> str:
+        """Формирует строку подключения к базе данных."""
+        if self.db_type.lower() in ['true', '1', 'yes']:
+            return (
+                f'postgresql+asyncpg://'
+                f'{self.postgres_user}:{self.postgres_password}'
+                f'@{self.db_host}:{self.db_port}/{self.postgres_db}'
+            )
+        return 'sqlite+aiosqlite:///./fast_toir.db'
 
 
 # Создал глобальную переменную settings с экземпляром класса Settings, чтобы
