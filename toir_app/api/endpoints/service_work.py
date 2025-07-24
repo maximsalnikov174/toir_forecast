@@ -3,11 +3,9 @@ from http import HTTPStatus
 from typing import Annotated, Dict, List, Optional
 
 from fastapi import APIRouter, Body, Depends, HTTPException, Query
-from pydantic import Field
 from sqlalchemy.ext.asyncio import AsyncSession
 
 # from toir_app.constants import TIMEZONE_AE
-from toir_app.constants import ZVR_PART_MAX, ZVR_PART_MIN
 from toir_app.core.db import get_async_session
 from toir_app.core.user import current_user
 from toir_app.crud.organization import get_current_organization
@@ -16,8 +14,11 @@ from toir_app.crud.service_work import (
     get_active_service_work_count_for_all_service_status,
     get_active_service_work_list_by_car,
     get_all_active_service_work_with_open_zvr, get_service_work)
-from toir_app.models import Organization, SpecialStatus, Station, User
-from toir_app.schemas.service_work import ServiceWorkWithZVRNumber
+from toir_app.models import Organization, SpecialStatus, User
+from toir_app.schemas.service_work import (
+    AddZvrSchema,
+    ServiceWorkWithZVRNumber,
+)
 
 router = APIRouter()
 
@@ -39,27 +40,26 @@ router = APIRouter()
     status_code=HTTPStatus.CREATED
 )
 async def add_zvr_to_service_work(
-    service_work_id: int,
-    zvr_number: Annotated[
-        int, Field(ge=ZVR_PART_MIN, lt=ZVR_PART_MAX)
-    ],
-    station_id: Annotated[int, Station.id],
+    zvr_attr: AddZvrSchema,
     user: User = Depends(current_user),
     session: AsyncSession = Depends(get_async_session)
 ):
     """Добавление 7-значного ЗВР к service_work."""
-    if service_work := await get_service_work(service_work_id, session):
+    if service_work := await get_service_work(
+        service_work_id=zvr_attr.service_work_id,
+        session=session,
+    ):
         if service_work.zvr_number:
             raise HTTPException(
                 status_code=HTTPStatus.UNPROCESSABLE_ENTITY,
                 detail='У данной работы ЗВР уже существует.'
             )
         await check_users_can_edit_service_work(user, service_work)
-        await check_zvr_unique(zvr_number, session)
+        await check_zvr_unique(zvr_attr.zvr_number, session)
 
         try:
-            service_work.zvr_number = zvr_number
-            service_work.station_id = station_id
+            service_work.zvr_number = zvr_attr.zvr_number
+            service_work.station_id = zvr_attr.station_id
             service_work.zvr_create_date = dt.now()  # TODO надо дописать tz
 
             await session.commit()

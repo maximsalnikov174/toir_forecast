@@ -1,10 +1,13 @@
 import logging
 from datetime import date
 from datetime import datetime as dt
-from typing import Optional, Union
+from typing import Annotated, Optional, Union
 
 from pydantic import (BaseModel, computed_field, Field, field_serializer,
                       field_validator, ValidationInfo)
+
+from toir_app.constants import ZVR_PART_MAX, ZVR_PART_MIN
+from toir_app.models import ServiceWork, Station
 
 
 class ServiceWorksRequestStatus(BaseModel):
@@ -129,7 +132,7 @@ class ServiceWorkWithZVRNumber(ServiceWorkWithDivergence):
         description='Флаг фактического завершения сервисных работ',
     )
     request_status_id: int = Field(..., title='id расчётного статуса')
-    id: int
+    id: int = Field(..., title='ID сервисного обслуживания')
 
     @computed_field
     def days_between_service_work_completed_and_now(self) -> Optional[int]:
@@ -146,3 +149,11 @@ class ServiceWorkWithZVRNumber(ServiceWorkWithDivergence):
 class ServiceWorkWithInArchive(ServiceWorkWithZVRNumber):
     """Добавлено поле состояния (в архиве или нет)"""
     in_archive: bool
+
+
+class AddZvrSchema(BaseModel):
+    """Схема атрибутов для добавления ЗВР к карточке ServiceWork"""
+
+    service_work_id: Annotated[int, ServiceWork.id]
+    zvr_number: int = Field(..., ge=ZVR_PART_MIN, lt=ZVR_PART_MAX)
+    station_id: Annotated[int, Station.id]
