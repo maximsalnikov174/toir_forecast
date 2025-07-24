@@ -46,7 +46,7 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
-import { api } from "../../boot/axios.js";
+import { api } from '../../boot/axios.js'
 import { useQuasar } from 'quasar'
 import { useAuthStore } from 'src/stores/useAuthStore'
 
@@ -56,12 +56,12 @@ const authStore = useAuthStore()
 const { show, serviceWorkId } = defineProps({
   show: {
     type: Boolean,
-    default: false
+    default: false,
   },
   serviceWorkId: {
     type: [String, Number],
-    required: true
-  }
+    required: true,
+  },
 })
 
 const emit = defineEmits(['close', 'update:selected', 'submitted'])
@@ -76,8 +76,8 @@ const fetchStationID = async () => {
     loading.value = true
     const response = await api.get('/station', {
       headers: {
-        'accept': 'application/json',
-      }
+        accept: 'application/json',
+      },
     })
     stations.value = response.data
   } catch (error) {
@@ -85,7 +85,7 @@ const fetchStationID = async () => {
     stations.value = []
     $q.notify({
       type: 'negative',
-      message: 'Ошибка при загрузке станций'
+      message: 'Ошибка при загрузке станций',
     })
   } finally {
     loading.value = false
@@ -96,7 +96,7 @@ const submit = async () => {
   if (!zvr_number.value || !selectedStation.value) {
     $q.notify({
       type: 'warning',
-      message: 'Заполните все поля'
+      message: 'Заполните все поля',
     })
     return
   }
@@ -109,20 +109,24 @@ const submit = async () => {
 
     // Отправляем запрос с выбранной станцией
     await api.patch(
-      `/service_work/add_zvr?service_work_id=${serviceWorkId}&zvr_number=${cleanZvrNumber}&station_id=${selectedStation.value}`,
-      null,
+      `/service_work/add_zvr`,
+      {
+        service_work_id: serviceWorkId,
+        zvr_number: cleanZvrNumber,
+        station_id: selectedStation.value,
+      },
       {
         headers: {
-          'accept': 'application/json',
-          'Authorization': `Bearer ${authStore.token}`,
-          'Content-Type': 'application/json'
-        }
-      }
+          accept: 'application/json',
+          Authorization: `Bearer ${authStore.token}`,
+          'Content-Type': 'application/json',
+        },
+      },
     )
 
     $q.notify({
       type: 'positive',
-      message: 'Данные успешно сохранены'
+      message: 'Данные успешно сохранены',
     })
 
     emit('submitted')
@@ -131,7 +135,7 @@ const submit = async () => {
     console.error('Ошибка при отправке данных:', error)
     $q.notify({
       type: 'negative',
-      message: error.response?.data?.detail || 'Ошибка при сохранении данных'
+      message: error.response?.data?.detail || 'Ошибка при сохранении данных',
     })
 
     if (error.response && error.response.status === 401) {
@@ -171,7 +175,7 @@ const close = () => {
   width: 80%;
   max-width: 600px;
   min-height: 250px;
-  background: #FFFFFF;
+  background: #ffffff;
   border-radius: 8px;
   padding: 25px;
   position: relative;
@@ -184,7 +188,7 @@ const close = () => {
   right: 15px;
   font-size: 28px;
   cursor: pointer;
-  color: #A5A5A5;
+  color: #a5a5a5;
 }
 
 .modal-close:hover {
