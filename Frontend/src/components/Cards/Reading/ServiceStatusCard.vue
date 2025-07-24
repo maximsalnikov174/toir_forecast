@@ -23,6 +23,13 @@
       @submitted="$emit('submitted')"
       :onSubmitSuccess="handleApply"
     />
+
+    <WindowCompletion
+      v-model:show="showCompletionModal"
+      :serviceWorkId="serviceWorkId"
+      @close="closeCompletionModal"
+      @submitted="$emit('submitted')"
+    />
   </div>
 </template>
 
@@ -31,9 +38,11 @@ import { computed, ref } from 'vue';
 import { useFilterStore } from 'src/components/Functions/FilterStoreAcceptButton';
 import { useAuthStore } from 'src/stores/useAuthStore';
 import ModalWindow from '../ModalWindow.vue';
+import WindowCompletion from '../WindowCompletion.vue'; // Импортируем новый компонент
 
 const hover = ref(false);
 const showModal = ref(false);
+const showCompletionModal = ref(false); // Добавляем состояние для нового модального окна
 const { selectedDivId } = useFilterStore();
 const authStore = useAuthStore();
 
@@ -79,7 +88,6 @@ const props = defineProps({
 
 const serviceWorkId = ref(props.id);
 
-// Добавляем проверку на отсутствие zvr_number или пустое значение
 const shouldShowPlusIcon = computed(() => {
   return props.zvr_number === null || props.zvr_number === '';
 });
@@ -87,12 +95,17 @@ const shouldShowPlusIcon = computed(() => {
 const shouldShowHover = computed(() => {
   return hover.value &&
          authStore.user?.organization_id === selectedDivId.value &&
-         shouldShowPlusIcon.value; // Добавляем это условие
+         shouldShowPlusIcon.value;
 });
 
 const handleClick = () => {
   if (props.divId) {
     selectedDivId.value = props.divId;
+  }
+
+  // Если есть zvr_number, открываем окно завершения
+  if (props.zvr_number) {
+    openCompletionModal();
   }
 };
 
@@ -102,6 +115,15 @@ const openModal = () => {
 
 const closeModal = () => {
   showModal.value = false;
+  hover.value = false;
+};
+
+const openCompletionModal = () => {
+  showCompletionModal.value = true;
+};
+
+const closeCompletionModal = () => {
+  showCompletionModal.value = false;
   hover.value = false;
 };
 
