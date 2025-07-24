@@ -6,7 +6,7 @@ from sqlalchemy import (Boolean, Column, DateTime, Float, ForeignKey, Integer,
                         String)
 from sqlalchemy.orm import relationship
 
-from toir_app.constants import EXCESS_VALUE, LEN_ZVR
+from toir_app.constants import EXCESS_VALUE, LEN_ZVR_TOTAL
 from toir_app.core.db import Base
 from toir_app.models import Status
 from toir_app.schemas.convertation import BaseCarData
@@ -49,7 +49,7 @@ class ServiceWork(Base):
     )
     zvr_number = Column(
         'zrv_number',
-        String(LEN_ZVR),
+        String(LEN_ZVR_TOTAL),
         nullable=True,
         unique=True,
         comment='ЗВР для данной работы'

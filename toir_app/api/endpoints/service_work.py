@@ -58,7 +58,9 @@ async def add_zvr_to_service_work(
         await check_zvr_unique(zvr_attr.zvr_number, session)
 
         try:
-            service_work.zvr_number = zvr_attr.zvr_number
+            service_work.zvr_number = (
+                f'{user.users_organization.name}-АВТ-{zvr_attr.zvr_number}'
+            )
             service_work.station_id = zvr_attr.station_id
             service_work.zvr_create_date = dt.now()  # TODO надо дописать tz
 

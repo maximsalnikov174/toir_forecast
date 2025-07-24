@@ -41,7 +41,8 @@ ORGANIZATION_NORMAL_NAME_PATTERN = r'^(\d-)?[А-Я]{1,3}$'
 WORDS_AND_DIGITS = r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[a-zA-Z\d]+$'
 COMPANY_DOMAIN = r'^[a-z]+\.?[a-z]{2}@(?:atu.)?mmk.ru$'
 pattern_zvr = r'^5[0-4]-АВТ-\d{7}$'
-LEN_ZVR = 14
+LEN_ZVR_BASE = 7
+LEN_ZVR_TOTAL = LEN_ZVR_BASE + 8
 ZVR_PART_MIN = 1_000_000
 ZVR_PART_MAX = 10_000_000
 
