@@ -62,6 +62,7 @@
                 :zvr_create_date="item.zvr_create_date"
                 :zvr_number="item.zvr_number"
                 :service_work_completed_fact="item.service_work_completed_fact"
+                :id="item.id"
                 />
               <div v-else class="empty-status-card"></div>
             </template>

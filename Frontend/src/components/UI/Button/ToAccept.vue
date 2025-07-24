@@ -22,7 +22,7 @@ const {
 } = useFilterStore()
 const loading = ref(false)
 
-const emit = defineEmits(['applied', 'servicesFetched', 'carsFetched'])
+const emit = defineEmits(['applied', 'servicesFetched', 'carsFetched', 'tableDataFetched'])
 
 watch(
   [selectedDivId, selectedMinimalStatus, selectedValues, selectedSpecialStatuses],
@@ -95,47 +95,38 @@ const handleApply = async () => {
       requestBody = [0, ...selectedSpecialStatuses.value, null]
     }
 
-    // Основной запрос
     const mainResponse = await makeRequest(
       '/service_work/get_table',
       params,
       requestBody
     )
-    emit('tableDataFetched', mainResponse);
 
-    // Общие параметры для всех запросов
+    // Фильтруем null значения и эмитим данные
+    const filteredData = mainResponse.filter(item => item !== null);
+    emit('tableDataFetched', filteredData);
+
     const commonParams = {
       request_status_param: params.request_status_param || 0,
       organization_id: params.organization_id || 0
     }
 
-    // Добавляем selectedValues в общие параметры, если они есть
     if (selectedValues.value !== null && selectedValues.value !== undefined) {
       commonParams.hide_service_work_with_zvr = selectedValues.value
     }
 
-    // Дополнительный запрос для сервисных имен
     const servicesResponse = await makeRequest(
       '/service_name/all_service_names',
-      commonParams, // Используем общие параметры
+      commonParams,
       requestBody
     )
     emit('servicesFetched', servicesResponse)
 
-    // Дополнительный запрос для автомобилей
     const carsResponse = await makeRequest(
       '/car/with_many_statuses',
-      commonParams, // Используем общие параметры
+      commonParams,
       requestBody
     )
     emit('carsFetched', carsResponse)
-
-    // showAlert('Фильтры успешно применены', 'success')
-    // return {
-    //   main: mainResponse,
-    //   services: servicesResponse,
-    //   cars: carsResponse
-    // }
 
   } catch (error) {
     console.error('Ошибка при выполнении запроса:', error)

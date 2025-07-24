@@ -12,18 +12,16 @@
     <div class="other-text">{{ displayDate }}</div>
     <div v-if="DBSWCAN" class="additional-text">{{ DBSWCAN }} Дней</div>
 
-    <!-- Элемент появляется только при наведении и совпадении organization_id с selectedDivId -->
     <div v-if="shouldShowHover" class="hover-overlay" @click.stop="openModal">
       <div class="plus-icon">+</div>
     </div>
 
-    <!-- Модальное окно (теперь отдельный компонент) -->
-    <ModalWindow  v-model:show="showModal"
-    @update:selected="handleSelectedStations"
-     @close="closeModal">
-      <!-- Можно передать кастомное содержимое через слот -->
-      <slot name="modal-content"></slot>
-    </ModalWindow>
+    <ModalWindow
+      v-model:show="showModal"
+      :serviceWorkId="serviceWorkId"
+      @close="closeModal"
+      @submitted="$emit('submitted')"
+    />
   </div>
 </template>
 
@@ -31,7 +29,7 @@
 import { computed, ref } from 'vue';
 import { useFilterStore } from 'src/components/Functions/FilterStoreAcceptButton';
 import { useAuthStore } from 'src/stores/useAuthStore';
-import ModalWindow from '../ModalWindow.vue'; // Импортируем компонент модального окна
+import ModalWindow from '../ModalWindow.vue';
 
 const hover = ref(false);
 const showModal = ref(false);
@@ -71,10 +69,15 @@ const props = defineProps({
   divId: {
     type: [String, Number],
     default: null
+  },
+  id: {
+    type: [Number, String],
+    required: true
   }
 });
 
-// Проверяем условия для отображения hover-эффекта
+const serviceWorkId = ref(props.id);
+
 const shouldShowHover = computed(() => {
   return hover.value &&
          authStore.user?.organization_id === selectedDivId.value;
@@ -86,18 +89,15 @@ const handleClick = () => {
   }
 };
 
-// Открытие модального окна
 const openModal = () => {
   showModal.value = true;
 };
 
-// Закрытие модального окна с сбросом hover
 const closeModal = () => {
   showModal.value = false;
-  hover.value = false; // Сбрасываем состояние hover
+  hover.value = false;
 };
 
-// Форматирование даты
 const formattedDate = computed(() => {
   if (props.LastServiceDate instanceof Date) {
     return props.LastServiceDate.toLocaleDateString();
@@ -109,7 +109,6 @@ const displayDate = computed(() => {
   return props.zvr_number !== null ? props.zvr_number : formattedDate.value;
 });
 
-// Класс для индикатора статуса
 const indicatorClass = computed(() => {
   const statusMap = {
     1: 'exceeded',
@@ -120,12 +119,10 @@ const indicatorClass = computed(() => {
   return statusMap[props.request_status_id];
 });
 
-// Показывать верхнюю полосу?
 const showTopBar = computed(() => {
   return props.zvr_create_date !== null;
 });
 
-// Показывать нижнюю полосу?
 const showBottomBar = computed(() => {
   return props.service_work_completed_fact !== null;
 });
