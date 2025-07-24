@@ -45,7 +45,7 @@
 </template>
 
 <script setup>
-import { ref, watch } from 'vue' // Убрали onMounted, добавили watch
+import { ref, watch } from 'vue'
 import { api } from '../../boot/axios.js'
 import { useQuasar } from 'quasar'
 import { useAuthStore } from 'src/stores/useAuthStore'
@@ -53,7 +53,7 @@ import { useAuthStore } from 'src/stores/useAuthStore'
 const $q = useQuasar()
 const authStore = useAuthStore()
 
-const { show, serviceWorkId } = defineProps({
+const props = defineProps({
   show: {
     type: Boolean,
     default: false,
@@ -62,6 +62,10 @@ const { show, serviceWorkId } = defineProps({
     type: [String, Number],
     required: true,
   },
+  onSubmitSuccess: {
+    type: Function,
+    default: () => {}
+  }
 })
 
 const emit = defineEmits(['close', 'update:selected', 'submitted'])
@@ -71,8 +75,7 @@ const loading = ref(false)
 const submitting = ref(false)
 const zvr_number = ref('')
 
-// Добавляем watcher для пропса show
-watch(() => show, (newVal) => {
+watch(() => props.show, (newVal) => {
   if (newVal) {
     fetchStationID()
   }
@@ -110,15 +113,12 @@ const submit = async () => {
 
   try {
     submitting.value = true
-
-    // Убираем пробелы из номера ЗВР
     const cleanZvrNumber = zvr_number.value.replace(/\s/g, '')
 
-    // Отправляем запрос с выбранной станцией
     await api.patch(
       `/service_work/add_zvr`,
       {
-        service_work_id: serviceWorkId,
+        service_work_id: props.serviceWorkId,
         zvr_number: cleanZvrNumber,
         station_id: selectedStation.value,
       },
@@ -137,6 +137,7 @@ const submit = async () => {
     })
 
     emit('submitted')
+    props.onSubmitSuccess()
     close()
   } catch (error) {
     console.error('Ошибка при отправке данных:', error)
@@ -152,7 +153,6 @@ const submit = async () => {
     submitting.value = false
   }
 }
-
 
 const close = () => {
   selectedStation.value = null
