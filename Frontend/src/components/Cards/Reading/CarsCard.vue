@@ -110,7 +110,7 @@ export default defineComponent({
 }
 
 .car-content {
-  padding: 8px 0 0 8px;
+  padding: 10px 0 0 8px;
 }
 
 .characteristic-subtitle {
@@ -121,7 +121,7 @@ export default defineComponent({
   font-size: 10px;
   line-height: 100%;
   color: #000000;
-  margin-bottom: 6px;
+  margin-bottom: 10px;
 }
 
 .car-grz {
@@ -132,7 +132,7 @@ export default defineComponent({
   font-size: 18px;
   line-height: 100%;
   color: #000000;
-  margin-bottom: 12px;
+  margin-bottom: 10px;
 }
 
 .additional-info {
