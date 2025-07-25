@@ -75,16 +75,17 @@ class ServiceWorkBase(CarAtributesInServiceWork):
     @field_serializer('last_service_date')
     def convert_datetime_to_date(
         self, last_service_date: dt, info
-    ) -> Union[date, dt]:
+    ) -> Union[str, dt]:
         """Обработка поля 'last_service_date'.
 
         ## Variants:
-        - [dflt] Преобразует datetime->date для отображения в главной таблице.
+        - [default] Преобразует datetime в строку вида dd.mm.yyyy для
+        отображения в главной таблице.
         - При передаче в model_dump(context='create_update_mode') - не меняет;
         """
         if info.context == 'create_update_mode':
             return last_service_date
-        return last_service_date.date()
+        return last_service_date.date().strftime('%d.%m.%Y')
 
 
 class ServiceWorkWithDivergence(ServiceWorkBase):
