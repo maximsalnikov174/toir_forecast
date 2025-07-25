@@ -228,7 +228,7 @@ const showBottomBar = computed(() => {
   position: absolute;
   width: 120px;
   height: 12px;
-  top: 47px;
+  top: 49px;
   left: 13px;
   font-family: 'Inter', sans-serif;
   font-weight: 400;
