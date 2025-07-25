@@ -22,9 +22,7 @@ import { defineProps, defineEmits } from 'vue';
 import { useAuthStore } from 'src/stores/useAuthStore';
 import { api } from '../../boot/axios.js';
 
-
-const authStore = useAuthStore()
-
+const authStore = useAuthStore();
 
 const props = defineProps({
   show: {
@@ -46,10 +44,10 @@ const close = () => {
 
 const complete = async () => {
   try {
-     await api.patch(
+    await api.patch(
       `http://127.0.0.1:8001/service_work/de_facto_completed?service_work_id=${props.serviceWorkId}`,
+      null, 
       {
-
         headers: {
           Authorization: `Bearer ${authStore.token}`,
           'accept': 'application/json'
@@ -57,11 +55,8 @@ const complete = async () => {
       }
     );
 
-    if (!response.ok) {
-      throw new Error('Ошибка при завершении работы');
-    }
-
     emit('submitted');
+    props.onSubmitSuccess()  // Вызываем переданную функцию
     close();
   } catch (error) {
     console.error('Ошибка:', error);

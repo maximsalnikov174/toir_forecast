@@ -29,6 +29,7 @@
       :serviceWorkId="serviceWorkId"
       @close="closeCompletionModal"
       @submitted="$emit('submitted')"
+      :onSubmitSuccess="handleApply"
     />
   </div>
 </template>
