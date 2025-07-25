@@ -1,5 +1,10 @@
 <template>
-  <q-card class="car-card" :class="{ 'bg-pink-2': isLowDistance }">
+  <q-card
+    class="car-card"
+    :class="{ 'bg-pink-2': isLowDistance }"
+    @click="copyGrzToClipboard"
+    style="cursor: pointer;"
+  >
     <q-card-section horizontal>
       <q-img
         src="your-image-path-here"
@@ -20,6 +25,7 @@
 
 <script>
 import { defineComponent, computed } from 'vue'
+import { useQuasar } from 'quasar'
 
 export default defineComponent({
   name: 'CarCard',
@@ -31,7 +37,7 @@ export default defineComponent({
     model: {
       type: String,
       required: false,
-      default: '' // значение по умолчанию, если модель не передана
+      default: ''
     },
     daliDistanse: {
       type: Number,
@@ -43,12 +49,39 @@ export default defineComponent({
     }
   },
   setup(props) {
+    const $q = useQuasar()
+
     const isLowDistance = computed(() => {
       return props.daliDistanse < 1
     })
 
+    const copyGrzToClipboard = () => {
+      // Удаляем все нецифровые символы (буквы, пробелы, дефисы и т.д.)
+      const cleanGrz = props.grz.replace(/[^А-Яа-я0-9]/g, '')
+
+      navigator.clipboard.writeText(cleanGrz)
+        .then(() => {
+          $q.notify({
+            message: 'GRZ скопирован в буфер обмена',
+            color: 'positive',
+            position: 'top',
+            timeout: 1000
+          })
+        })
+        .catch(err => {
+          console.error('Не удалось скопировать GRZ:', err)
+          $q.notify({
+            message: 'Ошибка при копировании GRZ',
+            color: 'negative',
+            position: 'top',
+            timeout: 1000
+          })
+        })
+    }
+
     return {
-      isLowDistance
+      isLowDistance,
+      copyGrzToClipboard
     }
   }
 })
@@ -63,6 +96,11 @@ export default defineComponent({
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   margin-right: 20px;
   flex-shrink: 0;
+  transition: transform 0.2s;
+}
+
+.car-card:hover {
+  transform: translateY(-2px);
 }
 
 .car-image {
