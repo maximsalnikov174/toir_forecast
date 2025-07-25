@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import timedelta
 from datetime import datetime as dt
 from typing import Annotated, Optional, Union
 
@@ -76,7 +76,7 @@ class ServiceWorkBase(CarAtributesInServiceWork):
     def convert_datetime_to_date(
         self, last_service_date: dt, info
     ) -> Union[str, dt]:
-        """Обработка поля 'last_service_date'.
+        """Обработка поля `last_service_date`.
 
         ## Variants:
         - [default] Преобразует datetime в строку вида dd.mm.yyyy для
@@ -85,7 +85,10 @@ class ServiceWorkBase(CarAtributesInServiceWork):
         """
         if info.context == 'create_update_mode':
             return last_service_date
-        return last_service_date.date().strftime('%d.%m.%Y')
+
+        days_left = (dt.now()-last_service_date).days
+        msg = f" (прошло дней: {days_left})" if days_left > 100 else ''
+        return f"{last_service_date.date().strftime('%d.%m.%Yг.')}{msg}"
 
 
 class ServiceWorkWithDivergence(ServiceWorkBase):
@@ -117,6 +120,8 @@ class ServiceWorkWithZVRNumber(ServiceWorkWithDivergence):
     """
     Схема записи о Сервисном Обслуживании с номером ЗВР.
     """
+
+    id: int = Field(..., title='ID сервисного обслуживания')
     zvr_number: Optional[str] = Field(
         None,
         title='Номер ЗВР',
@@ -130,10 +135,12 @@ class ServiceWorkWithZVRNumber(ServiceWorkWithDivergence):
     service_work_completed: Optional[dt] = Field(
         None,
         title='Дата завершения работ по факту',
-        description='Флаг фактического завершения сервисных работ',
+        description=(
+            'Дата фактического завершения сервисных работ. '
+            'Проставляется юзером (роль?) после выезда ТС из зоны ремонта.'
+        )
     )
     request_status_id: int = Field(..., title='id расчётного статуса')
-    id: int = Field(..., title='ID сервисного обслуживания')
 
     @computed_field
     def days_between_service_work_completed_and_now(self) -> Optional[int]:
@@ -149,11 +156,12 @@ class ServiceWorkWithZVRNumber(ServiceWorkWithDivergence):
 
 class ServiceWorkWithInArchive(ServiceWorkWithZVRNumber):
     """Добавлено поле состояния (в архиве или нет)"""
+
     in_archive: bool
 
 
 class AddZvrSchema(BaseModel):
-    """Схема атрибутов для добавления ЗВР к карточке ServiceWork"""
+    """Проверка атрибутов для добавления `№ ЗВР` к карточке `ServiceWork`."""
 
     service_work_id: Annotated[int, ServiceWork.id]
     zvr_number: str = Field(
