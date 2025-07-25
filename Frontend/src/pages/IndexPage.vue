@@ -51,6 +51,7 @@
           :model="car.car_model?.name || ''"
           :daliDistanse="car.indicators?.daily_distance"
           :requestReading="car.indicators?.request_reading"
+          :specialStatusId="car.status_associations?.find(status => status.is_active)?.special_status_id"
           />
           <div class="status-cards">
             <template v-for="(item, itemIndex) in tableData[rowIndex]" :key="itemIndex">
