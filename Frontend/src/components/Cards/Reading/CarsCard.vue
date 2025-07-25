@@ -112,7 +112,7 @@ export default defineComponent({
 .car-card {
   width: 212px;
   height: 80px;
-  background: #FFFFFF;
+  background: #F3F3F3;
   border-radius: 8px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   margin-right: 20px;
