@@ -316,10 +316,10 @@ async def get_all_active_service_work_with_open_zvr(
 
 
 async def _get_service_work_for_car_and_service_name(
-        car_id: int,
-        service_name_id: int,
-        request_status_id: int,
-        special_status_ids: list[Optional[int]],
+        car_id: Annotated[int, Car.id],
+        service_name_id: Annotated[int, ServiceName.id],
+        request_status_id: Annotated[int, ServiceStatus.id],
+        special_status_ids: list[Optional[Annotated[int, SpecialStatus.id]]],
         session: AsyncSession,
         hide_service_work_with_zvr: bool = False
 ) -> Optional[ServiceWork]:
@@ -406,7 +406,7 @@ async def check_users_can_edit_service_work(
         user: User,
         service_work: ServiceWork
 ) -> None:
-    """Проверка полномочий пользователя для внесения изменений.
+    """Проверка полномочий юзера для редактирования карточки `ServiceWork`.
 
     Если пользователь имеет права «Только чтение» или он является сотрудником
     другого подразделения - действия невозможны.
