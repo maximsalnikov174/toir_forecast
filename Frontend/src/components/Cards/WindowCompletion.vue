@@ -19,6 +19,12 @@
 
 <script setup>
 import { defineProps, defineEmits } from 'vue';
+import { useAuthStore } from 'src/stores/useAuthStore';
+import { api } from '../../boot/axios.js';
+
+
+const authStore = useAuthStore()
+
 
 const props = defineProps({
   show: {
@@ -38,13 +44,29 @@ const close = () => {
   emit('close');
 };
 
-const complete = () => {
+const complete = async () => {
+  try {
+     await api.patch(
+      `http://127.0.0.1:8001/service_work/de_facto_completed?service_work_id=${props.serviceWorkId}`,
+      {
 
-  console.log('Завершение работы с ID:', props.serviceWorkId);
+        headers: {
+          Authorization: `Bearer ${authStore.token}`,
+          'accept': 'application/json'
+        }
+      }
+    );
 
+    if (!response.ok) {
+      throw new Error('Ошибка при завершении работы');
+    }
 
-  emit('submitted');
-  close();
+    emit('submitted');
+    close();
+  } catch (error) {
+    console.error('Ошибка:', error);
+    // Можно добавить уведомление об ошибке
+  }
 };
 </script>
 
