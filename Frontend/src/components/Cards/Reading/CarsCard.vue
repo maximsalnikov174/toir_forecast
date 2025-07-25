@@ -120,7 +120,7 @@ export default defineComponent({
   font-weight: 200;
   font-size: 10px;
   line-height: 100%;
-  color: #929191;
+  color: #000000;
   margin-bottom: 10px;
 }
 
