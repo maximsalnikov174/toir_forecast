@@ -137,7 +137,7 @@ class ServiceWorkWithZVRNumber(ServiceWorkWithDivergence):
 
     @computed_field
     def days_between_service_work_completed_and_now(self) -> Optional[int]:
-        """Разница между сегодня и датой фактического завершения работ.
+        """Разница между `сегодня` и `датой фактического завершения работ`.
 
         Returns:
         - some days

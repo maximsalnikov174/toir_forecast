@@ -28,7 +28,7 @@ router = APIRouter()
     response_model=ServiceWorkWithZVRNumber,
     dependencies=[Depends(current_user)],
     name=(
-        'Добавление ЗВР + ID участка ТО к конкретному service_work'
+        'Добавление `№ ЗВР` + `ID участка ТО` к конкретному `service_work`'
         ' (доступно сотруднику подразделения).'
     ),
     description=(
@@ -44,36 +44,37 @@ async def add_zvr_to_service_work(
     user: User = Depends(current_user),
     session: AsyncSession = Depends(get_async_session)
 ):
-    """Добавление 7-значного ЗВР к service_work."""
-    if service_work := await get_service_work(
+    """Добавление 7-значного ЗВР и ID мастерской к карточке `service_work`."""
+    service_work = await get_service_work(
         service_work_id=zvr_attr.service_work_id,
         session=session,
-    ):
-        if service_work.zvr_number:
-            raise HTTPException(
-                status_code=HTTPStatus.UNPROCESSABLE_ENTITY,
-                detail='У данной работы ЗВР уже существует.'
-            )
-        await check_users_can_edit_service_work(user, service_work)
-        await check_zvr_unique(zvr_attr.zvr_number, session)
+    )
+    if service_work and service_work.zvr_number is not None:
+        raise HTTPException(
+            status_code=HTTPStatus.UNPROCESSABLE_ENTITY,
+            detail='У данной работы ЗВР уже существует.'
+        )
 
-        try:
-            service_work.zvr_number = (
-                f'{service_work.car.organization.name}'
-                f'-АВТ-{zvr_attr.zvr_number}'
-            )
-            service_work.station_id = zvr_attr.station_id
-            service_work.zvr_create_date = dt.now()  # TODO надо дописать tz
+    check_users_can_edit_service_work(user, service_work)
+    await check_zvr_unique(zvr_attr.zvr_number, session)
 
-            await session.commit()
-            await session.refresh(service_work)  # Опционально
-            return service_work
-        except Exception as e:
-            await session.rollback()
-            raise HTTPException(
-                HTTPStatus.INTERNAL_SERVER_ERROR,
-                detail=f'Ошибка при сохранении ЗВР: {str(e)}'
-            )
+    try:
+        service_work.zvr_number = (
+            f'{service_work.car.organization.name}'
+            f'-АВТ-{zvr_attr.zvr_number}'
+        )
+        service_work.station_id = zvr_attr.station_id
+        service_work.zvr_create_date = dt.now()  # TODO надо дописать tz
+
+        await session.commit()
+        await session.refresh(service_work)  # Опционально
+        return service_work
+    except Exception as e:
+        await session.rollback()
+        raise HTTPException(
+            HTTPStatus.INTERNAL_SERVER_ERROR,
+            detail=f'Ошибка при сохранении ЗВР: {str(e)}'
+        )
 
 
 @router.patch(

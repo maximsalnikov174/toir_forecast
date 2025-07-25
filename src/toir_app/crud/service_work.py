@@ -6,7 +6,7 @@ from typing import Annotated, List, Optional
 from fastapi import HTTPException
 from sqlalchemy import and_, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import selectinload
+from sqlalchemy.orm import joinedload
 
 from crud.car import (
     get_car_by_pk,
@@ -43,7 +43,8 @@ async def get_service_work(
     """Получение объекта модели ServiceWork по ID."""
     stmt = (
         select(ServiceWork)
-        .options(selectinload(ServiceWork.car))  # Явно загружаем связь с Car
+        .options(
+            joinedload(ServiceWork.car).joinedload(Car.organization))  # Явно загружаем связь с Car
         .where(ServiceWork.id == service_work_id)
     )
     result = await session.scalar(stmt)
@@ -119,15 +120,15 @@ async def get_last_request_reading_by_car(
 
 
 async def check_zvr_unique(
-        zvr_number: int,
+        zvr_number: str,
         session: AsyncSession
 ) -> None:
     """Проверяет ЗВР на уникальный номер."""
     result = await session.scalar(
         select(ServiceWork)
-        .where(ServiceWork.zvr_number == zvr_number)
+        .where(ServiceWork.zvr_number.contains(zvr_number))
     )
-    if result:
+    if result is not None:
         raise HTTPException(
             status_code=HTTPStatus.UNPROCESSABLE_ENTITY,
             detail=f'Указанный ЗВР #{zvr_number} не уникален, сверьте данные.'
@@ -402,7 +403,7 @@ async def create_main_table(
     return total_data
 
 
-async def check_users_can_edit_service_work(
+def check_users_can_edit_service_work(
         user: User,
         service_work: ServiceWork
 ) -> None:
@@ -413,7 +414,10 @@ async def check_users_can_edit_service_work(
     """
     if (
         user.users_role.name == UserRole.READ_ONLY.value
-        or service_work.car.organization_id != user.organization_id
+        or (
+            service_work.car.organization_id != user.organization_id
+            and not user.is_superuser
+        )
     ):
         raise HTTPException(
             status_code=HTTPStatus.FORBIDDEN,
