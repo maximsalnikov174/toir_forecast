@@ -15,8 +15,8 @@
         <div class="characteristic-subtitle">{{ model }}</div>
         <div class="car-grz">{{ grz }}</div>
         <div class="row items-center">
-          <div class="additional-info">{{ requestReading }} км</div>
-          <div class="car-value">{{ daliDistanse }} км/день </div>
+          <div class="additional-info">{{ requestReading }} <span style="color: gray;">км</span></div>
+          <div class="car-value">{{ daliDistanse }} <span style="color: gray;">км/день</span></div>
         </div>
       </q-card-section>
     </q-card-section>
