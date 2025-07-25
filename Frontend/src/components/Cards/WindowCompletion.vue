@@ -32,7 +32,11 @@ const props = defineProps({
   serviceWorkId: {
     type: [Number, String],
     required: true
-  }
+  },
+  onSubmitSuccess: {
+    type: Function,
+    default: () => {}
+  },
 });
 
 const emit = defineEmits(['update:show', 'close', 'submitted']);
@@ -45,8 +49,8 @@ const close = () => {
 const complete = async () => {
   try {
     await api.patch(
-      `http://127.0.0.1:8001/service_work/de_facto_completed?service_work_id=${props.serviceWorkId}`,
-      null, 
+      `/service_work/de_facto_completed?service_work_id=${props.serviceWorkId}`,
+      null,
       {
         headers: {
           Authorization: `Bearer ${authStore.token}`,
