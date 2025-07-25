@@ -183,14 +183,14 @@ async def get_cars_with_request_and_special_status(
             contains_eager(Car.service_works),  # жадный подгруз ServWork
             joinedload(Car.car_model),
             joinedload(Car.status_associations.and_(  # только те, что True
-                SpecialStatusForCar.is_active == True
+                SpecialStatusForCar.is_active.is_(True)
             ))
         ).where(
             ServiceWork.request_status_id <= request_status_id,
             Car.organization_id == organization_id,
             Car.in_archive.is_(False),
             or_(
-                Car.status_associations == None,
+                SpecialStatusForCar.id.is_(None),
                 SpecialStatusForCar.special_status_id.in_(special_status_ids)
             )
         ).distinct()  # distinct - дедупликация (FIXME не уверен, что так)
