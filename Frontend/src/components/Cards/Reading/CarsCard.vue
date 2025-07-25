@@ -7,9 +7,11 @@
   >
     <q-card-section horizontal>
       <q-img
-        src="your-image-path-here"
+        v-if="statusImage"
+        :src="statusImage"
         class="car-image"
       />
+      <div v-else class="car-image-placeholder"></div>
 
       <q-card-section class="car-content">
         <div class="characteristic-subtitle">{{ model }}</div>
@@ -26,6 +28,12 @@
 <script>
 import { defineComponent, computed } from 'vue'
 import { useQuasar } from 'quasar'
+
+// Импортируем только необходимые изображения статусов
+import status1 from 'src/assets/1.png'
+import status2 from 'src/assets/2.png'
+import status3 from 'src/assets/3.png'
+import status4 from 'src/assets/4.png'
 
 export default defineComponent({
   name: 'CarCard',
@@ -46,6 +54,10 @@ export default defineComponent({
     requestReading: {
       type: Number,
       required: false,
+    },
+    specialStatusId: {
+      type: Number,
+      required: false,
     }
   },
   setup(props) {
@@ -55,10 +67,18 @@ export default defineComponent({
       return props.daliDistanse < 1
     })
 
-    const copyGrzToClipboard = () => {
-      // Удаляем все нецифровые символы (буквы, пробелы, дефисы и т.д.)
-      const cleanGrz = props.grz.replace(/[^А-Яа-я0-9]/g, '')
+    const statusImage = computed(() => {
+      switch(props.specialStatusId) {
+        case 1: return status1
+        case 2: return status2
+        case 3: return status3
+        case 4: return status4
+        default: return null
+      }
+    })
 
+    const copyGrzToClipboard = () => {
+      const cleanGrz = props.grz.replace(/[^А-Яа-я0-9]/g, '')
       navigator.clipboard.writeText(cleanGrz)
         .then(() => {
           $q.notify({
@@ -81,6 +101,7 @@ export default defineComponent({
 
     return {
       isLowDistance,
+      statusImage,
       copyGrzToClipboard
     }
   }
@@ -107,6 +128,13 @@ export default defineComponent({
   width: 38px;
   height: 38px;
   margin: 21px 0 0 16px;
+  object-fit: contain;
+}
+
+.car-image-placeholder {
+  width: 38px;
+  height: 38px;
+  margin: 21px 0 0 16px;
 }
 
 .car-content {
@@ -122,6 +150,9 @@ export default defineComponent({
   line-height: 100%;
   color: #000000;
   margin-bottom: 10px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .car-grz {
