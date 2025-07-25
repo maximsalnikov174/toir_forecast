@@ -29,7 +29,7 @@ def upgrade() -> None:
             nullable=False,
             comment='Название зоны сервиса'
         ),
-        sa.Column('id', sa.Integer(), nullable=False),
+        sa.Column('id', sa.Integer(), nullable=False, autoincrement=True),
         sa.PrimaryKeyConstraint('id'),
         sa.UniqueConstraint('name')
     )

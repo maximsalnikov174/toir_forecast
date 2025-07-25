@@ -35,7 +35,7 @@ def upgrade() -> None:
         sa.Column('wait_moment_slice_id', sa.Integer(), nullable=False),
         sa.Column('no_need_slice_id', sa.Integer(), nullable=False),
         sa.Column('bad_request_slice_id', sa.Integer(), nullable=False),
-        sa.Column('id', sa.Integer(), nullable=False),
+        sa.Column('id', sa.Integer(), nullable=False, autoincrement=True),
         sa.ForeignKeyConstraint(
             ['bad_request_slice_id'], ['serviceworkstate.id'], ),
         sa.ForeignKeyConstraint(

@@ -41,7 +41,7 @@ def upgrade() -> None:
             nullable=False,
             comment='В состоянии без ЗВР'
         ),
-        sa.Column('id', sa.Integer(), nullable=False),
+        sa.Column('id', sa.Integer(), nullable=False, autoincrement=True),
         sa.PrimaryKeyConstraint('id')
     )
     # ### end Alembic commands ###
