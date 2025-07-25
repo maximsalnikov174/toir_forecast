@@ -221,7 +221,7 @@ const showBottomBar = computed(() => {
   font-weight: 400;
   font-size: 10px;
   line-height: 100%;
-  color: #000000;
+  color: #8a8989;
 }
 
 .additional-text {
