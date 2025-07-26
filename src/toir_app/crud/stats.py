@@ -53,7 +53,7 @@ async def add_statement_after_loading_csv_file(
                     await session.refresh(elem)
                     total_dump[f'{status.name.lower()}_slice_id'] = elem.id
 
-            service_status_stats.stats_date = dt.fromisoformat(stmt_date)
+            service_status_stats.stats_date = dt.fromisoformat(stmt_date[:10])
             service_status_stats.organization_id = organization.id
 
             for key, value in total_dump.items():

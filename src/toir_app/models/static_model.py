@@ -5,9 +5,8 @@ from convert_csv_to_py.convertation import UsersServiceName as USN
 
 
 class Status(str, Enum):
-    """
-    Расчётные статусы (для вида обслуживания) записи из OeBS.
-    """
+    """Расчётные статусы (для вида обслуживания) записи из OeBS."""
+
     DANGER = 'Превышение'
     TIME_HAS_COME = 'Подошло'
     WAIT_MOMENT = 'Ожидается в периоде'
@@ -30,13 +29,24 @@ class SpecialStatusForCarBase(str, Enum):
     - после ВР
     - ...
     """
+
     DISPOSAL = 'К выбытию'
     ON_SALE = 'На реализации'
     REMEDIAL_REPAIR = 'На восстановительном ремонте'
+    AFTER_ACCIDENT = 'После ДТП'
+
+
+class StationDefault(str, Enum):
+    """Станции сервисного обслуживания."""
+
+    URGA = 'УРГА'
+    URLA = 'УРЛА'
+    THIRD_PARTY = 'Сторона'
 
 
 class UserRole(str, Enum):
     """Полномочия Пользователей (read_only, can_edit, admin)."""
+
     READ_ONLY = 'Только чтение'
     CAN_EDIT = 'Редактирует свой цех'
     ADMIN = 'Полный доступ'
@@ -44,6 +54,7 @@ class UserRole(str, Enum):
 
 class StaticOrganization(str, Enum):
     """Действующие огранизации из OeBS (Ю51, Ю52, Ю53, Ю54)."""
+
     ORG_TWO = 'Ю51'
     ORG_THREE = 'Ю52'
     ORG_FOUR = 'Ю53'

@@ -16,6 +16,8 @@ from models import (
     SpecialStatus,
     SpecialStatusForCarBase,
     StaticOrganization,
+    Station,
+    StationDefault,
     Status,
     UserRole,
 )
@@ -30,7 +32,8 @@ need_to_upload_datas = [
     (Status, ServiceStatus),  # подошло, превышение
     (UsersServiceName, ServiceName),  # ТО-2, замена масла ДВС
     (UserRole, Role),  # админ, только чтение
-    (StaticOrganization, Organization)  # Ю51, Ю52, Ю53, Ю54, УПР
+    (StaticOrganization, Organization),  # Ю51, Ю52, Ю53, Ю54, УПР
+    (StationDefault, Station),  # УРГА, УРЛА, Сторона
     # ...
 ]
 
