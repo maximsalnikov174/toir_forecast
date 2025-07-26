@@ -1,5 +1,4 @@
 from pathlib import Path
-from typing import List
 
 UPLOAD_FILE_DIR = '/dataset_from_oebs/rmt321_ATU_'
 # Стандартное количество элементов в строке rmt-321:
@@ -45,6 +44,8 @@ LEN_ZVR_BASE = 7
 LEN_ZVR_TOTAL = LEN_ZVR_BASE + 8
 ZVR_PART_MIN = 1_000_000
 ZVR_PART_MAX = 10_000_000
+COMPLETED_DAYS_AGO = 180  # прошло дней с последней `service_work`
+PATTERN_DATE_USER_FRENDLY = '%d.%m.%Yг.'  # удобно читать в РФ
 
 PATTERN_DATE_OEBS = '%d.%m.%Y %H:%M:%S'
 
@@ -53,7 +54,7 @@ TIMEZONE_AE = 'Asia/Yekaterinburg'
 LIST_ORGANIZATIONS: list[str] = ['Ю51', 'Ю52', 'Ю53', 'Ю54']
 
 # FIXME Уточнить, когда будут созданы все необходимые статусы:
-SPECIAL_STATUS_LIST_FOR_GET_STATS: List[int] = [2, 3]
+SPECIAL_STATUS_LIST_FOR_GET_STATS: list[int] = [2, 3]
 
 # БЛОК РЕГИСТРАЦИИ ПОЛЬЗОВАТЕЛЕЙ:
 # Максимальная длина имени или фамилии сотрудника:

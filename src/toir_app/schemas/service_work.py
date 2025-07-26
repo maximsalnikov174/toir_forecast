@@ -5,7 +5,11 @@ from typing import Annotated, Optional, Union
 from pydantic import (BaseModel, computed_field, Field, field_serializer,
                       field_validator, ValidationInfo)
 
-from constants import LEN_ZVR_BASE
+from constants import (
+    COMPLETED_DAYS_AGO,
+    LEN_ZVR_BASE,
+    PATTERN_DATE_USER_FRENDLY,
+)
 from logger.logger import logger
 from models import ServiceWork, Station
 
@@ -41,6 +45,7 @@ class ServiceWorkBase(CarAtributesInServiceWork):
     Базовая схема записи о Сервисном Обслуживании.
     Дополнительное сравнение даты последнего сервиса и now()
     """
+
     car_id: int = Field(..., title='pk из таблицы Car')
     last_service_id: int = Field(..., title='pk из таблицы ServiceName')
     next_service_id: int = Field(..., title='pk из таблицы ServiceName')
@@ -76,22 +81,36 @@ class ServiceWorkBase(CarAtributesInServiceWork):
     def convert_datetime_to_date(
         self, last_service_date: dt, info
     ) -> Union[str, dt]:
-        """Обработка поля `last_service_date`.
+        """Обработка (отображение) поля `last_service_date`.
 
         ## Variants:
-        - [default] Преобразует datetime в строку вида dd.mm.yyyy для
-        отображения в главной таблице.
-        - При передаче в model_dump(context='create_update_mode') - не меняет;
+        - По умолчанию преобразует `datetime` в строку вида `dd.mm.yyyy` для
+        отображения в главной таблице;
+        - При передаче в `model_dump` параметра `context='create_update_mode'`
+        значение не меняет.
+
+        ## Special stmt:
+        - в режиме `по умолчанию` выполняется проверка времени, прошедшего с
+        предыдущего выполнения сервиса и, с учётом сравнения с полем
+        `COMPLETED_DAYS_AGO`, может быть расширено надписью `прошло дней: ХХХ`.
         """
         if info.context == 'create_update_mode':
             return last_service_date
 
         days_left = (dt.now()-last_service_date).days
-        msg = f" (прошло дней: {days_left})" if days_left > 100 else ''
-        return f"{last_service_date.date().strftime('%d.%m.%Yг.')}{msg}"
+        msg = (
+            f' -> прошло дней: {days_left}'
+            if days_left > COMPLETED_DAYS_AGO else ''
+        )
+        return (
+            f'{last_service_date.date().strftime(PATTERN_DATE_USER_FRENDLY)}'
+            f'{msg}'
+        )
 
 
 class ServiceWorkWithDivergence(ServiceWorkBase):
+    """Дополнительно подсчитывает отклонение пробега."""
+
     @computed_field
     def divergence(self) -> Optional[float]:
         """Отклонение фактического пробега от норматива (1 знак после «,»).
