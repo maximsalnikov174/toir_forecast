@@ -1,6 +1,7 @@
 from pathlib import Path
 
-UPLOAD_FILE_DIR = '/dataset_from_oebs/rmt321_ATU_'
+ENCODING_DEFAULT = 'utf-8'
+
 # Стандартное количество элементов в строке rmt-321:
 TOTAL_VALUES_IN_RAW_RMT_321 = 22
 
@@ -39,6 +40,7 @@ ORGANIZATION_BASE_NAME_PATTERN = r'^Ю\d{2}$'
 ORGANIZATION_NORMAL_NAME_PATTERN = r'^(\d-)?[А-Я]{1,3}$'
 WORDS_AND_DIGITS = r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[a-zA-Z\d]+$'
 COMPANY_DOMAIN = r'^[a-z]+\.?[a-z]{2}@(?:atu.)?mmk.ru$'
+PATTERN_FOR_DATE_IN_CSV = r'^RMT321_ATU_(202\d(?:_\d{2}){5}).csv$'
 pattern_zvr = r'^5[0-4]-АВТ-\d{7}$'
 LEN_ZVR_BASE = 7
 LEN_ZVR_TOTAL = LEN_ZVR_BASE + 8

@@ -1,6 +1,4 @@
-import csv
-import os
-from typing import List, Optional, Type, TypedDict, Union
+from typing import Optional, Type, TypedDict, Union
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -44,92 +42,81 @@ MODEL_MAPPING: dict[str, ModelMapping] = {
 
 
 # ------------------------ФУНКЦИЯ-КОНВЕРТЕР:------------------------
-
-async def convert_csv_to_list(filename: str) -> List[CarDataPoint]:
+async def convert_csv_to_list(csv_rows) -> list[CarDataPoint]:
     """
     Конвертирует CSV файл в список словарей с записями по обслуживанию.
 
     Выполняет подготовку для последующего выполнения update_db()
 
-    Args:
-        filename: Путь к CSV файлу
+    ## Args:
+        csv_rows: CSV файл.
 
     Returns:
-        List[CarDataPoint]: Список объектов с данными автомобилей
+        list[CarDataPoint]: Список объектов с данными автомобилей
     """
-
-    if not os.path.exists(filename):
-        logger.critical(f'Файл не найден: {filename}')
-
-    if os.path.isdir(filename):
-        logger.error(
-            f'Указанный путь ведет к директории: {filename}, а не к файлу.'
-        )
+    logger.info('Начался сбор данных из CSV-файла.')
 
     # Заготовка для общего списка данных из файла rmt-321:
-    total_list: List[CarDataPoint] = []
+    total_list: list[CarDataPoint] = []
 
-    with open(filename, mode='r', encoding='utf-8') as csvfile:
-        reader = csv.reader(csvfile, quotechar='"')
+    for row in csv_rows:
+        # Первая строчка - получаем заголовки csv-файла:
+        if (
+            len(row) == TOTAL_VALUES_IN_RAW_RMT_321
+            and csv_rows.line_num == 1
+        ):
+            mapping_name = list(row)
 
-        for row in reader:
-            # Первая строчка - заголовки:
-            if (
-                len(row) == TOTAL_VALUES_IN_RAW_RMT_321
-                and reader.line_num == 1
-            ):
-                mapping_name = list(row)
+        # Стандартная ситуация:
+        elif len(row) == TOTAL_VALUES_IN_RAW_RMT_321:
+            try:
+                data_point = create_data_point(row, mapping_name)
+                if data_point:
+                    total_list.append(data_point)
+                # else:
+                    # ERROR здесь!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+                    # logger.info(f'Строчка из другого цеха {data_point}')
+            except ValueError as e:
+                logger.error(f'Ошибка обработки данных: {e}')
+                continue
 
-            # Стандартная ситуация:
-            elif len(row) == TOTAL_VALUES_IN_RAW_RMT_321:
+        # Кривые данные (уже маловероятный сценарий):
+        elif len(row) == 1:  # все остальные строчки
+            try:
+                # Поскольку в исходной строке csv есть запятые внутри
+                # элемента - пришлось хардкодить и собирать список заново:
+                first_row, other_row = row[0].split(',"', 1)
+                rows = other_row.split('","')
+                rows.insert(0, first_row)
+
+                # Когда в строке кривое количество элементов
+                # (последняя строка файла):
+                if len(rows) < TOTAL_VALUES_IN_RAW_RMT_321:
+                    logger.error(
+                        f'Cтрока {row[0]} не соответствует нужной длине'
+                    )
+                    continue
+
+                # Только гении в элемент csv заталкивают «,»:
+                # n = 1 if len(row) == 22 else 0
+
+                # Валидация и преобразование данных
                 try:
-                    data_point = create_data_point(row, mapping_name)
+                    data_point = create_data_point(rows, mapping_name)
+
                     if data_point:
                         total_list.append(data_point)
-                    # else:
-                        # ERROR здесь!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-                        # logger.info(f'Строчка из другого цеха {data_point}')
+                    else:
+                        logger.error(f'И тут разобраться {data_point}')
                 except ValueError as e:
                     logger.error(f'Ошибка обработки данных: {e}')
                     continue
 
-            # Кривые данные:
-            elif len(row) == 1:  # все остальные строчки
-                try:
-                    # Поскольку в исходной строке csv есть запятые внутри
-                    # элемента - пришлось хардкодить и собирать список заново:
-                    first_row, other_row = row[0].split(',"', 1)
-                    rows = other_row.split('","')
-                    rows.insert(0, first_row)
+            except Exception as e:
+                logger.error(f'Ошибка разбора строки: {row}, {str(e)}')
+                continue
 
-                    # Когда в строке кривое количество элементов
-                    # (последняя строка файла):
-                    if len(rows) < TOTAL_VALUES_IN_RAW_RMT_321:
-                        logger.error(
-                            f'Cтрока {row[0]} не соответствует нужной длине'
-                        )
-                        continue
-
-                    # Только гении в элемент csv заталкивают «,»:
-                    # n = 1 if len(row) == 22 else 0
-
-                    # Валидация и преобразование данных
-                    try:
-                        data_point = create_data_point(rows, mapping_name)
-
-                        if data_point:
-                            total_list.append(data_point)
-                        else:
-                            logger.error(f'И тут разобраться {data_point}')
-                    except ValueError as e:
-                        logger.error(f'Ошибка обработки данных: {e}')
-                        continue
-
-                except Exception as e:
-                    logger.error(f'Ошибка разбора строки: {row}, {str(e)}')
-                    continue
-
-    logger.info(f'Общее количество строк - {len(total_list)}')
+    logger.info(f'Общее количество полезных строк в файле - {len(total_list)}')
     return total_list
 
 

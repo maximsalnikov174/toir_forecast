@@ -15,3 +15,7 @@ class StaticDataInDBNotFoundException(Exception):
     def __init__(self, status: HTTPStatus, detail: Any) -> None:
         self.status = status
         self.detail = detail
+
+
+class BadNameInUploadFileException(Exception):
+    """Если файл для загрузки имеет неправильное имя."""

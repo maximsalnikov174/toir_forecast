@@ -3,6 +3,8 @@ from typing import Optional
 from pydantic import EmailStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+from constants import ENCODING_DEFAULT
+
 
 class Settings(BaseSettings):
     """Класс для работы с переменными окружения."""
@@ -14,8 +16,6 @@ class Settings(BaseSettings):
     superuser_surname: str = 'Adminov'
     superuser_organization: int = 1
     superuser_role: int = 1
-    date_in_data: str = '2024_12_31'
-    upload_data_from_csv: bool = False
     db_in_pg: bool = False
     postgres_db: str = 'toir_db'
     postgres_user: str = 'user'
@@ -36,7 +36,7 @@ class Settings(BaseSettings):
 
     model_config = SettingsConfigDict(
         env_file='infra/.env',
-        env_file_encoding='utf-8',  # Рекомендуется явно указать кодировку
+        env_file_encoding=ENCODING_DEFAULT,  # Рекомендуется явно указать кодировку
         extra='ignore'  # Игнорировать лишние переменные
     )
 

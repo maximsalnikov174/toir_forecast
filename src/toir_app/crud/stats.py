@@ -1,4 +1,3 @@
-import os
 from datetime import datetime as dt
 from typing import Annotated, Dict
 
@@ -10,7 +9,6 @@ from constants import (
     LIST_ORGANIZATIONS,
     SPECIAL_STATUS_LIST_FOR_GET_STATS,
 )
-from core.config import settings
 from crud.organization import get_organization_by_name
 from crud.service_work import (
     get_active_service_work_count_for_all_service_status,
@@ -24,9 +22,11 @@ from models import (
 )
 
 
-async def add_statement_after_loading_csv_file(session: AsyncSession):
+async def add_statement_after_loading_csv_file(
+        file_date: str, session: AsyncSession,
+):
     """Оценка состояния service_works в подразделении с заполнением БД."""
-    stmt_date: str = settings.date_in_data.replace('_', '-')
+    stmt_date = file_date.replace('_', '-')
 
     for organization_name in LIST_ORGANIZATIONS:
         organization = await get_organization_by_name(
