@@ -2,10 +2,8 @@
 
 from typing import Any
 
-from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from core.db import Base as db
 from crud.service_status import get_service_status_by_name
 from crud.service_work import (
     add_service_works_in_archive, get_last_service_with_current_service_id,
@@ -14,30 +12,6 @@ from crud.service_work import (
 from models import ServiceWork
 from schemas.service_work import ServiceWorkBase
 from logger.logger import logger
-
-
-async def upload_users_data_in_db(
-    element: str,
-    apps_model: type[db],
-    session: AsyncSession
-):
-    """Асинхронно наполняет БД статичными данными."""
-    # Получаем значение (работает и для Enum, и для обычных строк)
-    value = element.value if hasattr(element, 'value') else element
-
-    # Проверяем существование записи
-    stmt = select(apps_model).where(apps_model.name == value)
-    result = await session.execute(stmt)
-    existing = result.scalar_one_or_none()
-
-    if not existing:
-
-        # TODO здесь нет валидации pydantic-схемами
-
-        new_instance = apps_model(name=value)
-        session.add(new_instance)
-
-    await session.commit()
 
 
 async def create_service_work(

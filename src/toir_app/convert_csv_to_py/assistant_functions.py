@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import Optional
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -11,7 +11,7 @@ from schemas.convertation import CarDataPoint
 
 
 def find_element_position(
-    row: List, elem: str, mapping_name: List, type='str'
+    row: list, elem: str, mapping_name: list, type='str'
 ):
     """
     Возвращает элемент (в обработанном виде) из поданной строки.
@@ -52,7 +52,7 @@ def find_element_position(
 
 
 def create_data_point(
-    row: List[str], mapping_name
+    row: list[str], mapping_name
 ) -> Optional[CarDataPoint]:
     """
     Создает схему CarDataPoint из входящей строки данных.
@@ -69,26 +69,30 @@ def create_data_point(
         return CarDataPoint(
             # Описание ТС:
             personal_id=find_element_position(
-                row, 'INSTANCE_ID', mapping_name, 'int'
+                row, 'INSTANCE_ID', mapping_name, 'int',
             ),
             grz=find_element_position(
-                row, 'INSTANCE_NUMBER', mapping_name),
+                row, 'INSTANCE_NUMBER', mapping_name,
+            ),
             car_model=find_element_position(row, 'GR', mapping_name),
             organization=find_element_position(
                 row, 'ORGANIZATION_CODE', mapping_name),
 
             # Базовая настройка:
             base_interval=find_element_position(
-                row, 'RUNTIME_INTERVAL', mapping_name, 'int'
+                row, 'RUNTIME_INTERVAL', mapping_name, 'int',
             ),
 
             # Динамические данные:
-            dt_now=convert_date(find_element_position(
-                row, 'TEK_DATE', mapping_name)),
+            dt_now=convert_date(
+                find_element_position(row, 'TEK_DATE', mapping_name)
+            ),
             daily_distance=find_element_position(
-                row, 'NORMA', mapping_name, 'float'),
+                row, 'NORMA', mapping_name, 'float',
+            ),
             reading_now=find_element_position(
-                row, 'CUR_READING', mapping_name, 'float'),
+                row, 'CUR_READING', mapping_name, 'float',
+            ),
 
             # История:
             last_service_date=(
@@ -103,7 +107,7 @@ def create_data_point(
                 find_element_position(row, 'LAST_OPER', mapping_name)
             ),
             last_service_reading=find_element_position(
-                row, 'LAST_SERVICE_READING', mapping_name, 'float'
+                row, 'LAST_SERVICE_READING', mapping_name, 'float',
             ),
 
             # Прогноз:

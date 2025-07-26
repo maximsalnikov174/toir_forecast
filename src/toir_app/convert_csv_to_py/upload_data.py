@@ -1,7 +1,7 @@
 # ----------ФУНКЦИИ, ВЫПОЛНЯЮЩИЕ НАПОЛНЕНИЕ ДАННЫМИ НЕ ИЗ CSV-ФАЙЛА----------
 # -------------Понадобятся только на старте создания приложения-------------
 
-from typing import List, Tuple
+from typing import Tuple
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -36,7 +36,7 @@ need_to_upload_datas = [
 
 
 async def upload_all_users_data_in_db(
-    data_and_model_pair: List[Tuple],
+    data_and_model_pair: list[Tuple],
     session: AsyncSession
 ):
     """
