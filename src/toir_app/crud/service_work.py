@@ -5,9 +5,11 @@ from typing import Annotated, List, Optional
 
 from fastapi import HTTPException
 from sqlalchemy import and_, or_, select
+from sqlalchemy.sql.expression import func
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
 
+from constants import PATTERN_DATE_OEBS
 from crud.car import (
     get_car_by_pk,
     get_cars_with_request_and_special_status,
@@ -423,3 +425,13 @@ def check_users_can_edit_service_work(
             status_code=HTTPStatus.FORBIDDEN,
             detail='Недостаточно прав!'
         )
+
+
+async def get_db_status(session: AsyncSession) -> dict[str, str]:
+    """Получение состояния об актуальности данных по ServiceWork."""
+    max_date = await session.scalar(select(func.max(ServiceWork.request_date)))
+    return {
+        'current_db_status': (
+            f'Актуально на {max_date.strftime(PATTERN_DATE_OEBS)}'
+        )
+    }

@@ -13,7 +13,7 @@ from crud.service_work import (
     check_users_can_edit_service_work, check_zvr_unique, create_main_table,
     get_active_service_work_count_for_all_service_status,
     get_active_service_work_list_by_car,
-    get_all_active_service_work_with_open_zvr, get_service_work)
+    get_all_active_service_work_with_open_zvr, get_db_status, get_service_work)
 from models import Organization, SpecialStatus, User
 from schemas.service_work import (
     AddZvrSchema,
@@ -21,6 +21,18 @@ from schemas.service_work import (
 )
 
 router = APIRouter()
+
+
+@router.get(
+        '/current_date_in_db',
+        name='Получение информации об актуальности базы данных.',
+        status_code=HTTPStatus.OK,
+)
+async def get_newest_date(
+    session: AsyncSession = Depends(get_async_session),
+) -> dict[str, str]:
+    """Определение свежести данных (находит самую позднюю) в базе."""
+    return await get_db_status(session=session)
 
 
 @router.patch(
