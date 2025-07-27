@@ -51,7 +51,7 @@ def upgrade() -> None:
     )
     op.create_table(
         'servicestatus',
-        sa.Column('name', sa.String(length=20), nullable=False, comment='Рассчётный статус для каждой записи из OeBS'),
+        sa.Column('name', sa.String(length=40), nullable=False, comment='Рассчётный статус для каждой записи из OeBS'),
         sa.Column('id', sa.Integer(), nullable=False, autoincrement=True),
         sa.PrimaryKeyConstraint('id'),
         sa.UniqueConstraint('name')

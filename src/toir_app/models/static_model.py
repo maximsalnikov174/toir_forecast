@@ -7,16 +7,11 @@ from convert_csv_to_py.convertation import UsersServiceName as USN
 class Status(str, Enum):
     """Расчётные статусы (для вида обслуживания) записи из OeBS."""
 
-    DANGER = 'Превышение'
-    TIME_HAS_COME = 'Подошло'
-    WAIT_MOMENT = 'Ожидается в периоде'
-    NO_NEED = 'Нет необходимости'
-    BAD_REQUEST = 'Не был расчитан'
-    # DANGER = '⚡ Превышение'
-    # TIME_HAS_COME = '⏰ Подошло'
-    # WAIT_MOMENT = '🎲 Ожидается в текущем периоде'
-    # NO_NEED = '❌ Нет необходимости'
-    # BAD_REQUEST = 'Не был расчитан'
+    DANGER = '🔴 Превышение'
+    TIME_HAS_COME = '🟡 Подошло'
+    WAIT_MOMENT = '🟢 Ожидается в периоде'
+    NO_NEED = '🔵 Нет необходимости'
+    BAD_REQUEST = '❌ Не был расчитан'
 
 
 class SpecialStatusForCarBase(str, Enum):
@@ -30,10 +25,11 @@ class SpecialStatusForCarBase(str, Enum):
     - ...
     """
 
-    DISPOSAL = 'К выбытию'
+    DISPOSAL = 'К списанию'
     ON_SALE = 'На реализации'
     REMEDIAL_REPAIR = 'На восстановительном ремонте'
     AFTER_ACCIDENT = 'После ДТП'
+    LONG_TERM_REPAIR = 'Долгосрочный ремонт'
 
 
 class StationDefault(str, Enum):
