@@ -43,6 +43,12 @@ pip install -r requirements.txt
 3. Применить миграции (работать только с ними), находящихся в /alembic/versions:
 ```
 alembic upgrade head
+
+```
+
+3.1 Если выполняешь сборку в оркестре выполнить:
+```
+docker-compose exec backend alembic upgrade head
 ```
 
 4. Файл .env
@@ -51,10 +57,4 @@ alembic upgrade head
 5. Запуск приложения через терминал:
 ```
 uvicorn main:toir_app --host 0.0.0.0 --port 8000 --reload
-```
-
-
-после сборки оркестра выполнить:
-```
-docker-compose exec backend alembic upgrade head
 ```

@@ -26,7 +26,7 @@ share/python-wheels/
 *.egg
 MANIFEST
 .vscode/
-dataset_from_oebs/
+csv_data/
 logs/
 *toir.db
 *db.bak
