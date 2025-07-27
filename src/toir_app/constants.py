@@ -64,7 +64,7 @@ PERSON_FULL_NAME_LEN = 40
 # Минимальная длина пароля от личного кабинета:
 MIN_PASSWORD_LEN = 5
 # Дефолтное время жизни (в секундах) токена для пользователя:
-LIFETIME_TOKEN_IN_SECONDS = 3_600
+LIFETIME_TOKEN_IN_SECONDS = 60 * 60 * 24
 # URL для работы с регистрацией пользователя:
 ENDPOINT_URL_FOR_REGISTRATION = '/auth'
 # URL для работы с аутентификацией:
