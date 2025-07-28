@@ -42,8 +42,8 @@ WORDS_AND_DIGITS = r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[a-zA-Z\d]+$'
 COMPANY_DOMAIN = r'^[a-z]+\.?[a-z]{2}@(?:atu.)?mmk.ru$'
 PATTERN_FOR_DATE_IN_CSV = r'^RMT321_ATU_(202\d(?:_\d{2}){5}).csv$'
 pattern_zvr = r'^5[0-4]-АВТ-\d{7}$'
-LEN_ZVR_BASE = 7
-LEN_ZVR_TOTAL = LEN_ZVR_BASE + 8
+LEN_ZVR_BASE = 11
+LEN_ZVR_TOTAL = LEN_ZVR_BASE + 4
 ZVR_PART_MIN = 1_000_000
 ZVR_PART_MAX = 10_000_000
 COMPLETED_DAYS_AGO = 180  # прошло дней с последней `service_work`

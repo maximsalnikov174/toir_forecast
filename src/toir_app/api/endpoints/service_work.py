@@ -72,8 +72,7 @@ async def add_zvr_to_service_work(
 
     try:
         service_work.zvr_number = (
-            f'{service_work.car.organization.name}'
-            f'-АВТ-{zvr_attr.zvr_number}'
+            f'{service_work.car.organization.name}-{zvr_attr.zvr_number}'
         )
         service_work.station_id = zvr_attr.station_id
         service_work.zvr_create_date = dt.now()  # TODO надо дописать tz
