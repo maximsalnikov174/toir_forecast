@@ -160,9 +160,8 @@ onMounted(async () => {
 
 .current-date {
   font-weight: 500;
-  color: #fa0808;
+  color: #3a3939;
   padding: 8px 12px;
-  background-color: #f0f0f0;
   border-radius: 4px;
   font-size: 16px;
   font-weight: 600;
