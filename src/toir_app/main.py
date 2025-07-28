@@ -2,6 +2,7 @@ import asyncio
 
 import uvicorn
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware  # Импортируем CORS middleware
 
 from api.routers import main_router
 from core.config import settings
@@ -12,6 +13,14 @@ toir_app = FastAPI(title=settings.app_title)
 # Подключаем роутер к приложению:
 toir_app.include_router(main_router)
 
+# Добавляем CORS middleware
+toir_app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Разрешаем запросы от всех доменов
+    allow_credentials=True,
+    allow_methods=["*"],  # Разрешаем все методы
+    allow_headers=["*"],  # Разрешаем все заголовки
+)
 
 async def main():
     """Основная асинхронная функция инициализации"""
