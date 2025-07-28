@@ -1,14 +1,19 @@
 <template>
   <div class="index-page">
-    <div class="user-controls">
-      <div class="user-name-placeholder">
-  {{ authStore.user?.name && authStore.user?.surname
-     ? `${authStore.user.name} ${authStore.user.surname}`
-     : 'Гость' }}
-</div>
-      <button class="login-logout-button" @click="handleAuth">
-        {{ authStore.isAuth ? 'Выйти' : 'Войти' }}
-      </button>
+    <div class="header-info">
+      <div class="current-date">{{ currentDate }}</div>
+      <div class="user-controls">
+        <div class="user-name-placeholder">
+          {{
+            authStore.user?.name && authStore.user?.surname
+              ? `${authStore.user.name} ${authStore.user.surname}`
+              : 'Гость'
+          }}
+        </div>
+        <button class="login-logout-button" @click="handleAuth">
+          {{ authStore.isAuth ? 'Выйти' : 'Войти' }}
+        </button>
+      </div>
     </div>
 
     <LoginRegisterDialog
@@ -47,11 +52,14 @@
       <!-- Основные данные - машины и статусы -->
       <div class="data-rows">
         <div v-for="(car, rowIndex) in cars" :key="car.personal_id" class="data-row">
-          <CarCard :grz="car.grz"
-          :model="car.car_model?.name || ''"
-          :daliDistanse="car.indicators?.daily_distance"
-          :requestReading="car.indicators?.request_reading"
-          :specialStatusId="car.status_associations?.find(status => status.is_active)?.special_status_id"
+          <CarCard
+            :grz="car.grz"
+            :model="car.car_model?.name || ''"
+            :daliDistanse="car.indicators?.daily_distance"
+            :requestReading="car.indicators?.request_reading"
+            :specialStatusId="
+              car.status_associations?.find((status) => status.is_active)?.special_status_id
+            "
           />
           <div class="status-cards">
             <template v-for="(item, itemIndex) in tableData[rowIndex]" :key="itemIndex">
@@ -66,7 +74,7 @@
                 :service_work_completed="item.service_work_completed"
                 :id="item.id"
                 @submitted="handleApply"
-                />
+              />
               <div v-else class="empty-status-card"></div>
             </template>
           </div>
@@ -77,7 +85,7 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import MinimalStatus from '../components/UI/Button/MinimalStatus.vue'
 import DivisionSelect from '../components/UI/Button/DivisionSelect.vue'
 import GroupTs from '../components/UI/Button/GroupTs.vue'
@@ -88,12 +96,14 @@ import ServiceStatusCard from '../components/Cards/Reading/ServiceStatusCard.vue
 import CarCard from '../components/Cards/Reading/CarsCard.vue'
 import LoginRegisterDialog from 'src/components/UI/Windows/LoginRegisterDialog.vue'
 import { useAuthStore } from 'src/stores/useAuthStore'
+import { getCurrentDateInDB } from 'src/components/Functions/CurrentDateInDB'
 
 const tableData = ref([])
 const services = ref([])
 const cars = ref([])
 const authStore = useAuthStore()
 const authDialog = ref(null)
+const currentDate = ref('Загрузка даты...')
 
 const handleTableDataFetched = (data) => {
   tableData.value = data
@@ -127,9 +137,36 @@ const handleApply = () => {
   toAcceptRef.value?.handleApply()
 }
 
+onMounted(async () => {
+  try {
+    const dateData = await getCurrentDateInDB()
+    currentDate.value = dateData.current_db_status
+  } catch (error) {
+    currentDate.value = 'Ошибка загрузки даты'
+    console.error(error)
+  }
+})
+
 </script>
 
 <style scoped>
+
+.header-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.current-date {
+  font-weight: 500;
+  color: #333;
+  padding: 8px 12px;
+  background-color: #f0f0f0;
+  border-radius: 4px;
+}
+
+
 .sticky-header {
   position: sticky;
   top: 0;
