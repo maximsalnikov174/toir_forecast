@@ -115,7 +115,7 @@ async def completed_real_service_work(
     service_work = await get_service_work(service_work_id, session)
 
     if service_work:
-        await check_users_can_edit_service_work(user, service_work)
+        check_users_can_edit_service_work(user, service_work)
         if not service_work.zvr_number:
             raise HTTPException(
                 status_code=HTTPStatus.UNPROCESSABLE_ENTITY,
