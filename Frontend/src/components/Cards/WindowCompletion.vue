@@ -2,16 +2,16 @@
   <div v-if="show" class="window-overlay" @click.self="close">
     <div class="window-container">
       <div class="window-header">
-        <h3>Подтверждение работы</h3>
+        <h3>Перевод в статус 'завершено'</h3>
         <button class="close-btn" @click="close"></button>
       </div>
 
       <div class="window-content">
-        <p>Вы уверены, что хотите подтвердить эту работу?</p>
+        <p>Подтверждаю, что работы выполнены, ТС принято с сервиса</p>
       </div>
 
       <div class="window-footer">
-        <button class="complete-btn" @click="complete">Подтвердить</button>
+        <button class="complete-btn" @click="complete">Да</button>
       </div>
     </div>
   </div>
@@ -84,7 +84,7 @@ const complete = async () => {
 }
 
 .window-container {
-  width: 400px;
+  width: 500px;
   height: 200px;
   background-color: white;
   border-radius: 8px;

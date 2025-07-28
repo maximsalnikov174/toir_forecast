@@ -25,7 +25,7 @@
                 filled
                 v-model="zvr_number"
                 label="Укажите 7 последних цифр №ЗВР"
-                mask="# # # # # # #"
+                mask="АВТ-# # # # # # #"
                 fill-mask
               />
             </div>
