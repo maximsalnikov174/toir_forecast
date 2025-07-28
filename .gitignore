@@ -26,11 +26,12 @@ share/python-wheels/
 *.egg
 MANIFEST
 .vscode/
-dataset_from_oebs/
+csv_data/
 logs/
 *toir.db
 *db.bak
 .DS_Store
+*.pdf
 
 # PyInstaller
 #  Usually these files are written by a python script from a template
