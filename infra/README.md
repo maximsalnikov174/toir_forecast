@@ -52,9 +52,13 @@ docker-compose exec backend alembic upgrade head
 ```
 
 4. Файл .env
-Создать файл .env в корне проекта (директория toir_app) с переменными окружения (есть в env.example)
+Создать файл `.env` в директории `infra` с переменными окружения (пример есть в env.example)
 
-5. Запуск приложения через терминал:
+5. Запуск приложения через терминал, находясь в `src/toir_app/`:
 ```
-uvicorn main:toir_app --host 0.0.0.0 --port 8000 --reload
+uvicorn main:toir_app --host 0.0.0.0 --port 8001 --reload
 ```
+
+6. Если нужно запустить базу на `SQLite`:
+* разместить файл `fast_toir.db` на одном уровне с `main.py` в `src/toir_app/`
+* в `.env` для переменной `DB_IN_PG` установить значение `False`
