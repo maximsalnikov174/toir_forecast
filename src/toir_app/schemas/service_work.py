@@ -99,7 +99,7 @@ class ServiceWorkBase(CarAtributesInServiceWork):
 
         days_left = (dt.now()-last_service_date).days
         msg = (
-            f' -> прошло дней: {days_left}'
+            f' -> {days_left} дней'
             if days_left > COMPLETED_DAYS_AGO else ''
         )
         return (
