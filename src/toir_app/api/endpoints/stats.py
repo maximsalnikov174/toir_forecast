@@ -15,12 +15,19 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from tqdm import tqdm
 
 from constants import ENCODING_DEFAULT, PATTERN_FOR_DATE_IN_CSV
+from convert_csv_to_py.upload_data import (
+    need_to_upload_datas,
+    upload_all_users_data_in_db,
+)
 from convert_csv_to_py.parse_data import (
     convert_csv_to_list,
     upload_filedata_in_db,
 )
 from core.db import AsyncSessionLocal, get_async_session
+from core.init_db import create_first_superuser
 from crud.car import push_cars_in_archive
+from crud.organization import get_organization_by_name
+from crud.role import get_superuser_role
 from crud.service_work import (
     add_service_works_in_archive,
     get_active_service_work_list_by_car,
@@ -32,9 +39,12 @@ from crud.stats import (
     add_statement_after_loading_csv_file,
     get_stats_for_organization,
 )
-from exception import BadNameInUploadFileException
+from exception import (
+    BadNameInUploadFileException,
+    StaticDataInDBNotFoundException,
+)
 from logger.logger import logger
-from models import Organization
+from models import Organization, StaticOrganization
 from schemas.service_work_stats import ServiceStatusStatsBase
 
 router = APIRouter()
@@ -57,6 +67,13 @@ async def upload_file(file: UploadFile = File(...)):
 
         # 3. Выполняем загрузку и обновление строк в БД:
         async with AsyncSessionLocal() as download_session:
+
+            # Проверяем наполнение БД статическими данными:
+            await get_organization_by_name(
+                name=StaticOrganization.ORG_UPR.value,
+                session=download_session
+            )
+
             # Создаём пустое множество ТС:
             car_list = array('H')
 
@@ -105,6 +122,28 @@ async def upload_file(file: UploadFile = File(...)):
 
             # 3.6 Общий коммит сессии:
             await download_session.commit()
+
+    except StaticDataInDBNotFoundException:
+        logger.info('Началась загрузка статических данных.')
+        # 1. Загружаем enum-значения в БД (по итогу - коммит, он нужен)
+        await upload_all_users_data_in_db(
+            need_to_upload_datas, download_session
+        )
+        await download_session.commit()
+        logger.info('Завершилась загрузка статических данных.')
+
+        logger.info('Начало создания первого суперпользователя.')
+        organization = await get_organization_by_name(
+            name=StaticOrganization.ORG_UPR.value,
+            session=download_session
+        )
+        role_id = await get_superuser_role(session=download_session)
+        await create_first_superuser(
+            role_id=role_id,
+            organization_id=organization.id
+        )
+        logger.info('Суперпользователь создан.')
+        await download_session.commit()
 
     except BadNameInUploadFileException:
         raise HTTPException(
