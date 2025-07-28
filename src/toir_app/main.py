@@ -28,7 +28,7 @@ toir_app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],  # Разрешаем запросы от всех доменов
     allow_credentials=True,
-    allow_methods=["POST", "DELET", "GET", "PATCH"],  # Разрешаем все методы
+    allow_methods=["*"],  # Разрешаем все методы
     allow_headers=["*"],  # Разрешаем все заголовки
 )
 
