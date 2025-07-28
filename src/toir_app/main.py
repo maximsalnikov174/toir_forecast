@@ -12,6 +12,7 @@ from core.config import settings
 from core.db import AsyncSessionLocal
 from core.init_db import create_first_superuser
 from crud.organization import get_organization_by_name
+from fastapi.middleware.cors import CORSMiddleware  # Импортируем CORS middleware
 from crud.role import get_superuser_role
 from exception import StaticDataInDBNotFoundException
 from logger.logger import logger
@@ -22,6 +23,14 @@ toir_app = FastAPI(title=settings.app_title)
 # Подключаем роутер к приложению:
 toir_app.include_router(main_router)
 
+# Добавляем CORS middleware
+toir_app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Разрешаем запросы от всех доменов
+    allow_credentials=True,
+    allow_methods=["POST", "DELET", "GET", "PATCH"],  # Разрешаем все методы
+    allow_headers=["*"],  # Разрешаем все заголовки
+)
 
 async def main():
     """Основная асинхронная функция инициализации"""
