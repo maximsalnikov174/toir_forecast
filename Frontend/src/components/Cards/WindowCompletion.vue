@@ -2,16 +2,16 @@
   <div v-if="show" class="window-overlay" @click.self="close">
     <div class="window-container">
       <div class="window-header">
-        <h3>Завершение работы</h3>
+        <h3>Подтверждение работы</h3>
         <button class="close-btn" @click="close"></button>
       </div>
 
       <div class="window-content">
-        <p>Вы уверены, что хотите завершить эту работу?</p>
+        <p>Вы уверены, что хотите подтвердить эту работу?</p>
       </div>
 
       <div class="window-footer">
-        <button class="complete-btn" @click="complete">Завершить</button>
+        <button class="complete-btn" @click="complete">Подтвердить</button>
       </div>
     </div>
   </div>
