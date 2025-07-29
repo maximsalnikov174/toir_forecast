@@ -2,13 +2,13 @@ name: service_forecast
 
 services:
   db:
-    image: postgres:16-alpine
+    image: postgres:17
     env_file:
       - .env
     environment:
       PGDATA: /var/lib/postgresql/data/pgdata
-    ports:
-      - "5432:5432"
+#    ports:
+#      - "5432:5432"
     volumes:
       - toir_app_data:/var/lib/postgresql/data/pgdata
     command: >
@@ -50,7 +50,7 @@ services:
         max-size: "10m"
         max-file: "3"
     ports:
-      - "80:8877"
+      - "8877:8877"
     env_file:
       - .env
     depends_on:
