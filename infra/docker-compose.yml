@@ -42,8 +42,8 @@ services:
   backend:
     build:
       context: ../src/toir_app/
-      pull: false
-    image: python:3.11-slim
+      pull: false  # тест локального образа
+    image: python:3.11-slim  # тест локального образа
     logging:
       driver: "json-file"
       options:
@@ -60,9 +60,9 @@ services:
 
   frontend:
     build:
-      context: ../src/frontend/
-      pull: false
-    image: node:20-alpine
+      context: ../src/Frontend/
+      pull: false  # Тест локального образа
+    image: node:20-alpine  # Тест локального образа
     env_file:
       - .env
     depends_on:
