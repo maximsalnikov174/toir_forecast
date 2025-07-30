@@ -59,25 +59,33 @@ services:
     networks: [internal]
 
   frontend:
-    # build:
-    #   context: ../src/Frontend/
-    #   pull: false  # Тест локального образа
-    image: node:20-alpine  # Тест локального образа
+    build: ../src/Frontend/
+    command: sh -c "cp -r ./dist/spa/. /static/"
     volumes:
-      - ../src/Frontend:/app          # Монтируем исходный код
-      - static_volume:/app/static      # Для статики
-      - /app/node_modules              # Защита node_modules
-    command: >
-      sh -c "npm install &&
-             npm run build &&
-             cp -R dist/* /app/static/ &&
-             exit 0"  # Явное завершение
-    env_file:
-      - .env
+      - static:/static
     depends_on:
-      backend:
-        condition: service_started
-    networks: [internal]
+      - backend
+
+  # frontend:
+  #   build:
+  #     context: ../src/Frontend/
+  #   #   pull: false  # Тест локального образа
+  #   # image: node:20-alpine  # Тест локального образа
+  #   volumes:
+  #     - ../src/Frontend:/app          # Монтируем исходный код
+  #     - static_volume:/app/static      # Для статики
+  #     - /app/node_modules              # Защита node_modules
+  #   #command: >
+  #   #  sh -c "npm install &&
+  #   #         npm run build &&
+  #   #         cp -R dist/* /app/static/ &&
+  #   #         exit 0"  # Явное завершение
+  #   env_file:
+  #     - .env
+  #   depends_on:
+  #     backend:
+  #       condition: service_started
+  #   networks: [internal]
 
   nginx:
     image: nginx:1.27
@@ -92,7 +100,7 @@ services:
 volumes:
   toir_app_data:
   migrations:
-  static_volume:
+  static:
 
 networks:
   internal:
