@@ -66,27 +66,6 @@ services:
     depends_on:
       - backend
 
-  # frontend:
-  #   build:
-  #     context: ../src/Frontend/
-  #   #   pull: false  # Тест локального образа
-  #   # image: node:20-alpine  # Тест локального образа
-  #   volumes:
-  #     - ../src/Frontend:/app          # Монтируем исходный код
-  #     - static_volume:/app/static      # Для статики
-  #     - /app/node_modules              # Защита node_modules
-  #   #command: >
-  #   #  sh -c "npm install &&
-  #   #         npm run build &&
-  #   #         cp -R dist/* /app/static/ &&
-  #   #         exit 0"  # Явное завершение
-  #   env_file:
-  #     - .env
-  #   depends_on:
-  #     backend:
-  #       condition: service_started
-  #   networks: [internal]
-
   gateway:
     build: ./nginx/
     ports:
