@@ -59,9 +59,9 @@ services:
     networks: [internal]
 
   frontend:
-    build:
-      context: ../src/Frontend/
-      pull: false  # Тест локального образа
+    # build:
+    #   context: ../src/Frontend/
+    #   pull: false  # Тест локального образа
     image: node:20-alpine  # Тест локального образа
     volumes:
       - ../src/Frontend:/app          # Монтируем исходный код
