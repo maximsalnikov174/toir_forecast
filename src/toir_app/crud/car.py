@@ -4,7 +4,7 @@ from http import HTTPStatus
 from typing import Annotated, Any, Optional
 
 from fastapi import HTTPException
-from sqlalchemy import or_, select
+from sqlalchemy import and_, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import contains_eager, joinedload, selectinload
 
@@ -178,13 +178,19 @@ async def get_cars_with_request_and_special_status(
     stmt = (
         select(Car)
         .join(ServiceWork, Car.id == ServiceWork.car_id)
-        .outerjoin(Car.status_associations)
+        .outerjoin(
+            Car.status_associations.and_(
+                SpecialStatusForCar.is_active.is_(True)
+            )
+        )
         .options(
             contains_eager(Car.service_works),  # жадный подгруз ServWork
             joinedload(Car.car_model),
-            joinedload(Car.status_associations.and_(  # только те, что True
-                SpecialStatusForCar.is_active.is_(True)
-            ))
+            joinedload(
+                Car.status_associations.and_(
+                    SpecialStatusForCar.is_active.is_(True)
+                )
+            ),
         ).where(
             ServiceWork.request_status_id <= request_status_id,
             Car.organization_id == organization_id,
@@ -196,7 +202,6 @@ async def get_cars_with_request_and_special_status(
         ).distinct()  # distinct - дедупликация (FIXME не уверен, что так)
         .order_by(Car.grz)
     )
-
     # Скрыть записи о сервисном обслуживании, если для них уже создан ЗВР:
     if hide_service_work_with_zvr:
         stmt = stmt.where(ServiceWork.zvr_number.is_(None))
