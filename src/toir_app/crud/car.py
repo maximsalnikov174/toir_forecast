@@ -6,7 +6,7 @@ from typing import Annotated, Any, Optional
 from fastapi import HTTPException
 from sqlalchemy import or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import contains_eager, joinedload, selectinload
+from sqlalchemy.orm import joinedload, selectinload
 
 from constants import MAX_SPECIAL_STATUS_VALID, pattern_grz_input_user
 from logger.logger import logger
@@ -177,15 +177,14 @@ async def get_cars_with_request_and_special_status(
     """
     stmt = (
         select(Car)
-        .join(ServiceWork, Car.id == ServiceWork.car_id)
-        .outerjoin(Car.status_associations)
         .options(
-            contains_eager(Car.service_works),  # жадный подгруз ServWork
-            joinedload(Car.car_model),
-            joinedload(Car.status_associations.and_(  # только те, что True
-                SpecialStatusForCar.is_active.is_(True)
-            ))
-        ).where(
+            selectinload(Car.car_model),
+            selectinload(Car.status_associations),
+            selectinload(Car.service_works)
+        )
+        .join(Car.service_works)  # Явное соед. с service_works
+        .outerjoin(Car.status_associations)  # OUTER JOIN: статусы могут отс.
+        .where(
             ServiceWork.request_status_id <= request_status_id,
             Car.organization_id == organization_id,
             Car.in_archive.is_(False),
