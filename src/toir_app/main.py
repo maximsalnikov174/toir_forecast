@@ -16,11 +16,12 @@ toir_app.include_router(main_router)
 # Добавляем CORS middleware
 toir_app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Разрешаем запросы от всех доменов
+    allow_origins=["http://toir.atu.mmk.ru:8811"],  # От кого разрешаем запросы
     allow_credentials=True,
     allow_methods=["*"],  # Разрешаем все методы
     allow_headers=["*"],  # Разрешаем все заголовки
 )
+
 
 async def main():
     """Основная асинхронная функция инициализации"""
