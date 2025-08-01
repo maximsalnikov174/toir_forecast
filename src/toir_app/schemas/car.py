@@ -142,3 +142,4 @@ class CarExpandWithIndicators(CarWithCarModelFields):
     - (new) Среднесуточный пробег
     """
     indicators: Optional[CarAtributesInServiceWork]
+    id: Optional[int]

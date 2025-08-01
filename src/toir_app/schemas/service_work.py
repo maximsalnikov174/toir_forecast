@@ -1,4 +1,3 @@
-from datetime import timedelta
 from datetime import datetime as dt
 from typing import Annotated, Optional, Union
 
@@ -12,6 +11,7 @@ from constants import (
 )
 from logger.logger import logger
 from models import ServiceWork, Station
+from schemas.station import StationBase
 
 
 class ServiceWorksRequestStatus(BaseModel):
@@ -160,6 +160,10 @@ class ServiceWorkWithZVRNumber(ServiceWorkWithDivergence):
         )
     )
     request_status_id: int = Field(..., title='id расчётного статуса')
+    station: Optional[StationBase] = Field(
+        ...,
+        title='Станция, где будут выполнены работы'
+    )
 
     @computed_field
     def days_between_service_work_completed_and_now(self) -> Optional[int]:
