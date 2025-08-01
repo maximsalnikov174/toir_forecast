@@ -63,9 +63,6 @@ async def upload_file(
 ):
     """Обработка файла csv и загрузка данных в БД."""
     try:
-        if not user.is_superuser:
-            raise NoPermissionForSuperUser
-
         # 1. проверим корректность имени файла CSV и заберём `datetime`:
         update_date = re.match(PATTERN_FOR_DATE_IN_CSV, file.filename)
         update_date = update_date.groups()[0] if update_date else None
@@ -85,6 +82,9 @@ async def upload_file(
                 name=StaticOrganization.ORG_UPR.value,
                 session=download_session
             )
+
+            if not user.is_superuser:
+                raise NoPermissionForSuperUser
 
             # Создаём пустое множество ТС:
             car_list = array('H')
