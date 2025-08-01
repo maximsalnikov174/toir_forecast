@@ -25,11 +25,11 @@ class SpecialStatusForCarBase(str, Enum):
     - ...
     """
 
-    DISPOSAL = 'К списанию'
-    ON_SALE = 'На реализации'
-    REMEDIAL_REPAIR = 'На восстановительном ремонте'
     AFTER_ACCIDENT = 'После ДТП'
     LONG_TERM_REPAIR = 'Долгосрочный ремонт'
+    REMEDIAL_REPAIR = 'На восстановительном ремонте'
+    ON_SALE = 'На реализации'
+    DISPOSAL = 'К списанию'
 
 
 class StationDefault(str, Enum):
