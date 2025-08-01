@@ -84,6 +84,7 @@ async def upload_file(
             )
 
             if not user.is_superuser:
+                await download_session.commit()
                 raise NoPermissionForSuperUser
 
             # Создаём пустое множество ТС:
