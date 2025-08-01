@@ -5,7 +5,7 @@
     @mouseleave="hover = false"
     @click="handleCardClick"
   >
-    <div v-if="showTopBar" class="vertical-bar top-bar"></div>
+    <div v-if="showTopBar" class="vertical-bar top-bar" :class="topBarColorClass"></div>
     <div v-if="showBottomBar" class="vertical-bar bottom-bar"></div>
     <div class="status-indicator" :class="indicatorClass"></div>
     <div class="characteristic-title">{{ Divergence }} км</div>
@@ -84,6 +84,10 @@ const props = defineProps({
   id: {
     type: [Number, String],
     required: true
+  },
+  station: {
+    type: Object,
+    default: null
   }
 });
 
@@ -98,6 +102,17 @@ const shouldShowHover = computed(() => {
          authStore.user?.organization_id === selectedDivId.value & !props.service_work_completed;
 });
 
+const topBarColorClass = computed(() => {
+  if (!props.station?.id) return 'default-color';
+
+  switch(props.station.id) {
+    case 1: return 'purple-color';    // УРГА
+    case 2: return 'orange-color';    // Другая станция
+    case 3: return 'turquoise-color'; // Третья станция
+    default: return 'default-color';
+  }
+});
+
 const handleCardClick = () => {
   if (props.divId) {
     selectedDivId.value = props.divId;
@@ -105,7 +120,6 @@ const handleCardClick = () => {
 };
 
 const handleOverlayClick = () => {
-  // Не открывать completion modal если работа уже завершена
   if (props.service_work_completed) {
     return;
   }
@@ -166,7 +180,6 @@ const showBottomBar = computed(() => {
 </script>
 
 <style scoped>
-/* Your existing styles remain unchanged */
 .service-status-card {
   width: 150px;
   height: 80px;
@@ -183,7 +196,6 @@ const showBottomBar = computed(() => {
   width: 5px;
   height: 30px;
   left: 3px;
-  background: #A5A5A5;
 }
 
 .top-bar {
@@ -192,6 +204,24 @@ const showBottomBar = computed(() => {
 
 .bottom-bar {
   top: 43px;
+  background: #A5A5A5;
+}
+
+/* Цвета для вертикальных полосок */
+.default-color {
+  background: #A5A5A5; /* Стандартный серый цвет */
+}
+
+.purple-color {
+  background: #800080; /* Фиолетовый для УРГА */
+}
+
+.orange-color {
+  background: #FFA500; /* Оранжевый для станции 2 */
+}
+
+.turquoise-color {
+  background: #40E0D0; /* Бирюзовый для станции 3 */
 }
 
 .characteristic-title {
