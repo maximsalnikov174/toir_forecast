@@ -5,8 +5,19 @@
     @mouseleave="hover = false"
     @click="handleCardClick"
   >
-    <div v-if="showTopBar" class="vertical-bar top-bar"></div>
-    <div v-if="showBottomBar" class="vertical-bar bottom-bar"></div>
+    <!-- Верхняя полоска (меняет цвет) -->
+    <div
+      v-if="showTopBar"
+      class="vertical-bar top-bar"
+      :class="topBarClass"
+    ></div>
+
+    <!-- Нижняя полоска (всегда серая) -->
+    <div
+      v-if="showBottomBar"
+      class="vertical-bar bottom-bar"
+    ></div>
+
     <div class="status-indicator" :class="indicatorClass"></div>
     <div class="characteristic-title">{{ Divergence }} км</div>
     <div class="other-text">{{ displayDate }}</div>
@@ -84,7 +95,23 @@ const props = defineProps({
   id: {
     type: [Number, String],
     required: true
+  },
+  station: {
+    type: Object,
+    default: () => ({ id: null })
   }
+});
+
+const topBarClass = computed(() => {
+  if (!props.station?.id) return '';
+
+  const stationClassMap = {
+    1: 'station-purple',
+    2: 'station-orange',
+    3: 'station-turquoise',
+  };
+
+  return stationClassMap[props.station.id] || '';
 });
 
 const serviceWorkId = ref(props.id);
@@ -105,7 +132,6 @@ const handleCardClick = () => {
 };
 
 const handleOverlayClick = () => {
-  // Не открывать completion modal если работа уже завершена
   if (props.service_work_completed) {
     return;
   }
@@ -166,7 +192,6 @@ const showBottomBar = computed(() => {
 </script>
 
 <style scoped>
-/* Your existing styles remain unchanged */
 .service-status-card {
   width: 150px;
   height: 80px;
@@ -178,12 +203,30 @@ const showBottomBar = computed(() => {
   cursor: pointer;
 }
 
+/* Цвета для верхней полоски в зависимости от station.id */
+.station-purple {
+  background: purple;
+}
+
+.station-orange {
+  background: orange;
+}
+
+.station-turquoise {
+  background: turquoise;
+}
+
+/* Нижняя полоска всегда серая */
+.bottom-bar {
+  background: #A5A5A5;
+}
+
+/* Общие стили для вертикальных полосок */
 .vertical-bar {
   position: absolute;
   width: 5px;
   height: 30px;
   left: 3px;
-  background: #A5A5A5;
 }
 
 .top-bar {
