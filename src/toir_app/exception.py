@@ -19,3 +19,7 @@ class StaticDataInDBNotFoundException(Exception):
 
 class BadNameInUploadFileException(Exception):
     """Если файл для загрузки имеет неправильное имя."""
+
+
+class NoPermissionForSuperUser(Exception):
+    """У пользователя нет прав суперпользователя."""

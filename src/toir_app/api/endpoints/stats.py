@@ -25,6 +25,7 @@ from convert_csv_to_py.parse_data import (
 )
 from core.db import AsyncSessionLocal, get_async_session
 from core.init_db import create_first_superuser
+from core.user import current_user
 from crud.car import push_cars_in_archive
 from crud.organization import get_organization_by_name
 from crud.role import get_superuser_role
@@ -41,19 +42,30 @@ from crud.stats import (
 )
 from exception import (
     BadNameInUploadFileException,
+    NoPermissionForSuperUser,
     StaticDataInDBNotFoundException,
 )
 from logger.logger import logger
-from models import Organization, StaticOrganization
+from models import Organization, StaticOrganization, User
 from schemas.service_work_stats import ServiceStatusStatsBase
 
 router = APIRouter()
 
 
-@router.post('/uploadfile')
-async def upload_file(file: UploadFile = File(...)):
+@router.post(
+        '/uploadfile',
+        dependencies=[Depends(current_user)],
+)
+async def upload_file(
+    file: UploadFile = File(...),
+    user: User = Depends(current_user),
+
+):
     """Обработка файла csv и загрузка данных в БД."""
     try:
+        if not user.is_superuser:
+            raise NoPermissionForSuperUser
+
         # 1. проверим корректность имени файла CSV и заберём `datetime`:
         update_date = re.match(PATTERN_FOR_DATE_IN_CSV, file.filename)
         update_date = update_date.groups()[0] if update_date else None
@@ -149,6 +161,12 @@ async def upload_file(file: UploadFile = File(...)):
         raise HTTPException(
             status_code=400,
             detail='Проверьте имя файла'
+        )
+
+    except NoPermissionForSuperUser:
+        raise HTTPException(
+            status_code=400,
+            detail='У пользователя недостаточно прав для загрузки файла'
         )
 
     except Exception as e:
