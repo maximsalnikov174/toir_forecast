@@ -73,6 +73,7 @@
                 :zvr_number="item.zvr_number"
                 :service_work_completed="item.service_work_completed"
                 :id="item.id"
+                :station="item.station"
                 @submitted="handleApply"
               />
               <div v-else class="empty-status-card"></div>

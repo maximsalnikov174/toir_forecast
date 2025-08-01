@@ -34,6 +34,7 @@ import status1 from 'src/assets/1.png'
 import status2 from 'src/assets/2.png'
 import status3 from 'src/assets/3.png'
 import status4 from 'src/assets/4.png'
+import status5 from 'src/assets/5.png'
 
 export default defineComponent({
   name: 'CarCard',
@@ -73,6 +74,7 @@ export default defineComponent({
         case 2: return status2
         case 3: return status3
         case 4: return status4
+        case 5: return status5
         default: return null
       }
     })

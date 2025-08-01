@@ -5,8 +5,19 @@
     @mouseleave="hover = false"
     @click="handleCardClick"
   >
-    <div v-if="showTopBar" class="vertical-bar top-bar" :class="topBarColorClass"></div>
-    <div v-if="showBottomBar" class="vertical-bar bottom-bar"></div>
+    <!-- Верхняя полоска (меняет цвет) -->
+    <div
+      v-if="showTopBar"
+      class="vertical-bar top-bar"
+      :class="topBarClass"
+    ></div>
+
+    <!-- Нижняя полоска (всегда серая) -->
+    <div
+      v-if="showBottomBar"
+      class="vertical-bar bottom-bar"
+    ></div>
+
     <div class="status-indicator" :class="indicatorClass"></div>
     <div class="characteristic-title">{{ Divergence }} км</div>
     <div class="other-text">{{ displayDate }}</div>
@@ -87,8 +98,20 @@ const props = defineProps({
   },
   station: {
     type: Object,
-    default: null
+    default: () => ({ id: null })
   }
+});
+
+const topBarClass = computed(() => {
+  if (!props.station?.id) return '';
+
+  const stationClassMap = {
+    1: 'station-purple',
+    2: 'station-orange',
+    3: 'station-turquoise',
+  };
+
+  return stationClassMap[props.station.id] || '';
 });
 
 const serviceWorkId = ref(props.id);
@@ -100,17 +123,6 @@ const shouldShowPlusIcon = computed(() => {
 const shouldShowHover = computed(() => {
   return hover.value &&
          authStore.user?.organization_id === selectedDivId.value & !props.service_work_completed;
-});
-
-const topBarColorClass = computed(() => {
-  if (!props.station?.id) return 'default-color';
-
-  switch(props.station.id) {
-    case 1: return 'purple-color';    // УРГА
-    case 2: return 'orange-color';    // Другая станция
-    case 3: return 'turquoise-color'; // Третья станция
-    default: return 'default-color';
-  }
 });
 
 const handleCardClick = () => {
@@ -191,6 +203,25 @@ const showBottomBar = computed(() => {
   cursor: pointer;
 }
 
+/* Цвета для верхней полоски в зависимости от station.id */
+.station-purple {
+  background: purple;
+}
+
+.station-orange {
+  background: orange;
+}
+
+.station-turquoise {
+  background: turquoise;
+}
+
+/* Нижняя полоска всегда серая */
+.bottom-bar {
+  background: #A5A5A5;
+}
+
+/* Общие стили для вертикальных полосок */
 .vertical-bar {
   position: absolute;
   width: 5px;
@@ -204,24 +235,6 @@ const showBottomBar = computed(() => {
 
 .bottom-bar {
   top: 43px;
-  background: #A5A5A5;
-}
-
-/* Цвета для вертикальных полосок */
-.default-color {
-  background: #A5A5A5; /* Стандартный серый цвет */
-}
-
-.purple-color {
-  background: #800080; /* Фиолетовый для УРГА */
-}
-
-.orange-color {
-  background: #FFA500; /* Оранжевый для станции 2 */
-}
-
-.turquoise-color {
-  background: #40E0D0; /* Бирюзовый для станции 3 */
 }
 
 .characteristic-title {
