@@ -54,7 +54,7 @@ router = APIRouter()
 
 @router.post(
         '/uploadfile',
-        dependencies=[Depends(current_user)],
+        # dependencies=[Depends(current_user)],
 )
 async def upload_file(
     file: UploadFile = File(...),
@@ -84,7 +84,6 @@ async def upload_file(
             )
 
             if not user.is_superuser:
-                await download_session.commit()
                 raise NoPermissionForSuperUser
 
             # Создаём пустое множество ТС:
