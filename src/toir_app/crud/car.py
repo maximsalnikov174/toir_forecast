@@ -186,6 +186,7 @@ async def get_cars_with_request_and_special_status(
         .outerjoin(Car.status_associations)  # OUTER JOIN: статусы могут отс.
         .where(
             ServiceWork.request_status_id <= request_status_id,
+            ServiceWork.in_archive.is_(False),
             Car.organization_id == organization_id,
             Car.in_archive.is_(False),
             or_(
