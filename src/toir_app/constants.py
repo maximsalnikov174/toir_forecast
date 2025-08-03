@@ -38,7 +38,7 @@ pattern_grz_input_user = (
 )
 ORGANIZATION_BASE_NAME_PATTERN = r'^Ю\d{2}$'
 ORGANIZATION_NORMAL_NAME_PATTERN = r'^(\d-)?[А-Я]{1,3}$'
-WORDS_AND_DIGITS = r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[a-zA-Z\d]+$'
+WORDS_AND_DIGITS = r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[a-zA-Z\d!@%^*-_+=]+$'
 COMPANY_DOMAIN = r'^[a-z]+\.?[a-z]{2}@(?:atu.)?mmk.ru$'
 PATTERN_FOR_DATE_IN_CSV = r'^RMT321_ATU_(202\d(?:_\d{2}){5}).csv$'
 pattern_zvr = r'^5[0-4]-АВТ-\d{7}$'
