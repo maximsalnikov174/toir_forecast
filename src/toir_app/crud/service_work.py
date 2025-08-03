@@ -414,9 +414,17 @@ def check_users_can_edit_service_work(
 ) -> None:
     """Проверка полномочий юзера для редактирования карточки `ServiceWork`.
 
-    Если пользователь имеет права «Только чтение» или он является сотрудником
+    ## Важно:
+    - Пользователь должен быть валидирован админом.
+    - Если пользователь имеет права «Только чтение» или он является сотрудником
     другого подразделения - действия невозможны.
     """
+    if not user.is_verified:
+        raise HTTPException(
+            status_code=HTTPStatus.FORBIDDEN,
+            detail='Требуется подтверждение администратора!'
+        )
+
     if (
         user.users_role.name == UserRole.READ_ONLY.value
         or (
