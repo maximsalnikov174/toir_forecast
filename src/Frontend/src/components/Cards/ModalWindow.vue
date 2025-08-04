@@ -20,26 +20,14 @@
           </div>
 
           <div class="q-pa-md input-container">
-            <div class="input-row">
-              <div class="input-col">
-                <q-input
-                  filled
-                  v-model="zvr_number"
-                  label="Укажите 7 последних цифр №ЗВР"
-                  mask="АВТ-# # # # # # #"
-                  fill-mask
-                  class="zvr-input"
-                />
-              </div>
-              <div class="button-col">
-                <q-btn
-                  class="paste-btn"
-                  color="green"
-                  label="Вставить номер ЗВР из буфера"
-                  @click="pasteFromClipboard"
-                />
-              </div>
-            </div>
+            <q-input
+              filled
+              v-model="zvr_number"
+              label="Укажите 7 последних цифр №ЗВР"
+              mask="АВТ-# # # # # # #"
+              fill-mask
+              class="zvr-input"
+            />
             <q-btn
               class="submit-btn"
               color="primary"
@@ -85,95 +73,6 @@ const selectedStation = ref(null)
 const loading = ref(false)
 const submitting = ref(false)
 const zvr_number = ref('')
-
-const pasteFromClipboard = async () => {
-  try {
-    let text = '';
-
-    if (navigator.clipboard && navigator.clipboard.readText) {
-      try {
-        text = await navigator.clipboard.readText();
-      } catch  {
-        console.log('Clipboard API не доступен, пробуем fallback');
-        // Если Clipboard API недоступен, пробуем fallback
-        text = await fallbackPaste();
-      }
-    } else {
-      // Используем fallback для HTTP
-      text = await fallbackPaste();
-    }
-
-    // Обработка текста
-    const numbersOnly = text.replace(/\D/g, '');
-
-    if (numbersOnly.length >= 7) {
-      // Берем последние 7 цифр
-      const last7Digits = numbersOnly.slice(-7);
-      // Форматируем по маске "АВТ-# # # # # # #"
-      zvr_number.value = `АВТ-${last7Digits.split('').join(' ')}`;
-    } else {
-      $q.notify({
-        type: 'warning',
-        message: 'В буфере обмена недостаточно цифр (нужно 7 цифр)'
-      });
-    }
-  } catch (error) {
-    console.error('Ошибка при чтении из буфера обмена:', error);
-    // Предлагаем ручной ввод
-    $q.dialog({
-      title: 'Вставка номера ЗВР',
-      message: 'Вставьте номер ЗВР вручную:',
-      prompt: {
-        model: '',
-        type: 'text',
-        isValid: val => val.replace(/\D/g, '').length >= 7,
-        hint: 'Должно быть не менее 7 цифр'
-      },
-      cancel: true,
-      persistent: true
-    }).onOk(data => {
-      const numbersOnly = data.replace(/\D/g, '');
-      if (numbersOnly.length >= 7) {
-        const last7Digits = numbersOnly.slice(-7);
-        zvr_number.value = `АВТ-${last7Digits.split('').join(' ')}`;
-      } else {
-        $q.notify({
-          type: 'warning',
-          message: 'Недостаточно цифр (нужно 7 цифр)'
-        });
-      }
-    });
-  }
-}
-
-// Fallback метод для вставки
-const fallbackPaste = () => {
-  return new Promise((resolve, reject) => {
-    try {
-      // Создаем временный textarea
-      const textarea = document.createElement('textarea');
-      textarea.style.position = 'fixed';
-      textarea.style.opacity = 0;
-      document.body.appendChild(textarea);
-      textarea.focus();
-
-      // Пытаемся вставить
-      const success = document.execCommand('paste');
-      const text = textarea.value;
-
-      // Удаляем textarea
-      document.body.removeChild(textarea);
-
-      if (success && text) {
-        resolve(text);
-      } else {
-        reject(new Error('Не удалось прочитать буфер обмена'));
-      }
-    } catch (error) {
-      reject(error);
-    }
-  });
-}
 
 watch(() => props.show, (newVal) => {
   if (newVal) {
@@ -360,29 +259,7 @@ const close = () => {
   padding: 0 10px;
 }
 
-.input-row {
-  display: flex;
-  width: 100%;
-  gap: 10px;
-  margin-bottom: 15px;
-}
-
-.input-col {
-  flex: 1;
-}
-
-.button-col {
-  flex: 1;
-  display: flex;
-  align-items: flex-end;
-}
-
 .zvr-input {
-  width: 100%;
-}
-
-.paste-btn {
-  height: 56px;
   width: 100%;
 }
 
