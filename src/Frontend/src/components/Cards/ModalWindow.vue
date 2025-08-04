@@ -88,55 +88,117 @@ const zvr_number = ref('')
 
 const pasteFromClipboard = async () => {
   try {
-    const text = await navigator.clipboard.readText()
-    // Очищаем текст от лишних символов и оставляем только цифры
-    const numbersOnly = text.replace(/\D/g, '')
+    let text = '';
+
+    if (navigator.clipboard && navigator.clipboard.readText) {
+      try {
+        text = await navigator.clipboard.readText();
+      } catch  {
+        console.log('Clipboard API не доступен, пробуем fallback');
+        // Если Clipboard API недоступен, пробуем fallback
+        text = await fallbackPaste();
+      }
+    } else {
+      // Используем fallback для HTTP
+      text = await fallbackPaste();
+    }
+
+    // Обработка текста
+    const numbersOnly = text.replace(/\D/g, '');
 
     if (numbersOnly.length >= 7) {
       // Берем последние 7 цифр
-      const last7Digits = numbersOnly.slice(-7)
+      const last7Digits = numbersOnly.slice(-7);
       // Форматируем по маске "АВТ-# # # # # # #"
-      zvr_number.value = `АВТ-${last7Digits.split('').join(' ')}`
+      zvr_number.value = `АВТ-${last7Digits.split('').join(' ')}`;
     } else {
       $q.notify({
         type: 'warning',
         message: 'В буфере обмена недостаточно цифр (нужно 7 цифр)'
-      })
+      });
     }
   } catch (error) {
-    console.error('Ошибка при чтении из буфера обмена:', error)
-    $q.notify({
-      type: 'negative',
-      message: 'Не удалось прочитать буфер обмена. Проверьте разрешения.'
-    })
+    console.error('Ошибка при чтении из буфера обмена:', error);
+    // Предлагаем ручной ввод
+    $q.dialog({
+      title: 'Вставка номера ЗВР',
+      message: 'Вставьте номер ЗВР вручную:',
+      prompt: {
+        model: '',
+        type: 'text',
+        isValid: val => val.replace(/\D/g, '').length >= 7,
+        hint: 'Должно быть не менее 7 цифр'
+      },
+      cancel: true,
+      persistent: true
+    }).onOk(data => {
+      const numbersOnly = data.replace(/\D/g, '');
+      if (numbersOnly.length >= 7) {
+        const last7Digits = numbersOnly.slice(-7);
+        zvr_number.value = `АВТ-${last7Digits.split('').join(' ')}`;
+      } else {
+        $q.notify({
+          type: 'warning',
+          message: 'Недостаточно цифр (нужно 7 цифр)'
+        });
+      }
+    });
   }
 }
 
-// Остальной код компонента остается без изменений...
+// Fallback метод для вставки
+const fallbackPaste = () => {
+  return new Promise((resolve, reject) => {
+    try {
+      // Создаем временный textarea
+      const textarea = document.createElement('textarea');
+      textarea.style.position = 'fixed';
+      textarea.style.opacity = 0;
+      document.body.appendChild(textarea);
+      textarea.focus();
+
+      // Пытаемся вставить
+      const success = document.execCommand('paste');
+      const text = textarea.value;
+
+      // Удаляем textarea
+      document.body.removeChild(textarea);
+
+      if (success && text) {
+        resolve(text);
+      } else {
+        reject(new Error('Не удалось прочитать буфер обмена'));
+      }
+    } catch (error) {
+      reject(error);
+    }
+  });
+}
+
 watch(() => props.show, (newVal) => {
   if (newVal) {
-    fetchStationID()
+    fetchStationID();
   }
 })
 
 const fetchStationID = async () => {
   try {
-    loading.value = true
+    loading.value = true;
     const response = await api.get('/station', {
       headers: {
         accept: 'application/json',
       },
-    })
-    stations.value = response.data
+    });
+    stations.value = response.data;
   } catch (error) {
-    console.error('Ошибка:', error)
-    stations.value = []
+    console.error('Ошибка:', error);
+    stations.value = [];
     $q.notify({
       type: 'negative',
       message: 'Ошибка при загрузке станций',
-    })
+    });
   } finally {
-    loading.value = false
+    loading.value = false;
   }
 }
 
@@ -145,13 +207,13 @@ const submit = async () => {
     $q.notify({
       type: 'warning',
       message: 'Заполните все поля',
-    })
-    return
+    });
+    return;
   }
 
   try {
-    submitting.value = true
-    const cleanZvrNumber = zvr_number.value.replace(/\s/g, '')
+    submitting.value = true;
+    const cleanZvrNumber = zvr_number.value.replace(/\s/g, '');
 
     await api.patch(
       `/service_work/add_zvr`,
@@ -167,34 +229,35 @@ const submit = async () => {
           'Content-Type': 'application/json',
         },
       },
-    )
+    );
 
     $q.notify({
       type: 'positive',
       message: 'Данные успешно сохранены',
-    })
+    });
 
-    emit('submitted')
-    props.onSubmitSuccess()  // Вызываем переданную функцию
-    close()
+    emit('submitted');
+    props.onSubmitSuccess();
+    close();
   } catch (error) {
-    console.error('Ошибка при отправке данных:', error)
+    console.error('Ошибка при отправке данных:', error);
     $q.notify({
       type: 'negative',
       message: error.response?.data?.detail || 'Ошибка при сохранении данных',
-    })
+    });
 
     if (error.response && error.response.status === 401) {
-      authStore.clearAuthData()
+      authStore.clearAuthData();
     }
   } finally {
-    submitting.value = false
+    submitting.value = false;
   }
 }
+
 const close = () => {
-  selectedStation.value = null
-  zvr_number.value = ''
-  emit('close')
+  selectedStation.value = null;
+  zvr_number.value = '';
+  emit('close');
 }
 </script>
 
@@ -241,7 +304,7 @@ const close = () => {
   flex-wrap: wrap;
   gap: 15px;
   margin-top: 20px;
-  justify-content: center; /* Выравнивание по горизонтали по центру */
+  justify-content: center;
   align-items: center;
 }
 
@@ -319,7 +382,7 @@ const close = () => {
 }
 
 .paste-btn {
-  height: 56px; /* Высота как у q-input */
+  height: 56px;
   width: 100%;
 }
 
