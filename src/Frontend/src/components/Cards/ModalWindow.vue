@@ -36,7 +36,7 @@
               label="Внести"
               @click="submit"
               :loading="submitting"
-              :disable="submitting"
+              :disable="submitting || !isFormValid"
             />
           </div>
         </div>
@@ -46,7 +46,7 @@
 </template>
 
 <script setup>
-import { ref, watch } from 'vue'
+import { ref, watch, computed } from 'vue'
 import { api } from '../../boot/axios.js'
 import { useQuasar } from 'quasar'
 import { useAuthStore } from 'src/stores/useAuthStore'
@@ -76,51 +76,54 @@ const loading = ref(false)
 const submitting = ref(false)
 const zvr_number = ref('')
 
+const isFormValid = computed(() => {
+  return selectedStation.value !== null && zvr_number.value.replace(/\D/g, '').length === 7
+})
+
 watch(() => props.show, (newVal) => {
   if (newVal) {
-    fetchStationID();
+    fetchStationID()
   }
 })
 
 const fetchStationID = async () => {
   try {
-    loading.value = true;
+    loading.value = true
     const response = await api.get('/station', {
       headers: {
         accept: 'application/json',
       },
-    });
-    stations.value = response.data;
+    })
+    stations.value = response.data
   } catch (error) {
-    console.error('Ошибка:', error);
-    stations.value = [];
+    console.error('Ошибка:', error)
+    stations.value = []
     $q.notify({
       type: 'negative',
       message: 'Ошибка при загрузке станций',
-    });
+    })
   } finally {
-    loading.value = false;
+    loading.value = false
+  }
+}
+
+const validateZvrNumber = () => {
+  const digitsCount = zvr_number.value.replace(/\D/g, '').length
+  if (digitsCount > 0 && digitsCount < 7) {
+    $q.notify({
+      type: 'warning',
+      message: 'Номер ЗВР должен содержать 7 цифр',
+      timeout: 2000,
+      position: 'top'
+    })
   }
 }
 
 const submit = async () => {
-  if (!selectedStation.value) {
-    $q.notify({
-      type: 'warning',
-      message: 'Выберите станцию',
-    })
-    return
-  }
+  if (!isFormValid.value) return
 
   const cleanZvrNumber = zvr_number.value.replace(/\D/g, '')
-
-  if (cleanZvrNumber.length !== 7) {
-    $q.notify({
-      type: 'warning',
-      message: 'Номер ЗВР должен содержать ровно 7 цифр',
-    })
-    return
-  }
+  const formattedZvrNumber = `АВТ-${cleanZvrNumber}`
 
   try {
     submitting.value = true
@@ -128,7 +131,7 @@ const submit = async () => {
       `/service_work/add_zvr`,
       {
         service_work_id: props.serviceWorkId,
-        zvr_number: cleanZvrNumber,
+        zvr_number: formattedZvrNumber,
         station_id: selectedStation.value,
       },
       {
