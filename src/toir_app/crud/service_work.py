@@ -46,9 +46,12 @@ async def get_service_work(
     stmt = (
         select(ServiceWork)
         .options(
-            joinedload(ServiceWork.car).joinedload(Car.organization))  # Явно загружаем связь с Car
+            selectinload(ServiceWork.car).joinedload(Car.organization),
+            selectinload(ServiceWork.station)
+        )
         .where(ServiceWork.id == service_work_id)
     )
+
     result = await session.scalar(stmt)
     if not result:
         raise HTTPException(
@@ -446,3 +449,38 @@ async def get_db_status(session: AsyncSession) -> dict[str, str]:
             f'Актуально на {max_date.strftime(PATTERN_DATE_OEBS)}'
         )
     }
+
+
+async def update_completed_real_service_work(
+        add_date: bool,
+        service_work_id: Annotated[int, ServiceWork.id],
+        user: User,
+        session: AsyncSession
+):
+    """Обновление поля фактического завершения работ в service_work."""
+    service_work = await get_service_work(service_work_id, session)
+
+    if service_work:
+        check_users_can_edit_service_work(user, service_work)
+        if not service_work.zvr_number:
+            raise HTTPException(
+                status_code=HTTPStatus.UNPROCESSABLE_ENTITY,
+                detail='Сначала необходимо добавить ЗВР.'
+            )
+
+    try:
+        value = dt.now() if add_date else None
+        service_work.service_work_completed = value
+        await session.commit()
+        await session.refresh(service_work)  # Опционально
+
+    except Exception as e:
+        await session.rollback()
+        raise HTTPException(
+            HTTPStatus.INTERNAL_SERVER_ERROR,
+            detail=(
+                'Ошибка при указании информации'
+                f'о фактическом завершении работ: {str(e)}'
+            )
+        )
+    return service_work
