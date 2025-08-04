@@ -27,6 +27,8 @@
               mask="АВТ-# # # # # # #"
               fill-mask
               class="zvr-input"
+              @paste="handlePaste"
+              @update:model-value="validateZvrNumber"
             />
             <q-btn
               class="submit-btn"
@@ -102,18 +104,26 @@ const fetchStationID = async () => {
 }
 
 const submit = async () => {
-  if (!zvr_number.value || !selectedStation.value) {
+  if (!selectedStation.value) {
     $q.notify({
       type: 'warning',
-      message: 'Заполните все поля',
-    });
-    return;
+      message: 'Выберите станцию',
+    })
+    return
+  }
+
+  const cleanZvrNumber = zvr_number.value.replace(/\D/g, '')
+
+  if (cleanZvrNumber.length !== 7) {
+    $q.notify({
+      type: 'warning',
+      message: 'Номер ЗВР должен содержать ровно 7 цифр',
+    })
+    return
   }
 
   try {
-    submitting.value = true;
-    const cleanZvrNumber = zvr_number.value.replace(/\s/g, '');
-
+    submitting.value = true
     await api.patch(
       `/service_work/add_zvr`,
       {
@@ -127,36 +137,54 @@ const submit = async () => {
           Authorization: `Bearer ${authStore.token}`,
           'Content-Type': 'application/json',
         },
-      },
-    );
+      }
+    )
 
     $q.notify({
       type: 'positive',
       message: 'Данные успешно сохранены',
-    });
+    })
 
-    emit('submitted');
-    props.onSubmitSuccess();
-    close();
+    emit('submitted')
+    props.onSubmitSuccess()
+    close()
   } catch (error) {
-    console.error('Ошибка при отправке данных:', error);
+    console.error('Ошибка при отправке данных:', error)
     $q.notify({
       type: 'negative',
       message: error.response?.data?.detail || 'Ошибка при сохранении данных',
-    });
+    })
 
     if (error.response && error.response.status === 401) {
-      authStore.clearAuthData();
+      authStore.clearAuthData()
     }
   } finally {
-    submitting.value = false;
+    submitting.value = false
   }
 }
 
 const close = () => {
-  selectedStation.value = null;
-  zvr_number.value = '';
-  emit('close');
+  selectedStation.value = null
+  zvr_number.value = ''
+  emit('close')
+}
+
+const handlePaste = (event) => {
+  const pastedText = (event.clipboardData || window.clipboardData).getData('text')
+  const digitsOnly = pastedText.replace(/\D/g, '')
+  const last7Digits = digitsOnly.slice(-7)
+
+  if (last7Digits.length === 7) {
+    const formatted = `АВТ-${last7Digits.split('').join(' ')}`
+    zvr_number.value = formatted
+    event.preventDefault()
+  } else {
+    $q.notify({
+      type: 'warning',
+      message: 'Вставлено недостаточно цифр (требуется 7)',
+      timeout: 2000
+    })
+  }
 }
 </script>
 
