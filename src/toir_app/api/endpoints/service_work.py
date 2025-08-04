@@ -10,10 +10,16 @@ from core.db import get_async_session
 from core.user import current_user
 from crud.organization import get_current_organization
 from crud.service_work import (
-    check_users_can_edit_service_work, check_zvr_unique, create_main_table,
+    check_users_can_edit_service_work,
+    check_zvr_unique,
+    create_main_table,
     get_active_service_work_count_for_all_service_status,
     get_active_service_work_list_by_car,
-    get_all_active_service_work_with_open_zvr, get_db_status, get_service_work)
+    get_all_active_service_work_with_open_zvr,
+    get_db_status,
+    get_service_work,
+    update_completed_real_service_work
+)
 from models import Organization, SpecialStatus, User
 from schemas.service_work import (
     AddZvrSchema,
@@ -112,31 +118,38 @@ async def completed_real_service_work(
     session: AsyncSession = Depends(get_async_session)
 ):
     """Добавление признака фактического завершения работ в service_work."""
-    service_work = await get_service_work(service_work_id, session)
+    return await update_completed_real_service_work(
+        add_date=True,
+        service_work_id=service_work_id,
+        user=user,
+        session=session
+    )
 
-    if service_work:
-        check_users_can_edit_service_work(user, service_work)
-        if not service_work.zvr_number:
-            raise HTTPException(
-                status_code=HTTPStatus.UNPROCESSABLE_ENTITY,
-                detail='Сначала необходимо добавить ЗВР.'
-            )
 
-    try:
-        service_work.service_work_completed = dt.now()
-        await session.commit()
-        await session.refresh(service_work)  # Опционально
-
-    except Exception as e:
-        await session.rollback()
-        raise HTTPException(
-            HTTPStatus.INTERNAL_SERVER_ERROR,
-            detail=(
-                'Ошибка при указании информации'
-                f'о фактическом завершении работ: {str(e)}'
-            )
-        )
-    return service_work
+@router.patch(
+    '/de_facto_drop',
+    response_model=ServiceWorkWithZVRNumber,
+    dependencies=[Depends(current_user)],
+    name=(
+        'Отмена фактического выполнения работы'
+        '(доступно суперпользователю)'
+    ),
+    description='Для удаления ошибочных закрытий',
+    response_model_exclude_none=True,
+    status_code=HTTPStatus.CREATED
+)
+async def drop_completed_real_service_work(
+    service_work_id: int,
+    user: User = Depends(current_user),
+    session: AsyncSession = Depends(get_async_session)
+):
+    """Добавление признака фактического завершения работ в service_work."""
+    return await update_completed_real_service_work(
+        add_date=False,
+        service_work_id=service_work_id,
+        user=user,
+        session=session
+    )
 
 
 @router.get(
