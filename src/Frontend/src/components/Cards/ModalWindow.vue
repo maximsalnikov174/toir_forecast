@@ -20,14 +20,25 @@
           </div>
 
           <div class="q-pa-md input-container">
-            <div class="q-gutter-md">
-              <q-input
-                filled
-                v-model="zvr_number"
-                label="Укажите 7 последних цифр №ЗВР"
-                mask="АВТ-# # # # # # #"
-                fill-mask
-              />
+            <div class="input-row">
+              <div class="input-col">
+                <q-input
+                  filled
+                  v-model="zvr_number"
+                  label="Укажите 7 последних цифр №ЗВР"
+                  mask="АВТ-# # # # # # #"
+                  fill-mask
+                  class="zvr-input"
+                />
+              </div>
+              <div class="button-col">
+                <q-btn
+                  class="paste-btn"
+                  color="green"
+                  label="Вставить номер ЗВР из буфера"
+                  @click="pasteFromClipboard"
+                />
+              </div>
             </div>
             <q-btn
               class="submit-btn"
@@ -75,6 +86,33 @@ const loading = ref(false)
 const submitting = ref(false)
 const zvr_number = ref('')
 
+const pasteFromClipboard = async () => {
+  try {
+    const text = await navigator.clipboard.readText()
+    // Очищаем текст от лишних символов и оставляем только цифры
+    const numbersOnly = text.replace(/\D/g, '')
+
+    if (numbersOnly.length >= 7) {
+      // Берем последние 7 цифр
+      const last7Digits = numbersOnly.slice(-7)
+      // Форматируем по маске "АВТ-# # # # # # #"
+      zvr_number.value = `АВТ-${last7Digits.split('').join(' ')}`
+    } else {
+      $q.notify({
+        type: 'warning',
+        message: 'В буфере обмена недостаточно цифр (нужно 7 цифр)'
+      })
+    }
+  } catch (error) {
+    console.error('Ошибка при чтении из буфера обмена:', error)
+    $q.notify({
+      type: 'negative',
+      message: 'Не удалось прочитать буфер обмена. Проверьте разрешения.'
+    })
+  }
+}
+
+// Остальной код компонента остается без изменений...
 watch(() => props.show, (newVal) => {
   if (newVal) {
     fetchStationID()
@@ -189,7 +227,7 @@ const close = () => {
   position: absolute;
   top: 10px;
   right: 15px;
-  font-size: 28px;
+  font-size: 35px;
   cursor: pointer;
   color: #a5a5a5;
 }
@@ -203,6 +241,8 @@ const close = () => {
   flex-wrap: wrap;
   gap: 15px;
   margin-top: 20px;
+  justify-content: center; /* Выравнивание по горизонтали по центру */
+  align-items: center;
 }
 
 .radio-wrapper {
@@ -255,6 +295,32 @@ const close = () => {
 .input-container {
   margin-top: 20px;
   padding: 0 10px;
+}
+
+.input-row {
+  display: flex;
+  width: 100%;
+  gap: 10px;
+  margin-bottom: 15px;
+}
+
+.input-col {
+  flex: 1;
+}
+
+.button-col {
+  flex: 1;
+  display: flex;
+  align-items: flex-end;
+}
+
+.zvr-input {
+  width: 100%;
+}
+
+.paste-btn {
+  height: 56px; /* Высота как у q-input */
+  width: 100%;
 }
 
 .submit-btn {
