@@ -7,27 +7,51 @@
 
       <form @submit.prevent="handleSubmit">
         <div class="form-group">
-    <label for="email">Email</label>
-    <input
-      id="email"
-      type="email"
-      v-model="form.email"
-      @input="validateEmail"
-      :class="{ 'invalid': emailError }"
-      required
-    >
-    <span v-if="emailError" class="error-message">{{ emailError }}</span>
-  </div>
+          <label for="email">Email</label>
+          <input
+            id="email"
+            type="email"
+            v-model="form.email"
+            @input="validateEmail"
+            :class="{ 'invalid': emailError }"
+            required
+          >
+          <span v-if="emailError" class="error-message">{{ emailError }}</span>
+        </div>
+
         <div class="form-group">
           <label for="password">Пароль</label>
           <input
             id="password"
             type="password"
             v-model="form.password"
+            @input="isLoginMode ? null : validatePassword()"
+            :class="{ 'invalid': !isLoginMode && passwordError }"
             required
           >
+          <span v-if="!isLoginMode && passwordError" class="error-message">{{ passwordError }}</span>
+
+          <!-- Подсказки для пароля только при регистрации -->
+          <div v-if="!isLoginMode && form.password && !passwordError" class="password-hints">
+            <p class="hint-valid">✓ Пароль соответствует требованиям</p>
+          </div>
+          <div v-else-if="!isLoginMode && form.password" class="password-hints">
+            <p :class="{'hint-invalid': !hasMinLength, 'hint-valid': hasMinLength}">
+              {{ hasMinLength ? '✓' : '•' }} Минимум 8 символов
+            </p>
+            <p :class="{'hint-invalid': !hasUpperLower, 'hint-valid': hasUpperLower}">
+              {{ hasUpperLower ? '✓' : '•' }} Буквы верхнего и нижнего регистра
+            </p>
+            <p :class="{'hint-invalid': !hasNumber, 'hint-valid': hasNumber}">
+              {{ hasNumber ? '✓' : '•' }} Хотя бы одна цифра
+            </p>
+            <p :class="{'hint-invalid': !hasSpecialChar, 'hint-valid': hasSpecialChar}">
+              {{ hasSpecialChar ? '✓' : '•' }} Хотя бы один спецсимвол (!@%^*-_+=)
+            </p>
+          </div>
         </div>
 
+        <!-- Поля только для регистрации -->
         <div v-if="!isLoginMode" class="form-group">
           <label for="name">Имя</label>
           <input
@@ -66,7 +90,6 @@
           </select>
         </div>
 
-
         <button type="submit" class="submit-button">
           {{ isLoginMode ? 'Войти' : 'Зарегистрироваться' }}
         </button>
@@ -81,7 +104,7 @@
 </template>
 
 <script setup>
-import { ref, reactive } from 'vue'
+import { ref, reactive, computed } from 'vue'
 import { DivisionFuctionSelect } from '../../Functions/ButtonSelectDivision.js'
 import { registerPerson } from '../../Functions/RegistrationPerson.js'
 import { LoginPerson } from '../../Functions/LoginPerson.js'
@@ -94,17 +117,32 @@ const isLoginMode = ref(true)
 const { divisions } = DivisionFuctionSelect();
 
 const emailError = ref('')
-
+const passwordError = ref('')
 
 const form = reactive({
   email: '',
   password: '',
   name: '',
-  surname:'',
-  organization:'',
+  surname: '',
+  organization: '',
   role_id: 2,
   is_verified: false,
 })
+
+const passwordRequirements = {
+  minLength: 8,
+  hasUpper: /[A-ZА-Я]/,
+  hasLower: /[a-zа-я]/,
+  hasNumber: /[0-9]/,
+  hasSpecial: /[!@%^*\-_+=]/
+}
+
+const hasMinLength = computed(() => form.password.length >= passwordRequirements.minLength)
+const hasUpper = computed(() => passwordRequirements.hasUpper.test(form.password))
+const hasLower = computed(() => passwordRequirements.hasLower.test(form.password))
+const hasUpperLower = computed(() => hasUpper.value && hasLower.value)
+const hasNumber = computed(() => passwordRequirements.hasNumber.test(form.password))
+const hasSpecialChar = computed(() => passwordRequirements.hasSpecial.test(form.password))
 
 const open = () => {
   isOpen.value = true
@@ -117,10 +155,13 @@ const close = () => {
 
 const toggleMode = () => {
   isLoginMode.value = !isLoginMode.value
+  // Сбрасываем ошибки при переключении режима
+  emailError.value = ''
+  passwordError.value = ''
 }
 
 const validateEmail = () => {
-  const emailRegex = /^[a-zA-Z0-9._-]+@atu\.mmk\.ru$/i
+  const emailRegex = /^[a-zA-Z0-9]+\.[a-zA-Z]{2}@atu\.mmk\.ru$/i
   if (!form.email) {
     emailError.value = ''
     return false
@@ -133,7 +174,48 @@ const validateEmail = () => {
   return true
 }
 
+const validatePassword = () => {
+  if (isLoginMode.value) return true; // Пропускаем проверку для входа
+
+  if (!form.password) {
+    passwordError.value = ''
+    return false
+  }
+
+  const errors = []
+
+  if (!hasMinLength.value) {
+    errors.push('минимум 8 символов')
+  }
+  if (!hasUpperLower.value) {
+    errors.push('буквы верхнего и нижнего регистра')
+  }
+  if (!hasNumber.value) {
+    errors.push('хотя бы одна цифра')
+  }
+  if (!hasSpecialChar.value) {
+    errors.push('хотя бы один спецсимвол (!@%^*-_+=)')
+  }
+
+  if (errors.length > 0) {
+    passwordError.value = `Пароль должен содержать: ${errors.join(', ')}`
+    return false
+  }
+
+  passwordError.value = ''
+  return true
+}
+
 const handleSubmit = async () => {
+  if (!validateEmail()) {
+    return
+  }
+
+  // Проверяем пароль только при регистрации
+  if (!isLoginMode.value && !validatePassword()) {
+    return
+  }
+
   if (isLoginMode.value) {
     try {
       const response = await LoginPerson({
@@ -153,7 +235,6 @@ const handleSubmit = async () => {
       console.log('Успешная регистрация:', response);
       emit('register', response);
 
-      // Очистка формы после успешной регистрации
       form.email = '';
       form.password = '';
       form.name = '';
@@ -174,18 +255,6 @@ defineExpose({
 </script>
 
 <style scoped>
-
-.invalid {
-  border-color: #ff4444 !important;
-}
-
-.error-message {
-  color: #ff4444;
-  font-size: 0.8em;
-  margin-top: 5px;
-  display: block;
-}
-
 .dialog-overlay {
   position: fixed;
   top: 0;
@@ -234,12 +303,38 @@ label {
   font-weight: 500;
 }
 
-input {
+input, select {
   width: 100%;
   padding: 8px;
   border: 1px solid #000000;
   border-radius: 4px;
   box-sizing: border-box;
+}
+
+.invalid {
+  border-color: #ff4444 !important;
+}
+
+.error-message {
+  color: #ff4444;
+  font-size: 0.8em;
+  margin-top: 5px;
+  display: block;
+}
+
+.password-hints {
+  margin-top: 5px;
+  font-size: 0.8em;
+}
+
+.hint-valid {
+  color: #4CAF50;
+  margin: 2px 0;
+}
+
+.hint-invalid {
+  color: #757575;
+  margin: 2px 0;
 }
 
 .submit-button {
@@ -277,12 +372,6 @@ input {
 }
 
 select {
-  width: 100%;
-  padding: 8px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  box-sizing: border-box;
-  background-color: white;
   appearance: none;
   -webkit-appearance: none;
   -moz-appearance: none;
