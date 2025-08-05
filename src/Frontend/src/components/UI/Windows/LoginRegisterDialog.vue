@@ -7,15 +7,17 @@
 
       <form @submit.prevent="handleSubmit">
         <div class="form-group">
-          <label for="email">Email</label>
-          <input
-            id="email"
-            type="email"
-            v-model="form.email"
-            required
-          >
-        </div>
-
+    <label for="email">Email</label>
+    <input
+      id="email"
+      type="email"
+      v-model="form.email"
+      @input="validateEmail"
+      :class="{ 'invalid': emailError }"
+      required
+    >
+    <span v-if="emailError" class="error-message">{{ emailError }}</span>
+  </div>
         <div class="form-group">
           <label for="password">Пароль</label>
           <input
@@ -91,6 +93,9 @@ const isLoginMode = ref(true)
 
 const { divisions } = DivisionFuctionSelect();
 
+const emailError = ref('')
+
+
 const form = reactive({
   email: '',
   password: '',
@@ -112,6 +117,20 @@ const close = () => {
 
 const toggleMode = () => {
   isLoginMode.value = !isLoginMode.value
+}
+
+const validateEmail = () => {
+  const emailRegex = /^[a-zA-Z0-9._-]+@atu\.mmk\.ru$/i
+  if (!form.email) {
+    emailError.value = ''
+    return false
+  }
+  if (!emailRegex.test(form.email)) {
+    emailError.value = 'Разрешены только рабочие Email (ivanov.av@atu.mmk.ru)'
+    return false
+  }
+  emailError.value = ''
+  return true
 }
 
 const handleSubmit = async () => {
@@ -155,6 +174,18 @@ defineExpose({
 </script>
 
 <style scoped>
+
+.invalid {
+  border-color: #ff4444 !important;
+}
+
+.error-message {
+  color: #ff4444;
+  font-size: 0.8em;
+  margin-top: 5px;
+  display: block;
+}
+
 .dialog-overlay {
   position: fixed;
   top: 0;
