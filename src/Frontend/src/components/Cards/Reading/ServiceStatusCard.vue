@@ -296,11 +296,11 @@ const showBottomBar = computed(() => {
   border-color: transparent #FFFF00 transparent transparent;
 }
 
-.status-indicator.upcoming {
+.status-indicator.normal {
   border-color: transparent #0000FF transparent transparent;
 }
 
-.status-indicator.normal {
+.status-indicator.upcomign  {
   border-color: transparent #00FF00 transparent transparent;
 }
 
