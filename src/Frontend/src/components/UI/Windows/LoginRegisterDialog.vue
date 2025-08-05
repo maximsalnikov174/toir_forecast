@@ -206,7 +206,7 @@ label {
 input {
   width: 100%;
   padding: 8px;
-  border: 1px solid #ddd;
+  border: 1px solid #000000;
   border-radius: 4px;
   box-sizing: border-box;
 }
