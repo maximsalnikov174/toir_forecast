@@ -25,13 +25,12 @@
             id="password"
             type="password"
             v-model="form.password"
-            @input="isLoginMode ? null : validatePassword()"
+            @input="handlePasswordInput"
             :class="{ 'invalid': !isLoginMode && passwordError }"
             required
           >
           <span v-if="!isLoginMode && passwordError" class="error-message">{{ passwordError }}</span>
 
-          <!-- Подсказки для пароля только при регистрации -->
           <div v-if="!isLoginMode && form.password && !passwordError" class="password-hints">
             <p class="hint-valid">✓ Пароль соответствует требованиям</p>
           </div>
@@ -48,10 +47,12 @@
             <p :class="{'hint-invalid': !hasSpecialChar, 'hint-valid': hasSpecialChar}">
               {{ hasSpecialChar ? '✓' : '•' }} Хотя бы один спецсимвол (!@%^*-_+=)
             </p>
+            <p :class="{'hint-invalid': !hasNoRussian, 'hint-valid': hasNoRussian}">
+              {{ hasNoRussian ? '✓' : '•' }} Без русских символов
+            </p>
           </div>
         </div>
 
-        <!-- Поля только для регистрации -->
         <div v-if="!isLoginMode" class="form-group">
           <label for="name">Имя</label>
           <input
@@ -131,10 +132,11 @@ const form = reactive({
 
 const passwordRequirements = {
   minLength: 8,
-  hasUpper: /[A-ZА-Я]/,
-  hasLower: /[a-zа-я]/,
+  hasUpper: /[A-Z]/,
+  hasLower: /[a-z]/,
   hasNumber: /[0-9]/,
-  hasSpecial: /[!@%^*\-_+=]/
+  hasSpecial: /[!@%^*\-_+=]/,
+  noRussian: /^[^а-яА-Я]*$/
 }
 
 const hasMinLength = computed(() => form.password.length >= passwordRequirements.minLength)
@@ -143,6 +145,7 @@ const hasLower = computed(() => passwordRequirements.hasLower.test(form.password
 const hasUpperLower = computed(() => hasUpper.value && hasLower.value)
 const hasNumber = computed(() => passwordRequirements.hasNumber.test(form.password))
 const hasSpecialChar = computed(() => passwordRequirements.hasSpecial.test(form.password))
+const hasNoRussian = computed(() => passwordRequirements.noRussian.test(form.password))
 
 const open = () => {
   isOpen.value = true
@@ -155,27 +158,34 @@ const close = () => {
 
 const toggleMode = () => {
   isLoginMode.value = !isLoginMode.value
-  // Сбрасываем ошибки при переключении режима
   emailError.value = ''
   passwordError.value = ''
 }
 
 const validateEmail = () => {
-  const emailRegex = /^[a-zA-Z0-9]+\.[a-zA-Z]{2}@atu\.mmk\.ru$/i
+  const emailRegex = /^[a-zA-Z0-9]+\.[a-zA-Z]{2}@(?:atu\.)?mmk\.ru$/i
   if (!form.email) {
     emailError.value = ''
     return false
   }
   if (!emailRegex.test(form.email)) {
-    emailError.value = 'Разрешены только рабочие Email (ivanov.av@atu.mmk.ru)'
+    emailError.value = 'Разрешены только рабочие Email (ivanov.av@atu.mmk.ru или ivanov.av@mmk.ru)'
     return false
   }
   emailError.value = ''
   return true
 }
 
+const handlePasswordInput = (e) => {
+  // Фильтруем русские символы
+  form.password = e.target.value.replace(/[а-яА-Я]/g, '')
+  if (!isLoginMode.value) {
+    validatePassword()
+  }
+}
+
 const validatePassword = () => {
-  if (isLoginMode.value) return true; // Пропускаем проверку для входа
+  if (isLoginMode.value) return true;
 
   if (!form.password) {
     passwordError.value = ''
@@ -184,6 +194,9 @@ const validatePassword = () => {
 
   const errors = []
 
+  if (!hasNoRussian.value) {
+    errors.push('русские символы запрещены')
+  }
   if (!hasMinLength.value) {
     errors.push('минимум 8 символов')
   }
@@ -211,7 +224,6 @@ const handleSubmit = async () => {
     return
   }
 
-  // Проверяем пароль только при регистрации
   if (!isLoginMode.value && !validatePassword()) {
     return
   }
