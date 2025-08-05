@@ -5,17 +5,18 @@
     @mouseleave="hover = false"
     @click="handleCardClick"
   >
-    <!-- Верхняя полоска (меняет цвет) -->
+    <!-- Верхняя полоска -->
     <div
       v-if="showTopBar"
       class="vertical-bar top-bar"
       :class="topBarClass"
     ></div>
 
-    <!-- Нижняя полоска (всегда серая) -->
+    <!-- Нижняя полоска (теперь того же цвета что и верхняя) -->
     <div
       v-if="showBottomBar"
       class="vertical-bar bottom-bar"
+      :class="topBarClass"
     ></div>
 
     <div class="status-indicator" :class="indicatorClass"></div>
@@ -203,7 +204,7 @@ const showBottomBar = computed(() => {
   cursor: pointer;
 }
 
-/* Цвета для верхней полоски в зависимости от station.id */
+/* Цвета для полосок в зависимости от station.id */
 .station-purple {
   background: purple;
 }
@@ -214,11 +215,6 @@ const showBottomBar = computed(() => {
 
 .station-turquoise {
   background: turquoise;
-}
-
-/* Нижняя полоска всегда серая */
-.bottom-bar {
-  background: #A5A5A5;
 }
 
 /* Общие стили для вертикальных полосок */
