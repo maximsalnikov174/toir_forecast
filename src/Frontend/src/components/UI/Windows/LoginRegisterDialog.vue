@@ -26,10 +26,13 @@
             type="password"
             v-model="form.password"
             @input="handlePasswordInput"
-            :class="{ 'invalid': !isLoginMode && passwordError }"
+            :class="{ 'invalid': !isLoginMode && (passwordError || russianCharWarning) }"
             required
           >
           <span v-if="!isLoginMode && passwordError" class="error-message">{{ passwordError }}</span>
+    <span v-if="!isLoginMode && russianCharWarning" class="warning-message">
+      Русские символы автоматически удалены из пароля
+    </span>
 
           <div v-if="!isLoginMode && form.password && !passwordError" class="password-hints">
             <p class="hint-valid">✓ Пароль соответствует требованиям</p>
@@ -120,6 +123,8 @@ const { divisions } = DivisionFuctionSelect();
 const emailError = ref('')
 const passwordError = ref('')
 
+const russianCharWarning = ref(false)
+
 const form = reactive({
   email: '',
   password: '',
@@ -177,8 +182,19 @@ const validateEmail = () => {
 }
 
 const handlePasswordInput = (e) => {
+  const originalValue = e.target.value
   // Фильтруем русские символы
-  form.password = e.target.value.replace(/[а-яА-Я]/g, '')
+  form.password = originalValue.replace(/[а-яА-Я]/g, '')
+
+  // Показываем предупреждение, если были русские символы
+  russianCharWarning.value = originalValue !== form.password
+
+  if (russianCharWarning.value) {
+    setTimeout(() => {
+      russianCharWarning.value = false
+    }, 6000)
+  }
+
   if (!isLoginMode.value) {
     validatePassword()
   }
@@ -267,6 +283,15 @@ defineExpose({
 </script>
 
 <style scoped>
+
+.warning-message {
+  color: #ff9800;
+  font-size: 0.8em;
+  margin-top: 5px;
+  display: block;
+  font-style: italic;
+}
+
 .dialog-overlay {
   position: fixed;
   top: 0;
