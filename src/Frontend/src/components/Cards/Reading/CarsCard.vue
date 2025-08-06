@@ -11,7 +11,9 @@
         :src="statusImage"
         class="car-image"
       />
-      <div v-else class="car-image-placeholder"></div>
+      <div v-else class="car-image-placeholder" @click.stop="openAddStatusDialog">
+        <span class="plus-icon">+</span>
+      </div>
 
       <q-card-section class="car-content">
         <div class="characteristic-subtitle">{{ model }}</div>
@@ -22,14 +24,22 @@
         </div>
       </q-card-section>
     </q-card-section>
+
+    <q-dialog v-model="showAddStatusDialog">
+      <AddCarSpecialStatus
+        :car-id="id"
+        @close="showAddStatusDialog = false"
+        :on-submit-success="onStatusAdded"
+      />
+    </q-dialog>
   </q-card>
 </template>
 
 <script>
-import { defineComponent, computed } from 'vue'
+import { defineComponent, computed, ref } from 'vue'
 import { useQuasar } from 'quasar'
+import AddCarSpecialStatus from '../AddCarSpecialStatus.vue'
 
-// Импортируем только необходимые изображения статусов
 import status1 from 'src/assets/1.png'
 import status2 from 'src/assets/2.png'
 import status3 from 'src/assets/3.png'
@@ -38,6 +48,9 @@ import status5 from 'src/assets/5.png'
 
 export default defineComponent({
   name: 'CarCard',
+  components: {
+    AddCarSpecialStatus
+  },
   props: {
     grz: {
       type: String,
@@ -59,10 +72,21 @@ export default defineComponent({
     specialStatusId: {
       type: Number,
       required: false,
+    },
+    id: {
+      type: Number,
+      required: true
+    }
+  },
+
+  methods: {
+    onStatusAdded() {
+      this.$emit('status-added') // Эмитим событие при успешном добавлении
     }
   },
   setup(props) {
     const $q = useQuasar()
+    const showAddStatusDialog = ref(false)
 
     const isLowDistance = computed(() => {
       return props.daliDistanse < 1
@@ -79,17 +103,19 @@ export default defineComponent({
       }
     })
 
-    const copyGrzToClipboard = () => {
-  // Добавляем % перед и после GRZ
-  const grzWithPercent = `%${props.grz}%`
+    const openAddStatusDialog = () => {
+      showAddStatusDialog.value = true
+    }
 
+    const copyGrzToClipboard = () => {
+      // Добавляем % перед и после GRZ
+  const grzWithPercent = `%${props.grz}%`
   const textArea = document.createElement('textarea')
   textArea.value = grzWithPercent
   textArea.style.position = 'fixed'
   document.body.appendChild(textArea)
   textArea.focus()
   textArea.select()
-
   try {
     const successful = document.execCommand('copy')
     if (successful) {
@@ -118,13 +144,16 @@ export default defineComponent({
     return {
       isLowDistance,
       statusImage,
-      copyGrzToClipboard
+      copyGrzToClipboard,
+      showAddStatusDialog,
+      openAddStatusDialog
     }
   }
 })
 </script>
 
 <style scoped>
+/* Оставьте стили без изменений */
 .car-card {
   width: 212px;
   height: 80px;
@@ -151,6 +180,25 @@ export default defineComponent({
   width: 38px;
   height: 38px;
   margin: 21px 0 0 16px;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: rgba(0, 0, 0, 0.05);
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.plus-icon {
+  opacity: 0;
+  font-size: 24px;
+  font-weight: bold;
+  color: #555;
+  transition: opacity 0.2s ease;
+}
+
+.car-image-placeholder:hover .plus-icon {
+  opacity: 1;
 }
 
 .car-content {

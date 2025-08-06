@@ -60,6 +60,8 @@
             :specialStatusId="
               car.status_associations?.find((status) => status.is_active)?.special_status_id
             "
+            :id="car.id"
+            @status-added="handleStatusAdded"
           />
           <div class="status-cards">
             <template v-for="(item, itemIndex) in tableData[rowIndex]" :key="itemIndex">
@@ -136,6 +138,10 @@ const toAcceptRef = ref(null)
 
 const handleApply = () => {
   toAcceptRef.value?.handleApply()
+}
+
+const handleStatusAdded = () => {
+  toAcceptRef.value?.handleApply() // Или toAcceptRef.value?.refreshData(), в зависимости от вашей реализации
 }
 
 onMounted(async () => {
