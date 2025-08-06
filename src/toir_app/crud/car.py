@@ -274,10 +274,8 @@ async def add_special_status_to_car(
             element.date_left = date_from_user
             element.is_active = True
             session.add(element)
-            await session.commit()
+            await session.flush()
 
-            # Обновляем объект из БД
-            await session.refresh(car)
         except Exception as e:
             await session.rollback()
             raise HTTPException(
@@ -285,7 +283,8 @@ async def add_special_status_to_car(
                 detail=f'Ошибка при обновлении статуса ТС: {str(e)}'
             )
 
-        # car = await get_car_by_pk(car.id, session, expand_data=True)
+        car = await get_car_by_pk(car.id, session, expand_data=True)
+        await session.commit()
         return car
 
     return None
