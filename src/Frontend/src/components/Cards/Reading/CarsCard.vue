@@ -11,7 +11,9 @@
         :src="statusImage"
         class="car-image"
       />
-      <div v-else class="car-image-placeholder"></div>
+      <div v-else class="car-image-placeholder">
+    <span class="plus-icon">+</span>
+  </div>
 
       <q-card-section class="car-content">
         <div class="characteristic-subtitle">{{ model }}</div>
@@ -151,6 +153,24 @@ export default defineComponent({
   width: 38px;
   height: 38px;
   margin: 21px 0 0 16px;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: rgba(0, 0, 0, 0.05);
+  border-radius: 4px;
+}
+
+.plus-icon {
+  opacity: 0;
+  font-size: 24px;
+  font-weight: bold;
+  color: #555;
+  transition: opacity 0.2s ease;
+}
+
+.car-image-placeholder:hover .plus-icon {
+  opacity: 1;
 }
 
 .car-content {
