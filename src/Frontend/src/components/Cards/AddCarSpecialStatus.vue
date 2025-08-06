@@ -21,11 +21,7 @@
         <template v-slot:option="scope">
           <q-item v-bind="scope.itemProps">
             <q-item-section avatar>
-              <q-img
-                :src="getStatusImage(scope.opt.id)"
-                width="24px"
-                height="24px"
-              />
+              <q-img :src="getStatusImage(scope.opt.id)" width="24px" height="24px" />
             </q-item-section>
             <q-item-section>
               <q-item-label>{{ scope.opt.name }}</q-item-label>
@@ -66,12 +62,7 @@
     </q-card-section>
 
     <q-card-actions align="center">
-      <q-btn
-        label="добавить статус"
-        color="primary"
-        @click="saveData"
-        :loading="isSaving"
-      />
+      <q-btn label="добавить статус" color="primary" @click="saveData" :loading="isSaving" />
     </q-card-actions>
   </q-card>
 </template>
@@ -81,6 +72,7 @@ import { defineComponent, computed, ref } from 'vue'
 import { useStatusOptions } from '../Functions/ButtonSelectGroupTs.js'
 import { date as qDate } from 'quasar'
 import { api } from 'boot/axios'
+import { useAuthStore } from 'src/stores/useAuthStore'
 
 // Импортируем изображения статусов
 import status1 from 'src/assets/1.png'
@@ -93,34 +85,39 @@ export default defineComponent({
   name: 'AddCarSpecialStatus',
   emits: ['close', 'save'],
   setup(props, { emit }) {
-    const {
-      statusOptions,
-      selectedSpecialStatuses,
-      loading
-    } = useStatusOptions()
+    const { statusOptions, selectedSpecialStatuses, loading } = useStatusOptions()
 
     const dateValue = ref('')
     const commentValue = ref('')
     const isSaving = ref(false)
+    const authStore = useAuthStore()
 
     // Получаем изображение статуса по ID
     const getStatusImage = (statusId) => {
-      switch(statusId) {
-        case 1: return status1
-        case 2: return status2
-        case 3: return status3
-        case 4: return status4
-        case 5: return status5
-        default: return null
+      switch (statusId) {
+        case 1:
+          return status1
+        case 2:
+          return status2
+        case 3:
+          return status3
+        case 4:
+          return status4
+        case 5:
+          return status5
+        default:
+          return null
       }
     }
 
     // Добавляем изображения в опции статусов
     const statusOptionsWithImages = computed(() => {
-      return statusOptions.value?.map(option => ({
-        ...option,
-        image: getStatusImage(option.id)
-      })) || []
+      return (
+        statusOptions.value?.map((option) => ({
+          ...option,
+          image: getStatusImage(option.id),
+        })) || []
+      )
     })
 
     // Валидация даты
@@ -153,19 +150,24 @@ export default defineComponent({
         for (const statusId of selectedSpecialStatuses.value) {
           const formattedDate = formatDateForApi(dateValue.value)
 
-          await api.patch(`/car/0/add_special_status`, null, {
+          await api.patch(`/car/${props.carId}/add_special_status`, null, {
             params: {
               special_status_id: statusId,
               date_from_user: formattedDate || '',
-              comment: commentValue.value || ''
-            }
+              comment: commentValue.value || '',
+            },
+            headers: {
+              accept: 'application/json',
+              Authorization: `Bearer ${authStore.token}`,
+              'Content-Type': 'application/json',
+            },
           })
         }
 
         emit('save', {
           statuses: selectedSpecialStatuses.value,
           date: dateValue.value,
-          comment: commentValue.value
+          comment: commentValue.value,
         })
         emit('close')
       } catch (error) {
@@ -185,9 +187,9 @@ export default defineComponent({
       isSaving,
       getStatusImage,
       validateDate,
-      saveData
+      saveData,
     }
-  }
+  },
 })
 </script>
 
