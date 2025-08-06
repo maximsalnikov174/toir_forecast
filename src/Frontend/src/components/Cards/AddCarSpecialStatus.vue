@@ -66,7 +66,12 @@
     </q-card-section>
 
     <q-card-actions align="center">
-      <q-btn label="добавить статус" color="primary" @click="saveData" />
+      <q-btn
+        label="добавить статус"
+        color="primary"
+        @click="saveData"
+        :loading="isSaving"
+      />
     </q-card-actions>
   </q-card>
 </template>
@@ -75,6 +80,7 @@
 import { defineComponent, computed, ref } from 'vue'
 import { useStatusOptions } from '../Functions/ButtonSelectGroupTs.js'
 import { date as qDate } from 'quasar'
+import { api } from 'boot/axios'
 
 // Импортируем изображения статусов
 import status1 from 'src/assets/1.png'
@@ -95,6 +101,7 @@ export default defineComponent({
 
     const dateValue = ref('')
     const commentValue = ref('')
+    const isSaving = ref(false)
 
     // Получаем изображение статуса по ID
     const getStatusImage = (statusId) => {
@@ -125,14 +132,48 @@ export default defineComponent({
       return isValid || 'Некорректная дата'
     }
 
+    // Преобразование даты в формат ГГГГ-ММ-ДД
+    const formatDateForApi = (dateStr) => {
+      if (!dateStr) return null
+      const [day, month, year] = dateStr.split('.')
+      return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`
+    }
+
     // Сохранение данных
-    const saveData = () => {
-      emit('save', {
-        statuses: selectedSpecialStatuses.value,
-        date: dateValue.value,
-        comment: commentValue.value
-      })
-      emit('close')
+    const saveData = async () => {
+      if (!selectedSpecialStatuses.value || selectedSpecialStatuses.value.length === 0) {
+        alert('Пожалуйста, выберите хотя бы один статус')
+        return
+      }
+
+      isSaving.value = true
+
+      try {
+        // Для каждого выбранного статуса делаем отдельный запрос
+        for (const statusId of selectedSpecialStatuses.value) {
+          const formattedDate = formatDateForApi(dateValue.value)
+
+          await api.patch(`/car/0/add_special_status`, null, {
+            params: {
+              special_status_id: statusId,
+              date_from_user: formattedDate || '',
+              comment: commentValue.value || ''
+            }
+          })
+        }
+
+        emit('save', {
+          statuses: selectedSpecialStatuses.value,
+          date: dateValue.value,
+          comment: commentValue.value
+        })
+        emit('close')
+      } catch (error) {
+        console.error('Ошибка при сохранении статуса:', error)
+        alert('Произошла ошибка при сохранении статуса')
+      } finally {
+        isSaving.value = false
+      }
     }
 
     return {
@@ -141,6 +182,7 @@ export default defineComponent({
       loading,
       dateValue,
       commentValue,
+      isSaving,
       getStatusImage,
       validateDate,
       saveData
