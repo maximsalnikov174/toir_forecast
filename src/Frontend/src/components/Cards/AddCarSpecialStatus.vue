@@ -3,7 +3,6 @@
     <q-card-section>
       <div class="text-h6">Добавить статус</div>
 
-      <!-- Поле выбора статусов -->
       <q-select
         v-model="selectedSpecialStatuses"
         :options="statusOptionsWithImages"
@@ -30,7 +29,6 @@
         </template>
       </q-select>
 
-      <!-- Поле выбора даты -->
       <q-input
         v-model="dateValue"
         label="Дата"
@@ -50,7 +48,6 @@
         </template>
       </q-input>
 
-      <!-- Поле для комментария -->
       <q-input
         v-model="commentValue"
         label="Комментарий"
@@ -62,7 +59,13 @@
     </q-card-section>
 
     <q-card-actions align="center">
-      <q-btn label="добавить статус" color="primary" @click="saveData" :loading="isSaving" />
+      <q-btn
+        label="добавить статус"
+        color="primary"
+        @click="saveData"
+        :loading="isSaving"
+        :disable="!selectedSpecialStatuses || selectedSpecialStatuses.length === 0"
+      />
     </q-card-actions>
   </q-card>
 </template>
@@ -74,7 +77,6 @@ import { date as qDate } from 'quasar'
 import { api } from 'boot/axios'
 import { useAuthStore } from 'src/stores/useAuthStore'
 
-// Импортируем изображения статусов
 import status1 from 'src/assets/1.png'
 import status2 from 'src/assets/2.png'
 import status3 from 'src/assets/3.png'
@@ -83,62 +85,53 @@ import status5 from 'src/assets/5.png'
 
 export default defineComponent({
   name: 'AddCarSpecialStatus',
+  props: {
+    carId: {
+      type: Number,
+      required: true,
+      validator: value => value > 0  // Проверка что ID не 0
+    }
+  },
   emits: ['close', 'save'],
   setup(props, { emit }) {
     const { statusOptions, selectedSpecialStatuses, loading } = useStatusOptions()
-
     const dateValue = ref('')
     const commentValue = ref('')
     const isSaving = ref(false)
     const authStore = useAuthStore()
 
-    // Получаем изображение статуса по ID
     const getStatusImage = (statusId) => {
       switch (statusId) {
-        case 1:
-          return status1
-        case 2:
-          return status2
-        case 3:
-          return status3
-        case 4:
-          return status4
-        case 5:
-          return status5
-        default:
-          return null
+        case 1: return status1
+        case 2: return status2
+        case 3: return status3
+        case 4: return status4
+        case 5: return status5
+        default: return null
       }
     }
 
-    // Добавляем изображения в опции статусов
     const statusOptionsWithImages = computed(() => {
-      return (
-        statusOptions.value?.map((option) => ({
-          ...option,
-          image: getStatusImage(option.id),
-        })) || []
-      )
+      return statusOptions.value?.map(option => ({
+        ...option,
+        image: getStatusImage(option.id),
+      })) || []
     })
 
-    // Валидация даты
     const validateDate = (val) => {
-      if (!val) return true // Разрешаем пустое значение
-
+      if (!val) return true
       const [day, month, year] = val.split('.')
-      const isValid = qDate.isValid(`${year}-${month}-${day}`)
-      return isValid || 'Некорректная дата'
+      return qDate.isValid(`${year}-${month}-${day}`) || 'Некорректная дата'
     }
 
-    // Преобразование даты в формат ГГГГ-ММ-ДД
     const formatDateForApi = (dateStr) => {
       if (!dateStr) return null
       const [day, month, year] = dateStr.split('.')
       return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`
     }
 
-    // Сохранение данных
     const saveData = async () => {
-      if (!selectedSpecialStatuses.value || selectedSpecialStatuses.value.length === 0) {
+      if (!selectedSpecialStatuses.value?.length) {
         alert('Пожалуйста, выберите хотя бы один статус')
         return
       }
@@ -146,7 +139,6 @@ export default defineComponent({
       isSaving.value = true
 
       try {
-        // Для каждого выбранного статуса делаем отдельный запрос
         for (const statusId of selectedSpecialStatuses.value) {
           const formattedDate = formatDateForApi(dateValue.value)
 
@@ -157,22 +149,16 @@ export default defineComponent({
               comment: commentValue.value || '',
             },
             headers: {
-              accept: 'application/json',
               Authorization: `Bearer ${authStore.token}`,
-              'Content-Type': 'application/json',
             },
           })
         }
 
-        emit('save', {
-          statuses: selectedSpecialStatuses.value,
-          date: dateValue.value,
-          comment: commentValue.value,
-        })
+        emit('save')
         emit('close')
       } catch (error) {
         console.error('Ошибка при сохранении статуса:', error)
-        alert('Произошла ошибка при сохранении статуса')
+        alert(`Ошибка: ${error.response?.data?.message || error.message}`)
       } finally {
         isSaving.value = false
       }

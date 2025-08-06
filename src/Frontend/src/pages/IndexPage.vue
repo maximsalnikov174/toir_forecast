@@ -60,6 +60,7 @@
             :specialStatusId="
               car.status_associations?.find((status) => status.is_active)?.special_status_id
             "
+            :id="car.id"
           />
           <div class="status-cards">
             <template v-for="(item, itemIndex) in tableData[rowIndex]" :key="itemIndex">

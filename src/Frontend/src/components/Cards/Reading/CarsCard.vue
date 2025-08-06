@@ -25,9 +25,11 @@
       </q-card-section>
     </q-card-section>
 
-    <!-- Диалог для добавления статуса -->
     <q-dialog v-model="showAddStatusDialog">
-      <AddCarSpecialStatus @close="showAddStatusDialog = false" />
+      <AddCarSpecialStatus
+        :car-id="id"
+        @close="showAddStatusDialog = false"
+      />
     </q-dialog>
   </q-card>
 </template>
@@ -37,7 +39,6 @@ import { defineComponent, computed, ref } from 'vue'
 import { useQuasar } from 'quasar'
 import AddCarSpecialStatus from '../AddCarSpecialStatus.vue'
 
-// Импортируем только необходимые изображения статусов
 import status1 from 'src/assets/1.png'
 import status2 from 'src/assets/2.png'
 import status3 from 'src/assets/3.png'
@@ -70,6 +71,10 @@ export default defineComponent({
     specialStatusId: {
       type: Number,
       required: false,
+    },
+    id: {
+      type: Number,
+      required: true
     }
   },
   setup(props) {
@@ -96,39 +101,25 @@ export default defineComponent({
     }
 
     const copyGrzToClipboard = () => {
-      // Добавляем % перед и после GRZ
       const grzWithPercent = `%${props.grz}%`
-
-      const textArea = document.createElement('textarea')
-      textArea.value = grzWithPercent
-      textArea.style.position = 'fixed'
-      document.body.appendChild(textArea)
-      textArea.focus()
-      textArea.select()
-
-      try {
-        const successful = document.execCommand('copy')
-        if (successful) {
+      navigator.clipboard.writeText(grzWithPercent)
+        .then(() => {
           $q.notify({
             message: 'GRZ скопирован в буфер обмена',
             color: 'positive',
             position: 'top',
             timeout: 1000
           })
-        } else {
-          throw new Error('Copy command unsuccessful')
-        }
-      } catch (err) {
-        console.error('Не удалось скопировать GRZ:', err)
-        $q.notify({
-          message: 'Ошибка при копировании GRZ',
-          color: 'negative',
-          position: 'top',
-          timeout: 1000
         })
-      } finally {
-        document.body.removeChild(textArea)
-      }
+        .catch(err => {
+          console.error('Не удалось скопировать GRZ:', err)
+          $q.notify({
+            message: 'Ошибка при копировании GRZ',
+            color: 'negative',
+            position: 'top',
+            timeout: 1000
+          })
+        })
     }
 
     return {
