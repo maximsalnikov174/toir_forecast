@@ -29,6 +29,7 @@
       <AddCarSpecialStatus
         :car-id="id"
         @close="showAddStatusDialog = false"
+        :on-submit-success="onStatusAdded"
       />
     </q-dialog>
   </q-card>
@@ -75,6 +76,12 @@ export default defineComponent({
     id: {
       type: Number,
       required: true
+    }
+  },
+
+  methods: {
+    onStatusAdded() {
+      this.$emit('status-added') // Эмитим событие при успешном добавлении
     }
   },
   setup(props) {

@@ -90,7 +90,11 @@ export default defineComponent({
       type: Number,
       required: true,
       validator: value => value > 0  // Проверка что ID не 0
-    }
+    },
+    onSubmitSuccess: {
+    type: Function,
+    default: null
+  },
   },
   emits: ['close', 'save'],
   setup(props, { emit }) {
@@ -131,38 +135,44 @@ export default defineComponent({
     }
 
     const saveData = async () => {
-      if (!selectedSpecialStatuses.value?.length) {
-        alert('Пожалуйста, выберите хотя бы один статус')
-        return
-      }
+  if (!selectedSpecialStatuses.value?.length) {
+    alert('Пожалуйста, выберите хотя бы один статус')
+    return
+  }
 
-      isSaving.value = true
+  isSaving.value = true
 
-      try {
-        for (const statusId of selectedSpecialStatuses.value) {
-          const formattedDate = formatDateForApi(dateValue.value)
+  try {
+    for (const statusId of selectedSpecialStatuses.value) {
+      const formattedDate = formatDateForApi(dateValue.value)
 
-          await api.patch(`/car/${props.carId}/add_special_status`, null, {
-            params: {
-              special_status_id: statusId,
-              date_from_user: formattedDate || '',
-              comment: commentValue.value || '',
-            },
-            headers: {
-              Authorization: `Bearer ${authStore.token}`,
-            },
-          })
-        }
-
-        emit('save')
-        emit('close')
-      } catch (error) {
-        console.error('Ошибка при сохранении статуса:', error)
-        alert(`Ошибка: ${error.response?.data?.message || error.message}`)
-      } finally {
-        isSaving.value = false
-      }
+      await api.patch(`/car/${props.carId}/add_special_status`, null, {
+        params: {
+          special_status_id: statusId,
+          date_from_user: formattedDate || '',
+          comment: commentValue.value || '',
+        },
+        headers: {
+          Authorization: `Bearer ${authStore.token}`,
+        },
+      })
     }
+
+    emit('save')
+    emit('close')
+    // Вызываем колбэк после успешного сохранения
+    if (props.onSubmitSuccess) {
+      props.onSubmitSuccess()
+    }
+  } catch (error) {
+    console.error('Ошибка при сохранении статуса:', error)
+    alert(`Ошибка: ${error.response?.data?.message || error.message}`)
+  } finally {
+    isSaving.value = false
+  }
+}
+
+
 
     return {
       statusOptionsWithImages,
