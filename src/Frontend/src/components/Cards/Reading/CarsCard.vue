@@ -11,9 +11,9 @@
         :src="statusImage"
         class="car-image"
       />
-      <div v-else class="car-image-placeholder">
-    <span class="plus-icon">+</span>
-  </div>
+      <div v-else class="car-image-placeholder" @click.stop="openAddStatusDialog">
+        <span class="plus-icon">+</span>
+      </div>
 
       <q-card-section class="car-content">
         <div class="characteristic-subtitle">{{ model }}</div>
@@ -24,12 +24,18 @@
         </div>
       </q-card-section>
     </q-card-section>
+
+    <!-- Диалог для добавления статуса -->
+    <q-dialog v-model="showAddStatusDialog">
+      <AddCarSpecialStatus @close="showAddStatusDialog = false" />
+    </q-dialog>
   </q-card>
 </template>
 
 <script>
-import { defineComponent, computed } from 'vue'
+import { defineComponent, computed, ref } from 'vue'
 import { useQuasar } from 'quasar'
+import AddCarSpecialStatus from '../AddCarSpecialStatus.vue'
 
 // Импортируем только необходимые изображения статусов
 import status1 from 'src/assets/1.png'
@@ -40,6 +46,9 @@ import status5 from 'src/assets/5.png'
 
 export default defineComponent({
   name: 'CarCard',
+  components: {
+    AddCarSpecialStatus
+  },
   props: {
     grz: {
       type: String,
@@ -65,6 +74,7 @@ export default defineComponent({
   },
   setup(props) {
     const $q = useQuasar()
+    const showAddStatusDialog = ref(false)
 
     const isLowDistance = computed(() => {
       return props.daliDistanse < 1
@@ -81,52 +91,59 @@ export default defineComponent({
       }
     })
 
-    const copyGrzToClipboard = () => {
-  // Добавляем % перед и после GRZ
-  const grzWithPercent = `%${props.grz}%`
-
-  const textArea = document.createElement('textarea')
-  textArea.value = grzWithPercent
-  textArea.style.position = 'fixed'
-  document.body.appendChild(textArea)
-  textArea.focus()
-  textArea.select()
-
-  try {
-    const successful = document.execCommand('copy')
-    if (successful) {
-      $q.notify({
-        message: 'GRZ скопирован в буфер обмена',
-        color: 'positive',
-        position: 'top',
-        timeout: 1000
-      })
-    } else {
-      throw new Error('Copy command unsuccessful')
+    const openAddStatusDialog = () => {
+      showAddStatusDialog.value = true
     }
-  } catch (err) {
-    console.error('Не удалось скопировать GRZ:', err)
-    $q.notify({
-      message: 'Ошибка при копировании GRZ',
-      color: 'negative',
-      position: 'top',
-      timeout: 1000
-    })
-  } finally {
-    document.body.removeChild(textArea)
-  }
-}
+
+    const copyGrzToClipboard = () => {
+      // Добавляем % перед и после GRZ
+      const grzWithPercent = `%${props.grz}%`
+
+      const textArea = document.createElement('textarea')
+      textArea.value = grzWithPercent
+      textArea.style.position = 'fixed'
+      document.body.appendChild(textArea)
+      textArea.focus()
+      textArea.select()
+
+      try {
+        const successful = document.execCommand('copy')
+        if (successful) {
+          $q.notify({
+            message: 'GRZ скопирован в буфер обмена',
+            color: 'positive',
+            position: 'top',
+            timeout: 1000
+          })
+        } else {
+          throw new Error('Copy command unsuccessful')
+        }
+      } catch (err) {
+        console.error('Не удалось скопировать GRZ:', err)
+        $q.notify({
+          message: 'Ошибка при копировании GRZ',
+          color: 'negative',
+          position: 'top',
+          timeout: 1000
+        })
+      } finally {
+        document.body.removeChild(textArea)
+      }
+    }
 
     return {
       isLowDistance,
       statusImage,
-      copyGrzToClipboard
+      copyGrzToClipboard,
+      showAddStatusDialog,
+      openAddStatusDialog
     }
   }
 })
 </script>
 
 <style scoped>
+/* Оставьте стили без изменений */
 .car-card {
   width: 212px;
   height: 80px;
@@ -159,6 +176,7 @@ export default defineComponent({
   justify-content: center;
   background-color: rgba(0, 0, 0, 0.05);
   border-radius: 4px;
+  cursor: pointer;
 }
 
 .plus-icon {
