@@ -9,7 +9,7 @@ from .role import Role  # noqa
 from .service_name import ServiceName  # noqa
 from .service_status import ServiceStatus  # noqa
 from .service_work import ServiceWork  # noqa
-from .special_status import SpecialStatus, SpecialStatusForCar  # noqa
+from .special_status import SpecialStatus, SpecialStatusForCar, special_status_role_association  # noqa
 from .station import Station  # noqa
 from .stats import ServiceWorkState, ServiceStatusStats  # noqa
 from .user import User  # noqa
