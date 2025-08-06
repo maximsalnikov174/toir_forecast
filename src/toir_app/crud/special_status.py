@@ -19,13 +19,13 @@ from models import (
 
 async def get_all_special_status(
         session: AsyncSession,
-        role_id: Annotated[int, Role.id],
+        # role_id: Annotated[int, Role.id],
 ):
     """Получение списка спец.статусов, доступных конкретному пользователю."""
     query = (
         select(SpecialStatus)
         .join(SpecialStatus.allowed_roles)
-        .where(Role.id == role_id)
+        # .where(Role.id == role_id)
         .options(selectinload(SpecialStatus.allowed_roles))
     )
 

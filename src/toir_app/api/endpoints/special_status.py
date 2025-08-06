@@ -20,7 +20,7 @@ router = APIRouter()
 @router.get(
     '/all',
     response_model=list[FullSpecialStatusSchemas],
-    dependencies=[Depends(current_user)],
+    # dependencies=[Depends(current_user)],
     name='Получение всех специальных статусов (доступно всем).',
     description=(
         '''
@@ -31,12 +31,12 @@ router = APIRouter()
 )
 async def get_all_special_status_for_car(
     session: AsyncSession = Depends(get_async_session),
-    user: User = Depends(current_user),
+    # user: User = Depends(current_user),
 ):
     """Получение списка специальных статусов, доступных пользователю."""
     return await get_all_special_status(
         session=session,
-        role_id=user.role_id
+        # role_id=user.role_id
     )
 
 
