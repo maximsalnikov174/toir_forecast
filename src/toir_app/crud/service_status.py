@@ -20,10 +20,6 @@ async def get_service_status_by_name(name: str, session: AsyncSession):
     )
 
 
-async def get_service_status_by_id(id: int, session: AsyncSession):
-    return await session.get(ServiceStatus, id)
-
-
 async def check_service_status_by_param(
     session: AsyncSession,
     request_status_param: Union[int, Status]

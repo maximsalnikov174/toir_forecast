@@ -1,9 +1,11 @@
 from datetime import date, timedelta
+from typing import Annotated, Optional
 
 from sqlalchemy import ScalarResult, select
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import joinedload
+from sqlalchemy.orm import joinedload, selectinload
 
+from exception import NotFoundError
 from logger.logger import logger
 from models import SpecialStatus, SpecialStatusForCar
 
@@ -58,3 +60,32 @@ async def deactivate_list_of_special_status_for_car(
         )
 
     await session.commit()
+
+
+async def get_special_status_by_id(
+        special_status_id: Annotated[int, SpecialStatus.id],
+        session: AsyncSession,
+        expand_data: bool = False
+) -> Optional[SpecialStatus]:
+    """
+    Получает специальный статус по ID с опциональной загрузкой связанных ролей.
+
+    Args:
+        service_status_id: ID специального статуса
+        session: Асинхронная сессия SQLAlchemy
+        expand_data: Флаг для загрузки связанных ролей
+
+    Returns:
+        Объект SpecialStatus или None, если не найден
+    """
+    query = select(SpecialStatus).where(SpecialStatus.id == special_status_id)
+
+    if expand_data:
+        query = query.options(selectinload(SpecialStatus.allowed_roles))
+
+    result = await session.scalar(query)
+
+    if not result:
+        raise NotFoundError(reason='Специальный статус не найден.')
+
+    return result

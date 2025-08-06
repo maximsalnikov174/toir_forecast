@@ -9,11 +9,18 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload, selectinload
 
 from constants import MAX_SPECIAL_STATUS_VALID, pattern_grz_input_user
+from crud.special_status import get_special_status_by_id
+from exception import (
+    AlreadyAssignedException,
+    CarInArchiveException,
+    CarNotFoundException,
+    NoPermissionForActionException,
+    NotFoundError
+)
 from logger.logger import logger
 from models import (
     Car,
     ServiceWork,
-    SpecialStatus,
     SpecialStatusForCar,
     User,
 )
@@ -61,13 +68,10 @@ async def get_car_by_pk(
         car = await session.get(Car, car_id)
 
     if not car:
-        raise HTTPException(HTTPStatus.NOT_FOUND, 'ТС не найдено')
+        raise CarNotFoundException
 
-    elif check_car_in_archive and car.in_archive:
-        raise HTTPException(
-            HTTPStatus.BAD_REQUEST,
-            'ТС находится в архиве, действие невозможно'
-        )
+    if check_car_in_archive and car.in_archive:
+        raise CarInArchiveException
 
     return car
 
@@ -235,22 +239,26 @@ async def add_special_status_to_car(
             f'не больше {MAX_SPECIAL_STATUS_VALID} дней!'
         )
 
-    # Проверяем, существует ли car и special_status:
-    if not await session.get(SpecialStatus, special_status_id):
-        raise HTTPException(HTTPStatus.NOT_FOUND, 'Статус не найден')
+    try:
+        # Проверяем, существует ли special_status и car по их id:
+        special_status = await get_special_status_by_id(
+            special_status_id=special_status_id,
+            session=session,
+            expand_data=True
+        )
 
-    car = await get_car_by_pk(car_id, session, expand_data=True)
+        car = await get_car_by_pk(car_id, session, expand_data=True)
 
-    if car:
+        allowed_roles = (
+            [users_role.id for users_role in special_status.allowed_roles]
+        )
 
-        if (
-            car.organization_id != user.organization_id
-            and not user.is_superuser
-        ):
-            raise HTTPException(
-                HTTPStatus.FORBIDDEN,
-                'Только пользователь подразделения или суперпользователь'
-            )
+        # Проверяем права пользователя для установки выбранного статуса:
+        if user.role_id not in allowed_roles:
+            raise NoPermissionForActionException
+
+        if car.organization_id != user.organization_id:
+            raise NoPermissionForActionException
 
         active_status_car = {
             elem.special_status_id: elem.date_left
@@ -259,35 +267,64 @@ async def add_special_status_to_car(
         }
 
         if special_status_id in active_status_car.keys():
-            raise HTTPException(
-                HTTPStatus.BAD_REQUEST,
-                'Выбранный статус ТС уже назначен '
-                f'и действует до {active_status_car[special_status_id]}'
-            )
+            raise AlreadyAssignedException
 
-        try:
-            element = SpecialStatusForCar()
-            element.car_id = car_id
-            element.special_status_id = special_status_id
-            element.assigned_by_user_id = user.id
-            element.comment = comment
-            element.date_left = date_from_user
-            element.is_active = True
-            session.add(element)
-            await session.flush()
+        element = SpecialStatusForCar()
+        element.car_id = car_id
+        element.special_status_id = special_status_id
+        element.assigned_by_user_id = user.id
+        element.comment = comment
+        element.date_left = date_from_user
+        element.is_active = True
 
-        except Exception as e:
-            await session.rollback()
-            raise HTTPException(
-                status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
-                detail=f'Ошибка при обновлении статуса ТС: {str(e)}'
-            )
-
-        car = await get_car_by_pk(car.id, session, expand_data=True)
+        session.add(element)
+        await session.flush()
+        await session.refresh(car)  # Обновляем объект из БД
         await session.commit()
-        return car
+        return await get_car_by_pk(car_id, session, expand_data=True)
 
-    return None
+    except CarNotFoundException:
+        await session.rollback()
+        raise HTTPException(
+            HTTPStatus.NO_CONTENT,
+            'ТС не найдено'
+        )
+
+    except CarInArchiveException:
+        await session.rollback()
+        raise HTTPException(
+            HTTPStatus.BAD_REQUEST,
+            'ТС находится в архиве, действие невозможно'
+        )
+
+    except NotFoundError:
+        await session.rollback()
+        raise HTTPException(
+            HTTPStatus.NO_CONTENT,
+            'Специальный статус не найден'
+        )
+
+    except NoPermissionForActionException:
+        await session.rollback()
+        raise HTTPException(
+            HTTPStatus.BAD_REQUEST,
+            'Специальный статус невозможно установить с данными правами юзера'
+        )
+
+    except AlreadyAssignedException:
+        await session.rollback()
+        raise HTTPException(
+            HTTPStatus.BAD_REQUEST,
+            'Выбранный статус ТС уже назначен '
+            f'и действует до {active_status_car[special_status_id]}'
+        )
+
+    except Exception as e:
+        await session.rollback()
+        raise HTTPException(
+            status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
+            detail=f'Ошибка при обновлении статуса ТС: {str(e)}'
+        )
 
 
 async def get_car_history(

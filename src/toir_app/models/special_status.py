@@ -1,4 +1,6 @@
-from sqlalchemy import Boolean, Column, Date, ForeignKey, Integer, String
+from sqlalchemy import (
+    Boolean, Column, Date, ForeignKey, Integer, String, Table,
+)
 from sqlalchemy.orm import relationship
 
 from constants import (
@@ -6,6 +8,15 @@ from constants import (
     SPECIAL_STATUS_NAME_LEN,
 )
 from core.db import Base
+
+
+# Ассоциативная таблица для связи многие-ко-многим между SpecialStatus и Role
+special_status_role_association = Table(
+    'special_status_role_association',
+    Base.metadata,
+    Column('special_status_id', Integer, ForeignKey('specialstatus.id')),
+    Column('role_id', Integer, ForeignKey('role.id'))
+)
 
 
 class SpecialStatus(Base):
@@ -23,6 +34,12 @@ class SpecialStatus(Base):
         String(SPECIAL_STATUS_NAME_LEN),
         nullable=False,
         unique=True
+    )
+    # Обратные связи:
+    allowed_roles = relationship(
+        'Role',
+        secondary=special_status_role_association,
+        back_populates='allowed_special_statuses'
     )
     car_associations = relationship(
         'SpecialStatusForCar',

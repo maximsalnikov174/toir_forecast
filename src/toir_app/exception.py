@@ -23,3 +23,25 @@ class BadNameInUploadFileException(Exception):
 
 class NoPermissionForSuperUser(Exception):
     """У пользователя нет прав суперпользователя."""
+
+
+class NoPermissionForActionException(Exception):
+    """Пользователь не обладает необходимыми правами."""
+
+
+class AlreadyAssignedException(Exception):
+    """Сигнал о попытке повторного назначения."""
+
+
+class NotFoundError(Exception):
+    """Данные не были найдены."""
+    def __init__(self, reason: Any) -> None:
+        self.reason = reason
+
+
+class CarNotFoundException(NotFoundError):
+    """Сигнал, что ТС по id не найдено."""
+
+
+class CarInArchiveException(Exception):
+    """Сигнал, что ТС находится (было переведено) в архив."""
