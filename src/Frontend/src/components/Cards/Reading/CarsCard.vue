@@ -108,26 +108,38 @@ export default defineComponent({
     }
 
     const copyGrzToClipboard = () => {
-      const grzWithPercent = `%${props.grz}%`
-      navigator.clipboard.writeText(grzWithPercent)
-        .then(() => {
-          $q.notify({
-            message: 'GRZ скопирован в буфер обмена',
-            color: 'positive',
-            position: 'top',
-            timeout: 1000
-          })
-        })
-        .catch(err => {
-          console.error('Не удалось скопировать GRZ:', err)
-          $q.notify({
-            message: 'Ошибка при копировании GRZ',
-            color: 'negative',
-            position: 'top',
-            timeout: 1000
-          })
-        })
+      // Добавляем % перед и после GRZ
+  const grzWithPercent = `%${props.grz}%`
+  const textArea = document.createElement('textarea')
+  textArea.value = grzWithPercent
+  textArea.style.position = 'fixed'
+  document.body.appendChild(textArea)
+  textArea.focus()
+  textArea.select()
+  try {
+    const successful = document.execCommand('copy')
+    if (successful) {
+      $q.notify({
+        message: 'GRZ скопирован в буфер обмена',
+        color: 'positive',
+        position: 'top',
+        timeout: 1000
+      })
+    } else {
+      throw new Error('Copy command unsuccessful')
     }
+  } catch (err) {
+    console.error('Не удалось скопировать GRZ:', err)
+    $q.notify({
+      message: 'Ошибка при копировании GRZ',
+      color: 'negative',
+      position: 'top',
+      timeout: 1000
+    })
+  } finally {
+    document.body.removeChild(textArea)
+  }
+}
 
     return {
       isLowDistance,
