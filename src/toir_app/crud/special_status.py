@@ -7,11 +7,23 @@ from sqlalchemy.orm import joinedload, selectinload
 
 from exception import NotFoundError
 from logger.logger import logger
-from models import SpecialStatus, SpecialStatusForCar
+from models import Role, SpecialStatus, SpecialStatusForCar
 
 
-async def get_all_special_status(session: AsyncSession):
-    return await session.scalars(select(SpecialStatus))
+async def get_all_special_status(
+        session: AsyncSession,
+        role_id: Annotated[int, Role.id],
+):
+    """Получение списка спец.статусов, доступных конкретному пользователю."""
+    query = (
+        select(SpecialStatus)
+        .join(SpecialStatus.allowed_roles)
+        .where(Role.id == role_id)
+        .options(selectinload(SpecialStatus.allowed_roles))
+    )
+
+    result = await session.scalars(query)
+    return result.all()
 
 
 async def deactivate_special_status_for_car(

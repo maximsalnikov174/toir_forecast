@@ -2,9 +2,11 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.db import get_async_session
+from core.user import current_user
 from crud.special_status import (
     get_all_special_status,
 )
+from models import User
 from schemas.special_status import (
     FullSpecialStatusSchemas,
 )
@@ -15,6 +17,7 @@ router = APIRouter()
 @router.get(
     '/all',
     response_model=list[FullSpecialStatusSchemas],
+    dependencies=[Depends(current_user)],
     name='Получение всех специальных статусов (доступно всем).',
     description=(
         '''
@@ -24,7 +27,11 @@ router = APIRouter()
     )
 )
 async def get_all_special_status_for_car(
-    session: AsyncSession = Depends(get_async_session)
+    session: AsyncSession = Depends(get_async_session),
+    user: User = Depends(current_user),
 ):
-    """Получение списка специальных статусов."""
-    return await get_all_special_status(session)
+    """Получение списка специальных статусов, доступных пользователю."""
+    return await get_all_special_status(
+        session=session,
+        role_id=user.role_id
+    )
