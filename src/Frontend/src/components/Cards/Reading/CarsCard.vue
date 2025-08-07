@@ -116,8 +116,8 @@ export default defineComponent({
     })
 
     const openAddStatusDialog = () => {
-      // Проверяем, что текущее подразделение пользователя совпадает с выбранным
-      if (authStore.user?.organization_id === selectedDivId.value) {
+      // Проверяем, что пользователь суперпользователь ИЛИ его подразделение совпадает с выбранным
+      if (authStore.user?.is_superuser || authStore.user?.organization_id === selectedDivId.value) {
         showAddStatusDialog.value = true
       }
     }
@@ -169,7 +169,6 @@ export default defineComponent({
 </script>
 
 <style scoped>
-/* Оставьте стили без изменений */
 .car-card {
   width: 212px;
   height: 80px;
