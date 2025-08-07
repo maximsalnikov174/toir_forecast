@@ -6,18 +6,39 @@
     style="cursor: pointer;"
   >
     <q-card-section horizontal>
-      <q-img
-        v-if="statusImage"
-        :src="statusImage"
-        class="car-image"
-      />
-      <div
-        v-else
-        class="car-image-placeholder"
-        @click.stop="openAddStatusDialog"
-      >
-        <span class="plus-icon" v-if="showPlusIcon">+</span>
+      <div class="status-image-container">
+        <q-img
+          v-if="statusImage"
+          :src="statusImage"
+          class="car-image"
+        />
+        <q-tooltip
+          v-if="hasStatusInfo"
+          class="status-tooltip"
+          anchor="top middle"
+          self="bottom middle"
+          :offset="[0, 10]"
+        >
+          <div class="tooltip-content">
+            <div v-if="specialStatusComment" class="tooltip-row">
+              <q-icon name="comment" size="sm" />
+              <span>{{ specialStatusComment }}</span>
+            </div>
+            <div v-if="specialStatusDateLeft" class="tooltip-row">
+              <q-icon name="event" size="sm" />
+              <span>До: {{ formattedDateLeft }}</span>
+            </div>
+          </div>
+        </q-tooltip>
+        <div
+          v-else
+          class="car-image-placeholder"
+          @click.stop="openAddStatusDialog"
+        >
+          <span class="plus-icon" v-if="showPlusIcon">+</span>
+        </div>
       </div>
+
       <q-card-section class="car-content">
         <div class="characteristic-subtitle">{{ model }}</div>
         <div class="car-grz">{{ grz }}</div>
@@ -32,7 +53,7 @@
       <AddCarSpecialStatus
         :car-id="id"
         @close="showAddStatusDialog = false"
-        :on-submit-success="onStatusAdded"
+        @submit-success="onStatusAdded"
       />
     </q-dialog>
   </q-card>
@@ -78,6 +99,16 @@ export default defineComponent({
       type: Number,
       required: false,
     },
+    specialStatusComment: {
+      type: String,
+      required: false,
+      default: ''
+    },
+    specialStatusDateLeft: {
+      type: String,
+      required: false,
+      default: ''
+    },
     id: {
       type: Number,
       required: true
@@ -87,13 +118,8 @@ export default defineComponent({
       default: null
     }
   },
-
-  methods: {
-    onStatusAdded() {
-      this.$emit('status-added')
-    }
-  },
-  setup(props) {
+  emits: ['status-added'],
+  setup(props, { emit }) {
     const $q = useQuasar()
     const showAddStatusDialog = ref(false)
     const { selectedDivId } = useFilterStore()
@@ -120,6 +146,16 @@ export default defineComponent({
         case 5: return status5
         default: return null
       }
+    })
+
+    const formattedDateLeft = computed(() => {
+      if (!props.specialStatusDateLeft) return ''
+      const date = new Date(props.specialStatusDateLeft)
+      return date.toLocaleDateString('ru-RU')
+    })
+
+    const hasStatusInfo = computed(() => {
+      return props.specialStatusComment || props.specialStatusDateLeft
     })
 
     const openAddStatusDialog = () => {
@@ -161,14 +197,22 @@ export default defineComponent({
       }
     }
 
+    const onStatusAdded = () => {
+      emit('status-added')
+      showAddStatusDialog.value = false
+    }
+
     return {
       isLowDistance,
       isSelectedDivision,
       statusImage,
+      formattedDateLeft,
+      hasStatusInfo,
       copyGrzToClipboard,
       showAddStatusDialog,
       openAddStatusDialog,
-      showPlusIcon
+      showPlusIcon,
+      onStatusAdded
     }
   }
 })
@@ -192,6 +236,11 @@ export default defineComponent({
 
 .car-card.selected-division {
   border: 2px solid purple;
+}
+
+.status-image-container {
+  position: relative;
+  display: flex;
 }
 
 .car-image {
@@ -274,5 +323,27 @@ export default defineComponent({
   line-height: 100%;
   color: #000000;
   margin-left: 5px;
+}
+
+.status-tooltip {
+  background: white !important;
+  color: black !important;
+  padding: 10px !important;
+  border-radius: 8px !important;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2) !important;
+  max-width: 250px !important;
+  font-size: 12px !important;
+}
+
+.tooltip-content {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.tooltip-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 </style>
