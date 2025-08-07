@@ -1,7 +1,7 @@
 <template>
   <q-card
     class="car-card"
-    :class="{ 'bg-pink-2': isLowDistance }"
+    :class="{ 'bg-pink-2': isLowDistance, 'selected-division': isSelectedDivision }"
     @click="copyGrzToClipboard"
     style="cursor: pointer;"
   >
@@ -39,6 +39,8 @@
 import { defineComponent, computed, ref } from 'vue'
 import { useQuasar } from 'quasar'
 import AddCarSpecialStatus from '../AddCarSpecialStatus.vue'
+import { useFilterStore } from 'src/components/Functions/FilterStoreAcceptButton'
+import { useAuthStore } from 'src/stores/useAuthStore'
 
 import status1 from 'src/assets/1.png'
 import status2 from 'src/assets/2.png'
@@ -76,6 +78,10 @@ export default defineComponent({
     id: {
       type: Number,
       required: true
+    },
+    divId: {
+      type: [String, Number],
+      default: null
     }
   },
 
@@ -87,9 +93,15 @@ export default defineComponent({
   setup(props) {
     const $q = useQuasar()
     const showAddStatusDialog = ref(false)
+    const { selectedDivId } = useFilterStore()
+    const authStore = useAuthStore()
 
     const isLowDistance = computed(() => {
       return props.daliDistanse < 1
+    })
+
+    const isSelectedDivision = computed(() => {
+      return props.divId && props.divId === selectedDivId.value
     })
 
     const statusImage = computed(() => {
@@ -104,45 +116,49 @@ export default defineComponent({
     })
 
     const openAddStatusDialog = () => {
-      showAddStatusDialog.value = true
+      // Проверяем, что текущее подразделение пользователя совпадает с выбранным
+      if (authStore.user?.organization_id === selectedDivId.value) {
+        showAddStatusDialog.value = true
+      }
     }
 
     const copyGrzToClipboard = () => {
       // Добавляем % перед и после GRZ
-  const grzWithPercent = `%${props.grz}%`
-  const textArea = document.createElement('textarea')
-  textArea.value = grzWithPercent
-  textArea.style.position = 'fixed'
-  document.body.appendChild(textArea)
-  textArea.focus()
-  textArea.select()
-  try {
-    const successful = document.execCommand('copy')
-    if (successful) {
-      $q.notify({
-        message: 'GRZ скопирован в буфер обмена',
-        color: 'positive',
-        position: 'top',
-        timeout: 1000
-      })
-    } else {
-      throw new Error('Copy command unsuccessful')
+      const grzWithPercent = `%${props.grz}%`
+      const textArea = document.createElement('textarea')
+      textArea.value = grzWithPercent
+      textArea.style.position = 'fixed'
+      document.body.appendChild(textArea)
+      textArea.focus()
+      textArea.select()
+      try {
+        const successful = document.execCommand('copy')
+        if (successful) {
+          $q.notify({
+            message: 'GRZ скопирован в буфер обмена',
+            color: 'positive',
+            position: 'top',
+            timeout: 1000
+          })
+        } else {
+          throw new Error('Copy command unsuccessful')
+        }
+      } catch (err) {
+        console.error('Не удалось скопировать GRZ:', err)
+        $q.notify({
+          message: 'Ошибка при копировании GRZ',
+          color: 'negative',
+          position: 'top',
+          timeout: 1000
+        })
+      } finally {
+        document.body.removeChild(textArea)
+      }
     }
-  } catch (err) {
-    console.error('Не удалось скопировать GRZ:', err)
-    $q.notify({
-      message: 'Ошибка при копировании GRZ',
-      color: 'negative',
-      position: 'top',
-      timeout: 1000
-    })
-  } finally {
-    document.body.removeChild(textArea)
-  }
-}
 
     return {
       isLowDistance,
+      isSelectedDivision,
       statusImage,
       copyGrzToClipboard,
       showAddStatusDialog,
@@ -167,6 +183,10 @@ export default defineComponent({
 
 .car-card:hover {
   transform: translateY(-2px);
+}
+
+.car-card.selected-division {
+  border: 2px solid purple;
 }
 
 .car-image {
