@@ -13,8 +13,8 @@
           class="car-image"
         />
         <q-tooltip
+         class="bg-red text-body2"
           v-if="hasStatusInfo"
-          class="status-tooltip"
           anchor="top middle"
           self="bottom middle"
           :offset="[0, 10]"
@@ -323,16 +323,6 @@ export default defineComponent({
   line-height: 100%;
   color: #000000;
   margin-left: 5px;
-}
-
-.status-tooltip {
-  background: white !important;
-  color: black !important;
-  padding: 10px !important;
-  border-radius: 8px !important;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2) !important;
-  max-width: 250px !important;
-  font-size: 12px !important;
 }
 
 .tooltip-content {
