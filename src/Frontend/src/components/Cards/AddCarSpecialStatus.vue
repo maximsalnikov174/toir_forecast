@@ -4,7 +4,7 @@
       <div class="text-h6">Добавить статус</div>
 
       <q-select
-        v-model="selectedSpecialStatuses"
+        v-model="selectedSpecialStatus"
         :options="statusOptionsWithImages"
         option-label="name"
         option-value="id"
@@ -13,7 +13,6 @@
         map-options
         emit-value
         :loading="loading"
-        multiple
         clearable
         class="q-mb-md"
       >
@@ -64,7 +63,7 @@
         color="primary"
         @click="saveData"
         :loading="isSaving"
-        :disable="!selectedSpecialStatuses || selectedSpecialStatuses.length === 0"
+        :disable="!selectedSpecialStatus"
       />
     </q-card-actions>
   </q-card>
@@ -72,7 +71,7 @@
 
 <script>
 import { defineComponent, computed, ref } from 'vue'
-import { useStatusOptions } from '../Functions/ButtonSelectGroupTs.js'
+import { useAuthorizedStatusOptions } from '../Functions/AuthorizeSelectGroupTs.js'
 import { date as qDate } from 'quasar'
 import { api } from 'boot/axios'
 import { useAuthStore } from 'src/stores/useAuthStore'
@@ -92,13 +91,14 @@ export default defineComponent({
       validator: value => value > 0  // Проверка что ID не 0
     },
     onSubmitSuccess: {
-    type: Function,
-    default: null
-  },
+      type: Function,
+      default: null
+    },
   },
   emits: ['close', 'save'],
   setup(props, { emit }) {
-    const { statusOptions, selectedSpecialStatuses, loading } = useStatusOptions()
+    const { statusOptions, loading } = useAuthorizedStatusOptions()
+    const selectedSpecialStatus = ref(null) // Изменили на одиночное значение
     const dateValue = ref('')
     const commentValue = ref('')
     const isSaving = ref(false)
@@ -135,48 +135,44 @@ export default defineComponent({
     }
 
     const saveData = async () => {
-  if (!selectedSpecialStatuses.value?.length) {
-    alert('Пожалуйста, выберите хотя бы один статус')
-    return
-  }
+      if (!selectedSpecialStatus.value) {
+        alert('Пожалуйста, выберите статус')
+        return
+      }
 
-  isSaving.value = true
+      isSaving.value = true
 
-  try {
-    for (const statusId of selectedSpecialStatuses.value) {
-      const formattedDate = formatDateForApi(dateValue.value)
+      try {
+        const formattedDate = formatDateForApi(dateValue.value)
 
-      await api.patch(`/car/${props.carId}/add_special_status`, null, {
-        params: {
-          special_status_id: statusId,
-          date_from_user: formattedDate || '',
-          comment: commentValue.value || '',
-        },
-        headers: {
-          Authorization: `Bearer ${authStore.token}`,
-        },
-      })
+        await api.patch(`/car/${props.carId}/add_special_status`, null, {
+          params: {
+            special_status_id: selectedSpecialStatus.value,
+            date_from_user: formattedDate || '',
+            comment: commentValue.value || '',
+          },
+          headers: {
+            Authorization: `Bearer ${authStore.token}`,
+          },
+        })
+
+        emit('save')
+        emit('close')
+        // Вызываем колбэк после успешного сохранения
+        if (props.onSubmitSuccess) {
+          props.onSubmitSuccess()
+        }
+      } catch (error) {
+        console.error('Ошибка при сохранении статуса:', error)
+        alert(`Ошибка: ${error.response?.data?.message || error.message}`)
+      } finally {
+        isSaving.value = false
+      }
     }
-
-    emit('save')
-    emit('close')
-    // Вызываем колбэк после успешного сохранения
-    if (props.onSubmitSuccess) {
-      props.onSubmitSuccess()
-    }
-  } catch (error) {
-    console.error('Ошибка при сохранении статуса:', error)
-    alert(`Ошибка: ${error.response?.data?.message || error.message}`)
-  } finally {
-    isSaving.value = false
-  }
-}
-
-
 
     return {
       statusOptionsWithImages,
-      selectedSpecialStatuses,
+      selectedSpecialStatus, // Изменили на одиночное значение
       loading,
       dateValue,
       commentValue,
