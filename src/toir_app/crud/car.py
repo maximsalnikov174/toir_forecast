@@ -257,7 +257,10 @@ async def add_special_status_to_car(
         if user.role_id not in allowed_roles:
             raise NoPermissionForActionException
 
-        if car.organization_id != user.organization_id:
+        if (
+            car.organization_id != user.organization_id
+            or not user.is_superuser
+        ):
             raise NoPermissionForActionException
 
         active_status_car = {
