@@ -123,7 +123,8 @@ const shouldShowPlusIcon = computed(() => {
 
 const shouldShowHover = computed(() => {
   return hover.value &&
-         authStore.user?.organization_id === selectedDivId.value & !props.service_work_completed;
+         (authStore.user?.is_superuser || authStore.user?.organization_id === selectedDivId.value) &&
+         !props.service_work_completed;
 });
 
 const handleCardClick = () => {
