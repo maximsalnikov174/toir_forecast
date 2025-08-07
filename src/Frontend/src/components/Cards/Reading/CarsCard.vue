@@ -11,10 +11,13 @@
         :src="statusImage"
         class="car-image"
       />
-      <div v-else class="car-image-placeholder" @click.stop="openAddStatusDialog">
-        <span class="plus-icon">+</span>
+      <div
+        v-else
+        class="car-image-placeholder"
+        @click.stop="openAddStatusDialog"
+      >
+        <span class="plus-icon" v-if="showPlusIcon">+</span>
       </div>
-
       <q-card-section class="car-content">
         <div class="characteristic-subtitle">{{ model }}</div>
         <div class="car-grz">{{ grz }}</div>
@@ -87,7 +90,7 @@ export default defineComponent({
 
   methods: {
     onStatusAdded() {
-      this.$emit('status-added') // Эмитим событие при успешном добавлении
+      this.$emit('status-added')
     }
   },
   setup(props) {
@@ -104,6 +107,10 @@ export default defineComponent({
       return props.divId && props.divId === selectedDivId.value
     })
 
+    const showPlusIcon = computed(() => {
+      return authStore.user?.is_superuser || authStore.user?.organization_id === selectedDivId.value
+    })
+
     const statusImage = computed(() => {
       switch(props.specialStatusId) {
         case 1: return status1
@@ -116,14 +123,12 @@ export default defineComponent({
     })
 
     const openAddStatusDialog = () => {
-      // Проверяем, что пользователь суперпользователь ИЛИ его подразделение совпадает с выбранным
-      if (authStore.user?.is_superuser || authStore.user?.organization_id === selectedDivId.value) {
+      if (showPlusIcon.value) {
         showAddStatusDialog.value = true
       }
     }
 
     const copyGrzToClipboard = () => {
-      // Добавляем % перед и после GRZ
       const grzWithPercent = `%${props.grz}%`
       const textArea = document.createElement('textarea')
       textArea.value = grzWithPercent
@@ -162,7 +167,8 @@ export default defineComponent({
       statusImage,
       copyGrzToClipboard,
       showAddStatusDialog,
-      openAddStatusDialog
+      openAddStatusDialog,
+      showPlusIcon
     }
   }
 })
@@ -209,10 +215,10 @@ export default defineComponent({
 }
 
 .plus-icon {
-  opacity: 0;
   font-size: 24px;
   font-weight: bold;
   color: #555;
+  opacity: 0;
   transition: opacity 0.2s ease;
 }
 
