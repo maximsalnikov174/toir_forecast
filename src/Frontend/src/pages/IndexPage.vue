@@ -2,9 +2,7 @@
   <div class="index-page">
     <div class="header-info">
       <!-- Кнопка возврата вверх -->
-    <button v-show="showScrollButton" class="scroll-to-top" @click="scrollToTop">
-      ↑
-    </button>
+      <button v-show="showScrollButton" class="scroll-to-top" @click="scrollToTop">↑</button>
       <div class="current-date">{{ currentDate }}</div>
       <div class="user-controls">
         <div class="user-name-placeholder">
@@ -66,6 +64,9 @@
             "
             :id="car.id"
             @status-added="handleStatusAdded"
+            :special-status-id="car.status_associations[0]?.special_status_id"
+            :special-status-comment="car.status_associations[0]?.comment || ''"
+            :special-status-date-left="car.status_associations[0]?.date_left || ''"
           />
           <div class="status-cards">
             <template v-for="(item, itemIndex) in tableData[rowIndex]" :key="itemIndex">
@@ -114,7 +115,7 @@ const checkScrollPosition = () => {
 const scrollToTop = () => {
   window.scrollTo({
     top: 0,
-    behavior: 'smooth'
+    behavior: 'smooth',
   })
 }
 
@@ -179,11 +180,9 @@ onMounted(() => {
 onUnmounted(() => {
   window.removeEventListener('scroll', checkScrollPosition)
 })
-
 </script>
 
 <style scoped>
-
 /* Добавляем стили для кнопки */
 .scroll-to-top {
   position: fixed;
@@ -224,7 +223,6 @@ onUnmounted(() => {
   font-size: 16px;
   font-weight: 600;
 }
-
 
 .sticky-header {
   position: sticky;

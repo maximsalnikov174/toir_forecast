@@ -15,7 +15,7 @@
 </template>
 
 <script setup>
-import { DivisionFuctionSelect } from '../../Functions/ButtonSelectDivision.js'
+import { DivisionFuctionSelect } from '../../Functions/SelectDivision.js'
 
 const { selectedDivId, divisions } = DivisionFuctionSelect()
 console.log(selectedDivId)
