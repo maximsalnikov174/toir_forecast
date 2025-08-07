@@ -28,6 +28,20 @@ async def get_all_organization(
 
 
 @router.get(
+    '/with_vehicles',
+    response_model=list[OrganizationResponse],
+    name='Получение списка подразделений (на выбор пользователю)',
+    description='Получение списка всех подразделений для отбора по цеху.',
+    status_code=HTTPStatus.OK,
+)
+async def get_all_vehicles_organization(
+    session: AsyncSession = Depends(get_async_session)
+):
+    """Возвращает список всех подразделений."""
+    return await get_organization_list(session, vehicle_only=True)
+
+
+@router.get(
     '/{organization_id}',
     response_model=OrganizationResponse,
     name='Получение информации о выбранном пользователем подразделении',

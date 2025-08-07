@@ -10,13 +10,22 @@ from models import Organization
 
 
 async def get_organization_list(
-        session: AsyncSession
+        session: AsyncSession,
+        vehicle_only: bool = False,
 ) -> Sequence[Organization]:
-    """Возврат списка подразделений."""
-    organization_list = await session.scalars(
+    """Возврат списка подразделений.
+
+    # Args:
+    - `vehicle_only=True` - если нужны ТОЛЬКО подразделения с транспортом.
+    """
+    query = (
         select(Organization)
         .order_by(Organization.name)  # сортировка по Юхх
     )
+    if vehicle_only:
+        query = query.where(Organization.name.contains('Ю5'))
+
+    organization_list = await session.scalars(query)
     return organization_list.all()
 
 
