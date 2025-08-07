@@ -259,7 +259,7 @@ async def add_special_status_to_car(
 
         if (
             car.organization_id != user.organization_id
-            or not user.is_superuser
+            and not user.is_superuser
         ):
             raise NoPermissionForActionException
 
