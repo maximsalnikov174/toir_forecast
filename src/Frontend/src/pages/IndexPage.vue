@@ -1,6 +1,10 @@
 <template>
   <div class="index-page">
     <div class="header-info">
+      <!-- Кнопка возврата вверх -->
+    <button v-show="showScrollButton" class="scroll-to-top" @click="scrollToTop">
+      ↑
+    </button>
       <div class="current-date">{{ currentDate }}</div>
       <div class="user-controls">
         <div class="user-name-placeholder">
@@ -88,7 +92,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 import MinimalStatus from '../components/UI/Button/MinimalStatus.vue'
 import DivisionSelect from '../components/UI/Button/DivisionSelect.vue'
 import GroupTs from '../components/UI/Button/GroupTs.vue'
@@ -100,6 +104,19 @@ import CarCard from '../components/Cards/Reading/CarsCard.vue'
 import LoginRegisterDialog from 'src/components/UI/Windows/LoginRegisterDialog.vue'
 import { useAuthStore } from 'src/stores/useAuthStore'
 import { getCurrentDateInDB } from 'src/components/Functions/CurrentDateInDB'
+
+const showScrollButton = ref(false)
+
+const checkScrollPosition = () => {
+  showScrollButton.value = window.scrollY > 300
+}
+
+const scrollToTop = () => {
+  window.scrollTo({
+    top: 0,
+    behavior: 'smooth'
+  })
+}
 
 const tableData = ref([])
 const services = ref([])
@@ -154,9 +171,43 @@ onMounted(async () => {
   }
 })
 
+onMounted(() => {
+  window.addEventListener('scroll', checkScrollPosition)
+  // ... остальной код onMounted
+})
+
+onUnmounted(() => {
+  window.removeEventListener('scroll', checkScrollPosition)
+})
+
 </script>
 
 <style scoped>
+
+/* Добавляем стили для кнопки */
+.scroll-to-top {
+  position: fixed;
+  bottom: 30px;
+  right: 30px;
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  background-color: #4a76a8;
+  color: white;
+  border: none;
+  cursor: pointer;
+  font-size: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+  z-index: 1000;
+  transition: background-color 0.3s;
+}
+
+.scroll-to-top:hover {
+  background-color: #3a5f8a;
+}
 
 .header-info {
   display: flex;
