@@ -22,6 +22,7 @@
     <div class="status-indicator" :class="indicatorClass"></div>
     <div class="characteristic-title">{{ Divergence }} км</div>
     <div class="other-text">{{ displayDate }}</div>
+    <div v-if="zvr_create_date" class="zvr-create-date">{{ zvr_create_date }}</div>
     <div v-if="DBSWCAN" class="additional-text">{{ DBSWCAN }} Дней</div>
 
     <div v-if="shouldShowHover" class="hover-overlay" @click.stop="handleOverlayClick">
@@ -194,11 +195,27 @@ const showBottomBar = computed(() => {
 </script>
 
 <style scoped>
+
+.zvr-create-date {
+  position: absolute;
+  width: 120px;
+  height: 12px;
+  top: 22px; /* Позиционируем ниже additional-text или на его место */
+  left: 13px;
+  font-family: 'Inter', sans-serif;
+  font-weight: 400;
+  font-size: 9px;
+  line-height: 100%;
+  color: #8a8989;
+}
+
 .service-status-card {
   width: 150px;
   height: 80px;
   background: #FFFFFF;
   border-radius: 8px;
+  border: 1px solid #000000;
+  border-color: #000000;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   position: relative;
   flex-shrink: 0;
@@ -238,7 +255,7 @@ const showBottomBar = computed(() => {
   position: absolute;
   width: 120px;
   height: 22px;
-  top: 29px;
+  top: 32px;
   left: 22px;
   font-family: 'Inter', sans-serif;
   font-weight: 700;
