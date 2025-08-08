@@ -27,8 +27,8 @@ def convert_date_into_convenient_format(
 
     days_left = (dt.now()-element).days
     msg = f' -> {days_left} дней' if days_left > borderline_value else ''
-    # return f'{element.date().strftime(pattern_for_date)} {msg}'
-    return f'{element.strftime(pattern_for_date)} {msg}'
+    return f'{element.date().strftime(pattern_for_date)} {msg}'
+    # return f'{element.strftime(pattern_for_date)} {msg}'
 
 
 class ServiceWorksRequestStatus(BaseModel):

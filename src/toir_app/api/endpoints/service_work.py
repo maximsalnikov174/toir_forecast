@@ -38,6 +38,7 @@ async def get_newest_date(
     session: AsyncSession = Depends(get_async_session),
 ) -> dict[str, str]:
     """Определение свежести данных (находит самую позднюю) в базе."""
+    print(dt.now())
     return await get_db_status(session=session)
 
 
