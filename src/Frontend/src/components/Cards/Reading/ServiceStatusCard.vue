@@ -214,6 +214,7 @@ const showBottomBar = computed(() => {
   height: 80px;
   background: #FFFFFF;
   border-radius: 8px;
+  border: 1px solid #000000;
   border-color: #000000;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   position: relative;
