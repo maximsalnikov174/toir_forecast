@@ -47,6 +47,7 @@ LEN_ZVR_TOTAL = LEN_ZVR_BASE + 4
 ZVR_PART_MIN = 1_000_000
 ZVR_PART_MAX = 10_000_000
 COMPLETED_DAYS_AGO = 180  # прошло дней с последней `service_work`
+ZVR_CREATED_DAYS_AGO = 5  # прошло дней с момента создания ЗВР
 PATTERN_DATE_USER_FRENDLY = '%d.%m.%Yг.'  # удобно читать в РФ
 
 PATTERN_DATE_OEBS = '%d.%m.%Y %H:%M:%S'
@@ -54,6 +55,7 @@ PATTERN_DATE_OEBS = '%d.%m.%Y %H:%M:%S'
 TIMEZONE_AE = 'Asia/Yekaterinburg'
 
 LIST_ORGANIZATIONS: list[str] = ['Ю51', 'Ю52', 'Ю53', 'Ю54']
+VEHICLE_ORGANOZATIONS = 'Ю5'  # все ТС находятся в цехах с именем Ю5х
 
 # FIXME Уточнить, когда будут созданы все необходимые статусы:
 SPECIAL_STATUS_LIST_FOR_GET_STATS: list[int] = [2, 3]
