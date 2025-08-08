@@ -206,7 +206,7 @@ const showBottomBar = computed(() => {
   font-weight: 400;
   font-size: 9px;
   line-height: 100%;
-  color: #000000;
+  color: #8a8989;
 }
 
 .service-status-card {
@@ -255,7 +255,7 @@ const showBottomBar = computed(() => {
   position: absolute;
   width: 120px;
   height: 22px;
-  top: 29px;
+  top: 32px;
   left: 22px;
   font-family: 'Inter', sans-serif;
   font-weight: 700;
