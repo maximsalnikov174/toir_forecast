@@ -93,30 +93,6 @@ class ServiceWorkBase(CarAtributesInServiceWork):
             return dt(2025, 1, 1, 0, 0, 0)
         return value
 
-    @field_serializer('last_service_date')
-    def convert_datetime_to_date(
-        self, last_service_date: dt, info
-    ) -> Union[str, dt]:
-        """Обработка (отображение) поля `last_service_date`.
-
-        ## Variants:
-        - По умолчанию преобразует `datetime` в строку вида `dd.mm.yyyy` для
-        отображения в главной таблице;
-        - При передаче в `model_dump` параметра `context='create_update_mode'`
-        значение не меняет.
-
-        ## Special stmt:
-        - в режиме `по умолчанию` выполняется проверка времени, прошедшего с
-        предыдущего выполнения сервиса и, с учётом сравнения с полем
-        `COMPLETED_DAYS_AGO`, может быть расширено надписью `прошло дней: ХХХ`.
-        """
-        return convert_date_into_convenient_format(
-            element=last_service_date,
-            borderline_value=COMPLETED_DAYS_AGO,
-            pattern_for_date=PATTERN_DATE_USER_FRENDLY,
-            context=info.context
-        )
-
 
 class ServiceWorkWithDivergence(ServiceWorkBase):
     """Дополнительно подсчитывает отклонение пробега."""
@@ -186,8 +162,32 @@ class ServiceWorkWithZVRNumber(ServiceWorkWithDivergence):
             return (dt.now()-self.service_work_completed).days
         return None
 
+    @field_serializer('last_service_date')
+    def convert_last_service_date(
+        self, last_service_date: dt, info
+    ) -> Union[str, dt]:
+        """Обработка (отображение) поля `last_service_date`.
+
+        ## Variants:
+        - По умолчанию преобразует `datetime` в строку вида `dd.mm.yyyy` для
+        отображения в главной таблице;
+        - При передаче в `model_dump` параметра `context='create_update_mode'`
+        значение не меняет.
+
+        ## Special stmt:
+        - в режиме `по умолчанию` выполняется проверка времени, прошедшего с
+        предыдущего выполнения сервиса и, с учётом сравнения с полем
+        `COMPLETED_DAYS_AGO`, может быть расширено надписью `прошло дней: ХХХ`.
+        """
+        return convert_date_into_convenient_format(
+            element=last_service_date,
+            borderline_value=COMPLETED_DAYS_AGO,
+            pattern_for_date=PATTERN_DATE_USER_FRENDLY,
+            context=info.context
+        )
+
     @field_serializer('zvr_create_date')
-    def convert_datetime_to_date(
+    def convert_zvr_create_date(
         self,
         zvr_create_date: dt,
         info,
