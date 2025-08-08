@@ -11,7 +11,7 @@ from sqlalchemy.ext.asyncio import (
 )
 from sqlalchemy.orm import declarative_base, declared_attr
 
-from constants import NEED_ECHO_SQL
+from constants import NEED_ECHO_SQL, TIMEZONE_AE
 from core.config import settings
 
 
@@ -39,7 +39,12 @@ engine: AsyncEngine = create_async_engine(
 
     # Проверка соединения перед использованием
     # для автоматического восстановления соединений
-    pool_pre_ping=True
+    pool_pre_ping=True,
+    connect_args={
+        'server_settings': {
+            'timezone': TIMEZONE_AE  # Установка часового пояса для PostgreSQL
+        }
+    }
 )
 
 
