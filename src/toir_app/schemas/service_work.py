@@ -8,10 +8,26 @@ from constants import (
     COMPLETED_DAYS_AGO,
     LEN_ZVR_BASE,
     PATTERN_DATE_USER_FRENDLY,
+    ZVR_CREATED_DAYS_AGO,
 )
 from logger.logger import logger
 from models import ServiceWork, Station
 from schemas.station import StationBase
+
+
+def convert_date_into_convenient_format(
+        element,
+        borderline_value,
+        pattern_for_date,
+        context
+):
+    """В зависимости от `context` формирует `дату` в удобном виде."""
+    if context == 'create_update_mode':
+        return element
+
+    days_left = (dt.now()-element).days
+    msg = f' -> {days_left} дней' if days_left > borderline_value else ''
+    return f'{element.date().strftime(pattern_for_date)} {msg}'
 
 
 class ServiceWorksRequestStatus(BaseModel):
@@ -94,17 +110,11 @@ class ServiceWorkBase(CarAtributesInServiceWork):
         предыдущего выполнения сервиса и, с учётом сравнения с полем
         `COMPLETED_DAYS_AGO`, может быть расширено надписью `прошло дней: ХХХ`.
         """
-        if info.context == 'create_update_mode':
-            return last_service_date
-
-        days_left = (dt.now()-last_service_date).days
-        msg = (
-            f' -> {days_left} дней'
-            if days_left > COMPLETED_DAYS_AGO else ''
-        )
-        return (
-            f'{last_service_date.date().strftime(PATTERN_DATE_USER_FRENDLY)}'
-            f'{msg}'
+        return convert_date_into_convenient_format(
+            element=last_service_date,
+            borderline_value=COMPLETED_DAYS_AGO,
+            pattern_for_date=PATTERN_DATE_USER_FRENDLY,
+            context=info.context
         )
 
 
@@ -175,6 +185,32 @@ class ServiceWorkWithZVRNumber(ServiceWorkWithDivergence):
         if self.service_work_completed:
             return (dt.now()-self.service_work_completed).days
         return None
+
+    @field_serializer('zvr_create_date')
+    def convert_datetime_to_date(
+        self,
+        zvr_create_date: dt,
+        info,
+    ) -> Union[str, dt]:
+        """Обработка (отображение) поля `zvr_create_date`.
+
+        ## Variants:
+        - По умолчанию преобразует `datetime` в строку вида `dd.mm.yyyy` для
+        отображения в главной таблице;
+        - При передаче в `model_dump` параметра `context='create_update_mode'`
+        значение не меняет.
+
+        ## Special stmt:
+        - в режиме `по умолчанию` выполняется проверка времени, прошедшего с
+        предыдущего выполнения сервиса и, с учётом сравнения с полем
+        `ZVR_CREATED_DAYS_AGO`, может быть расширено надписью `прошло дней: Х`.
+        """
+        return convert_date_into_convenient_format(
+            element=zvr_create_date,
+            borderline_value=ZVR_CREATED_DAYS_AGO,
+            pattern_for_date=PATTERN_DATE_USER_FRENDLY,
+            context=info.context
+        )
 
 
 class ServiceWorkWithInArchive(ServiceWorkWithZVRNumber):
