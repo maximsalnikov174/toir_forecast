@@ -5,6 +5,7 @@ from fastapi import HTTPException
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from constants import VEHICLE_ORGANOZATIONS
 from exception import StaticDataInDBNotFoundException
 from models import Organization
 
@@ -22,8 +23,10 @@ async def get_organization_list(
         select(Organization)
         .order_by(Organization.name)  # сортировка по Юхх
     )
+
+    # FIXME Костыль: поиск цеха выполняется, пока УЭ - только Ю5х
     if vehicle_only:
-        query = query.where(Organization.name.contains('Ю5'))
+        query = query.where(Organization.name.contains(VEHICLE_ORGANOZATIONS))
 
     organization_list = await session.scalars(query)
     return organization_list.all()
