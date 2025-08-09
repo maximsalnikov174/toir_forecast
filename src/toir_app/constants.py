@@ -48,7 +48,7 @@ ZVR_PART_MIN = 1_000_000
 ZVR_PART_MAX = 10_000_000
 COMPLETED_DAYS_AGO = 180  # прошло дней с последней `service_work`
 ZVR_CREATED_DAYS_AGO = 5  # прошло дней с момента создания ЗВР
-PATTERN_DATE_USER_FRENDLY = '%d.%m.%Yг.'  # %H:%M'  # удобно читать в РФ
+PATTERN_DATE_USER_FRENDLY = '%d.%m.%yг.'  # %H:%M'  # удобно читать в РФ
 
 PATTERN_DATE_OEBS = '%d.%m.%Y %H:%M:%S'
 
