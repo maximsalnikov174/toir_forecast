@@ -10,6 +10,7 @@ from constants import (
     PATTERN_DATE_USER_FRENDLY,
     ZVR_CREATED_DAYS_AGO,
 )
+from function import add_declension_to_date
 from logger.logger import logger
 from models import ServiceWork, Station
 from schemas.station import StationBase
@@ -26,8 +27,10 @@ def convert_date_into_convenient_format(
         return element
 
     days_left = (dt.now()-element).days
-    msg = f' -> {days_left} дней' if days_left > borderline_value else ''
-    return f'{element.date().strftime(pattern_for_date)} {msg}'
+    phrase_with_days = add_declension_to_date(days_left)
+    msg = f' → {phrase_with_days}' if days_left > borderline_value else ''
+
+    return f'{element.date().strftime(pattern_for_date)}{msg}'
     # return f'{element.strftime(pattern_for_date)} {msg}'
 
 

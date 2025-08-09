@@ -31,3 +31,15 @@ def predict_reading_when_current_month_left(
 
     forecast_reading = days_left * daily_distance
     return forecast_reading + reading_now
+
+
+def add_declension_to_date(value: int) -> str:
+    """Добавляет к слову `день` склонение и возвращает фразу целиком."""
+    if value % 10 == 1 and not value // 10 % 10 == 1:
+        word = 'день'
+    elif 2 <= value % 10 <= 4 and not value // 10 % 10 == 1:
+        word = 'дня'
+    else:
+        word = 'дней'
+
+    return f'{value} {word}'
