@@ -1,14 +1,14 @@
 <template>
   <q-card style="min-width: 350px">
     <q-card-section>
-      <div class="text-h6">Добавить статус</div>
+      <div class="text-h6">Установить статус ТС</div>
 
       <q-select
         v-model="selectedSpecialStatus"
         :options="statusOptionsWithImages"
         option-label="name"
         option-value="id"
-        label="Статус"
+        label="Выбрать из списка"
         filled
         map-options
         emit-value
@@ -30,11 +30,11 @@
 
       <q-input
         v-model="dateValue"
-        label="Дата"
+        label="Указать дату окончания его действия"
         filled
         mask="##.##.####"
         placeholder="ДД.ММ.ГГГГ"
-        hint="Формат: ДД.ММ.ГГГГ"
+        hint="Например: 31.12.2025"
         :rules="[validateDate]"
         class="q-mb-md"
       >
@@ -49,7 +49,7 @@
 
       <q-input
         v-model="commentValue"
-        label="Комментарий"
+        label="Оставить комментарий (опционально)"
         filled
         type="textarea"
         autogrow
