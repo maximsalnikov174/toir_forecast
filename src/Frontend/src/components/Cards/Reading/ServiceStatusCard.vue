@@ -23,7 +23,7 @@
     <div class="characteristic-title">{{ Divergence }} км</div>
     <div class="other-text">{{ displayDate }}</div>
     <div v-if="zvr_create_date" class="zvr-create-date">{{ zvr_create_date }}</div>
-    <div v-if="DBSWCAN" class="additional-text">{{ DBSWCAN }} Дней</div>
+    <div v-if="DBSWCAN" class="additional-text">{{ DBSWCAN }} </div>
 
     <div v-if="shouldShowHover" class="hover-overlay" @click.stop="handleOverlayClick">
       <div v-if="shouldShowPlusIcon" class="plus-icon">+</div>

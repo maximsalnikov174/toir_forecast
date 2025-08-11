@@ -52,6 +52,7 @@
     <q-dialog v-model="showAddStatusDialog">
       <AddCarSpecialStatus
         :car-id="id"
+        :grz="grz"
         @close="showAddStatusDialog = false"
         @submit-success="onStatusAdded"
       />
