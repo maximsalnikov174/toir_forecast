@@ -1,7 +1,7 @@
 <template>
   <q-card style="min-width: 350px">
     <q-card-section>
-      <div class="text-h6">Установить статус ТС</div>
+      <div class="text-h6">Установить статус ТС: &laquo;{{ grz }}&raquo;</div>
 
       <q-select
         v-model="selectedSpecialStatus"
@@ -94,6 +94,10 @@ export default defineComponent({
       type: Function,
       default: null
     },
+    grz: {
+    type: String,
+    required: true
+  },
   },
   emits: ['close', 'save'],
   setup(props, { emit }) {
@@ -103,6 +107,7 @@ export default defineComponent({
     const commentValue = ref('')
     const isSaving = ref(false)
     const authStore = useAuthStore()
+
 
     const getStatusImage = (statusId) => {
       switch (statusId) {
@@ -172,7 +177,7 @@ export default defineComponent({
 
     return {
       statusOptionsWithImages,
-      selectedSpecialStatus, // Изменили на одиночное значение
+      selectedSpecialStatus,
       loading,
       dateValue,
       commentValue,
@@ -180,6 +185,7 @@ export default defineComponent({
       getStatusImage,
       validateDate,
       saveData,
+
     }
   },
 })
