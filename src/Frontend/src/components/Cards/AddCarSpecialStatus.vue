@@ -59,7 +59,7 @@
 
     <q-card-actions align="center">
       <q-btn
-        label="добавить статус"
+        label="Установить"
         color="primary"
         @click="saveData"
         :loading="isSaving"
