@@ -156,14 +156,17 @@ class ServiceWorkWithZVRNumber(ServiceWorkWithDivergence):
     )
 
     @computed_field
-    def days_between_service_work_completed_and_now(self) -> Optional[int]:
+    def days_between_service_work_completed_and_now(self) -> Optional[str]:
+    # def days_between_service_work_completed_and_now(self) -> Optional[int]:
         """Разница между `сегодня` и `датой фактического завершения работ`.
 
         Returns:
         - some days
         """
         if self.service_work_completed:
-            return (dt.now()-self.service_work_completed).days
+            # return (dt.now()-self.service_work_completed).days
+            date_value = (dt.now()-self.service_work_completed).days
+            return add_declension_to_date(date_value)
         return None
 
     @field_serializer('last_service_date')
