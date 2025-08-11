@@ -50,7 +50,23 @@
                 navigation-min-year-month="2023/01"
                 navigation-max-year-month="2030/12"
                 color="primary"
-              />
+              >
+                <template v-slot:default>
+                  <div class="row justify-end q-gutter-sm q-pa-sm">
+                    <q-btn
+                      label="Отмена"
+                      color="grey"
+                      v-close-popup
+                      flat
+                    />
+                    <q-btn
+                      label="Применить"
+                      color="primary"
+                      v-close-popup
+                    />
+                  </div>
+                </template>
+              </q-date>
             </q-popup-proxy>
           </q-icon>
         </template>
