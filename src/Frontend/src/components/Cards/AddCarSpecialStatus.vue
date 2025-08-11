@@ -41,7 +41,16 @@
         <template v-slot:append>
           <q-icon name="event" class="cursor-pointer">
             <q-popup-proxy cover transition-show="scale" transition-hide="scale">
-              <q-date v-model="dateValue" mask="DD.MM.YYYY" />
+              <q-date
+                v-model="dateValue"
+                mask="DD.MM.YYYY"
+                :options="disablePastDates"
+                today-btn
+                first-day-of-week="1"
+                navigation-min-year-month="2023/01"
+                navigation-max-year-month="2030/12"
+                color="primary"
+              />
             </q-popup-proxy>
           </q-icon>
         </template>
@@ -75,6 +84,11 @@ import { useAuthorizedStatusOptions } from '../Functions/AuthorizeSelectGroupTs.
 import { date as qDate } from 'quasar'
 import { api } from 'boot/axios'
 import { useAuthStore } from 'src/stores/useAuthStore'
+import { Quasar } from 'quasar'
+import ru from 'quasar/lang/ru'
+
+// Установка русской локали
+Quasar.lang.set(ru)
 
 import status1 from 'src/assets/1.png'
 import status2 from 'src/assets/2.png'
@@ -88,26 +102,25 @@ export default defineComponent({
     carId: {
       type: Number,
       required: true,
-      validator: value => value > 0  // Проверка что ID не 0
+      validator: value => value > 0
     },
     onSubmitSuccess: {
       type: Function,
       default: null
     },
     grz: {
-    type: String,
-    required: true
-  },
+      type: String,
+      required: true
+    },
   },
   emits: ['close', 'save'],
   setup(props, { emit }) {
     const { statusOptions, loading } = useAuthorizedStatusOptions()
-    const selectedSpecialStatus = ref(null) // Изменили на одиночное значение
+    const selectedSpecialStatus = ref(null)
     const dateValue = ref('')
     const commentValue = ref('')
     const isSaving = ref(false)
     const authStore = useAuthStore()
-
 
     const getStatusImage = (statusId) => {
       switch (statusId) {
@@ -127,10 +140,30 @@ export default defineComponent({
       })) || []
     })
 
+    const disablePastDates = (date) => {
+      const today = new Date()
+      today.setHours(0, 0, 0, 0)
+      const selectedDate = new Date(date)
+      return selectedDate >= today
+    }
+
     const validateDate = (val) => {
       if (!val) return true
+
       const [day, month, year] = val.split('.')
-      return qDate.isValid(`${year}-${month}-${day}`) || 'Некорректная дата'
+      if (!qDate.isValid(`${year}-${month}-${day}`)) {
+        return 'Некорректная дата'
+      }
+
+      const inputDate = new Date(year, month - 1, day)
+      const today = new Date()
+      today.setHours(0, 0, 0, 0)
+
+      if (inputDate < today) {
+        return 'Дата не может быть раньше сегодняшнего дня'
+      }
+
+      return true
     }
 
     const formatDateForApi = (dateStr) => {
@@ -163,7 +196,6 @@ export default defineComponent({
 
         emit('save')
         emit('close')
-        // Вызываем колбэк после успешного сохранения
         if (props.onSubmitSuccess) {
           props.onSubmitSuccess()
         }
@@ -184,8 +216,8 @@ export default defineComponent({
       isSaving,
       getStatusImage,
       validateDate,
+      disablePastDates,
       saveData,
-
     }
   },
 })
