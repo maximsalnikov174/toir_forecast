@@ -9,6 +9,7 @@ from constants import ENCODING_DEFAULT
 class Settings(BaseSettings):
     """Класс для работы с переменными окружения."""
     app_title: str = 'Приложение ТОиР'
+    for_local: bool = False
     secret: str = 'SECRET'
     first_superuser_email: Optional[EmailStr] = None
     first_superuser_password: Optional[str] = None
@@ -22,15 +23,17 @@ class Settings(BaseSettings):
     postgres_password: str = 'password'
     db_host: str = 'db_host'
     db_port: int = 5432
+    bot_service_url: str = "bot:8000"  # Имя сервиса из docker-compose
 
     @property
     def database_url(self) -> str:
         """Формирует строку подключения к базе данных."""
         if self.db_in_pg is True:
+            host = 'localhost' if self.for_local else self.db_host
             return (
                 f'postgresql+asyncpg://'
                 f'{self.postgres_user}:{self.postgres_password}'
-                f'@{self.db_host}:{self.db_port}/{self.postgres_db}'
+                f'@{host}:{self.db_port}/{self.postgres_db}'
             )
         return 'sqlite+aiosqlite:///./fast_toir.db'
 

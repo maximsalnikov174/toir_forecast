@@ -40,11 +40,11 @@ engine: AsyncEngine = create_async_engine(
     # Проверка соединения перед использованием
     # для автоматического восстановления соединений
     pool_pre_ping=True,
-    connect_args={
-        'server_settings': {
-            'timezone': TIMEZONE_AE  # Установка часового пояса для PostgreSQL
-        }
-    }
+    # connect_args={
+    #     'server_settings': {
+    #         'timezone': TIMEZONE_AE  # Установка часового пояса для PostgreSQL
+    #     }
+    # }
 )
 
 
