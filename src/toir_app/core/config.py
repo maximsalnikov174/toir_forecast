@@ -9,7 +9,8 @@ from constants import ENCODING_DEFAULT
 class Settings(BaseSettings):
     """Класс для работы с переменными окружения."""
     app_title: str = 'Приложение ТОиР'
-    for_local: bool = False
+    for_local: bool = False  # для локальной разработки
+    cors_on_frontend: bool = True  # для подключения фронтенда
     secret: str = 'SECRET'
     first_superuser_email: Optional[EmailStr] = None
     first_superuser_password: Optional[str] = None
@@ -41,7 +42,7 @@ class Settings(BaseSettings):
 
     model_config = SettingsConfigDict(
         env_file='infra/.env',
-        env_file_encoding=ENCODING_DEFAULT,  # Рекомендуется явно указать кодировку
+        env_file_encoding=ENCODING_DEFAULT,  # Явно указать кодировку
         extra='ignore'  # Игнорировать лишние переменные
     )
 
@@ -49,5 +50,4 @@ class Settings(BaseSettings):
 # Глобальная переменная settings с экземпляром класса Settings, чтобы
 # его можно было импортировать в любую часть приложения, где потребуется
 # доступ к настройкам:
-
 settings: Settings = Settings()
