@@ -39,13 +39,6 @@ services:
     entrypoint: ["alembic", "upgrade", "head"]
     networks: [internal]
 
-  # bot:
-  #   build:
-  #     context: ../src/bot/
-  #   env_file:
-  #     - .env
-  #   networks: [internal]
-
   backend:
     build:
       context: ../src/toir_app/

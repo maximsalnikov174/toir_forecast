@@ -7,7 +7,7 @@ from fastapi import HTTPException
 from sqlalchemy import and_, or_, select
 from sqlalchemy.sql.expression import func
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import joinedload, selectinload
+from sqlalchemy.orm import selectinload
 
 from constants import PATTERN_DATE_OEBS
 from crud.car import (
@@ -47,7 +47,8 @@ async def get_service_work(
         select(ServiceWork)
         .options(
             selectinload(ServiceWork.car).joinedload(Car.organization),
-            selectinload(ServiceWork.station)
+            selectinload(ServiceWork.station),
+            selectinload(ServiceWork.next_service),
         )
         .where(ServiceWork.id == service_work_id)
     )

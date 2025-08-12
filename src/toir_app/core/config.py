@@ -23,7 +23,9 @@ class Settings(BaseSettings):
     postgres_password: str = 'password'
     db_host: str = 'db_host'
     db_port: int = 5432
-    bot_service_url: str = "bot:8000"  # Имя сервиса из docker-compose
+    admin_tg_id: int = 1
+    chat_id: int = 1
+    tg_bot_token: str = 'some_token'
 
     @property
     def database_url(self) -> str:
