@@ -3,6 +3,18 @@
     <div class="dialog-content">
       <button class="close-button" @click="close">×</button>
 
+      <!-- Toast-уведомления -->
+      <transition-group name="toast">
+        <div
+          v-for="toast in toasts"
+          :key="toast.id"
+          :class="['toast', toast.type]"
+          @click="removeToast(toast.id)"
+        >
+          {{ toast.message }}
+        </div>
+      </transition-group>
+
       <h2>{{ isLoginMode ? 'Вход' : 'Регистрация' }}</h2>
 
       <form @submit.prevent="handleSubmit">
@@ -12,7 +24,7 @@
             id="email"
             type="email"
             v-model="form.email"
-            @input="validateEmail"
+            @input="handleEmailInput"
             :class="{ 'invalid': emailError }"
             required
           >
@@ -30,9 +42,9 @@
             required
           >
           <span v-if="!isLoginMode && passwordError" class="error-message">{{ passwordError }}</span>
-    <span v-if="!isLoginMode && russianCharWarning" class="warning-message">
-      Русские символы автоматически удалены из пароля
-    </span>
+          <span v-if="!isLoginMode && russianCharWarning" class="warning-message">
+            Русские символы автоматически удалены из пароля
+          </span>
 
           <div v-if="!isLoginMode && form.password && !passwordError" class="password-hints">
             <p class="hint-valid">✓ Пароль соответствует требованиям</p>
@@ -117,12 +129,13 @@ const emit = defineEmits(['login', 'register', 'close'])
 
 const isOpen = ref(false)
 const isLoginMode = ref(true)
+const toasts = ref([])
+let toastId = 0
 
 const { divisions } = DivisionFuctionSelect();
 
 const emailError = ref('')
 const passwordError = ref('')
-
 const russianCharWarning = ref(false)
 
 const form = reactive({
@@ -151,6 +164,24 @@ const hasUpperLower = computed(() => hasUpper.value && hasLower.value)
 const hasNumber = computed(() => passwordRequirements.hasNumber.test(form.password))
 const hasSpecialChar = computed(() => passwordRequirements.hasSpecial.test(form.password))
 const hasNoRussian = computed(() => passwordRequirements.noRussian.test(form.password))
+
+const handleEmailInput = (e) => {
+  form.email = e.target.value.toLowerCase()
+  validateEmail()
+}
+
+const showToast = (message, type = 'success') => {
+  const id = toastId++
+  toasts.value.push({ id, message, type })
+
+  setTimeout(() => {
+    removeToast(id)
+  }, 5000)
+}
+
+const removeToast = (id) => {
+  toasts.value = toasts.value.filter(toast => toast.id !== id)
+}
 
 const open = () => {
   isOpen.value = true
@@ -183,10 +214,8 @@ const validateEmail = () => {
 
 const handlePasswordInput = (e) => {
   const originalValue = e.target.value
-  // Фильтруем русские символы
   form.password = originalValue.replace(/[а-яА-Я]/g, '')
 
-  // Показываем предупреждение, если были русские символы
   russianCharWarning.value = originalValue !== form.password
 
   if (russianCharWarning.value) {
@@ -235,12 +264,22 @@ const validatePassword = () => {
   return true
 }
 
+const resetForm = () => {
+  form.email = ''
+  form.password = ''
+  form.name = ''
+  form.surname = ''
+  form.organization = ''
+}
+
 const handleSubmit = async () => {
   if (!validateEmail()) {
+    showToast('Пожалуйста, введите корректный email', 'error')
     return
   }
 
   if (!isLoginMode.value && !validatePassword()) {
+    showToast('Пароль не соответствует требованиям', 'error')
     return
   }
 
@@ -250,28 +289,30 @@ const handleSubmit = async () => {
         email: form.email,
         password: form.password
       });
-      console.log('Успешный вход:', response);
-      emit('login', response);
-      close();
+
+      showToast('Успешный вход! Перенаправляем...', 'success')
+
+      setTimeout(() => {
+        emit('login', response);
+        close();
+      }, 2000);
+
     } catch (error) {
-      alert(error.message);
-      console.error('Ошибка входа:', error);
+      showToast(error.message || 'Ошибка входа. Проверьте данные', 'error')
     }
   } else {
     try {
-      const response = await registerPerson(form);
-      console.log('Успешная регистрация:', response);
-      emit('register', response);
+      await registerPerson(form);
 
-      form.email = '';
-      form.password = '';
-      form.name = '';
-      form.surname = '';
-      form.organization = '';
-      close();
+      showToast('Регистрация прошла успешно! Теперь вы можете войти', 'success')
+
+      setTimeout(() => {
+        isLoginMode.value = true;
+        resetForm();
+      }, 3000);
+
     } catch (error) {
-      alert(error.message);
-      console.error('Ошибка регистрации:', error);
+      showToast(error.message || 'Ошибка регистрации. Пожалуйста, попробуйте снова', 'error')
     }
   }
 }
@@ -283,15 +324,6 @@ defineExpose({
 </script>
 
 <style scoped>
-
-.warning-message {
-  color: #ff9800;
-  font-size: 0.8em;
-  margin-top: 5px;
-  display: block;
-  font-style: italic;
-}
-
 .dialog-overlay {
   position: fixed;
   top: 0;
@@ -359,6 +391,14 @@ input, select {
   display: block;
 }
 
+.warning-message {
+  color: #ff9800;
+  font-size: 0.8em;
+  margin-top: 5px;
+  display: block;
+  font-style: italic;
+}
+
 .password-hints {
   margin-top: 5px;
   font-size: 0.8em;
@@ -420,5 +460,43 @@ select {
 select:focus {
   outline: none;
   border-color: #4a76a8;
+}
+
+/* Стили для toast-уведомлений */
+.toast {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  padding: 15px 20px;
+  border-radius: 4px;
+  color: white;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  cursor: pointer;
+  z-index: 1001;
+  transition: all 0.3s ease;
+  max-width: 300px;
+}
+
+.toast.success {
+  background-color: #4CAF50;
+}
+
+.toast.error {
+  background-color: #F44336;
+}
+
+.toast-enter-active,
+.toast-leave-active {
+  transition: all 0.3s ease;
+}
+
+.toast-enter-from,
+.toast-leave-to {
+  opacity: 0;
+  transform: translateX(100%);
+}
+
+.toast-move {
+  transition: transform 0.3s ease;
 }
 </style>
