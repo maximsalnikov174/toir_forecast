@@ -22,8 +22,8 @@ class TgSchedular:
     def convert_model_to_text(self) -> str:
         """Обрабатывает поля модели `ServiceWork` в человекочитаемый текст."""
         return (
-            f'🚚 «{self.obj.car.grz}» [{self.obj.next_service.name}]'
-            f' - работы выполнены в 🔧 {self.obj.station.name}.'
+            f'Готово!\n🚚 {self.obj.car.grz}\n🔧 {self.obj.next_service.name}'
+            f'🧰 {self.obj.station.name}.'
         )
 
     def get_thread_by_organization(self) -> int:
