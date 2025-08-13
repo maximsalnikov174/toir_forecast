@@ -23,7 +23,7 @@ class TgSchedular:
         """Обрабатывает поля модели `ServiceWork` в человекочитаемый текст."""
         return (
             f'Готово!\n🚚 {self.obj.car.grz}\n🔧 {self.obj.next_service.name}'
-            f'🧰 {self.obj.station.name}.'
+            f'\n🧰 {self.obj.station.name}.'
         )
 
     def get_thread_by_organization(self) -> int:
