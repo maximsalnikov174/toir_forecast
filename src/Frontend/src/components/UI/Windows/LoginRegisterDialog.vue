@@ -24,7 +24,7 @@
             id="email"
             type="email"
             v-model="form.email"
-            @input="validateEmail"
+            @input="handleEmailInput"
             :class="{ 'invalid': emailError }"
             required
           >
@@ -164,6 +164,11 @@ const hasUpperLower = computed(() => hasUpper.value && hasLower.value)
 const hasNumber = computed(() => passwordRequirements.hasNumber.test(form.password))
 const hasSpecialChar = computed(() => passwordRequirements.hasSpecial.test(form.password))
 const hasNoRussian = computed(() => passwordRequirements.noRussian.test(form.password))
+
+const handleEmailInput = (e) => {
+  form.email = e.target.value.toLowerCase()
+  validateEmail()
+}
 
 const showToast = (message, type = 'success') => {
   const id = toastId++
