@@ -7,7 +7,7 @@ services:
       - .env
     environment:
       PGDATA: /var/lib/postgresql/data/pgdata
-#    ports:
+#    ports:  # закомментить на проде
 #      - "5432:5432"
     volumes:
       - toir_app_data:/var/lib/postgresql/data/pgdata

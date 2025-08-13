@@ -1,11 +1,11 @@
-from datetime import datetime as dt  # , tzinfo
+from datetime import datetime as dt
 from http import HTTPStatus
 from typing import Annotated, Dict, List, Optional
 
 from fastapi import APIRouter, Body, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
-# from constants import TIMEZONE_AE
+from api.endpoints.bot import TgSchedular
 from core.db import get_async_session
 from core.user import current_user
 from crud.organization import get_current_organization
@@ -86,6 +86,10 @@ async def add_zvr_to_service_work(
 
         await session.commit()
         await session.refresh(service_work)  # Опционально
+
+        # schedular = TgSchedular(service_work)
+        # await schedular.send_notification()
+
         return service_work
     except Exception as e:
         await session.rollback()
@@ -119,12 +123,19 @@ async def completed_real_service_work(
     session: AsyncSession = Depends(get_async_session)
 ):
     """Добавление признака фактического завершения работ в service_work."""
-    return await update_completed_real_service_work(
+
+    result = await update_completed_real_service_work(
         add_date=True,
         service_work_id=service_work_id,
         user=user,
         session=session
     )
+
+    # Отправка уведомления в Telegram:
+    schedular = TgSchedular(result)
+    await schedular.send_notification()
+
+    return result
 
 
 @router.patch(

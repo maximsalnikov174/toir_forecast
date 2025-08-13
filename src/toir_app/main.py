@@ -13,14 +13,16 @@ toir_app = FastAPI(title=settings.app_title)
 # Подключаем роутер к приложению:
 toir_app.include_router(main_router)
 
-# Добавляем CORS middleware
-toir_app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["http://toir.atu.mmk.ru:8811"],  # От кого разрешаем запросы
-    allow_credentials=True,
-    allow_methods=["*"],  # Разрешаем все методы
-    allow_headers=["*"],  # Разрешаем все заголовки
-)
+# Если не для локальной разработки:
+if not settings.for_local:
+    # ... добавляем CORS middleware
+    toir_app.add_middleware(
+        CORSMiddleware,
+        allow_origins=["http://toir.atu.mmk.ru:8811"],  # От кого разрешено
+        allow_credentials=True,
+        allow_methods=["*"],  # Разрешаем все методы
+        allow_headers=["*"],  # Разрешаем все заголовки
+    )
 
 
 async def main():
