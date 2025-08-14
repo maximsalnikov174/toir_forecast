@@ -3,7 +3,12 @@
     <div class="header-info">
       <!-- Кнопка возврата вверх -->
       <button v-show="showScrollButton" class="scroll-to-top" @click="scrollToTop">↑</button>
-      <div class="current-date">{{ currentDate }}</div>
+      <div class="date-and-manual">
+        <div class="current-date">{{ currentDate }}</div>
+        <button class="manual-button" @click="colorsDialog.open()">
+          <span class="material-icons">menu_book</span>
+        </button>
+      </div>
       <div class="user-controls">
         <div class="user-name-placeholder">
           {{
@@ -17,6 +22,8 @@
         </button>
       </div>
     </div>
+
+    <ColorsOfRepairShops ref="colorsDialog" />
 
     <LoginRegisterDialog
       ref="authDialog"
@@ -105,8 +112,12 @@ import CarCard from '../components/Cards/Reading/CarsCard.vue'
 import LoginRegisterDialog from 'src/components/UI/Windows/LoginRegisterDialog.vue'
 import { useAuthStore } from 'src/stores/useAuthStore'
 import { getCurrentDateInDB } from 'src/components/Functions/CurrentDateInDB'
+import ColorsOfRepairShops from '../components/Cards/ColorsOfRepairShops.vue'
+
 
 const showScrollButton = ref(false)
+
+const colorsDialog = ref(null)
 
 const checkScrollPosition = () => {
   showScrollButton.value = window.scrollY > 300
@@ -183,7 +194,42 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
-/* Добавляем стили для кнопки */
+.date-and-manual {
+  display: flex;
+  align-items: center;
+  gap: 4px; /* Уменьшил отступ между датой и кнопкой */
+}
+
+.current-date {
+  font-weight: 500;
+  color: #3a3939;
+  padding: 8px 8px 8px 12px; /* Уменьшил правый отступ */
+  border-radius: 4px;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.manual-button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #000000;
+  padding: 4px; /* Уменьшил padding */
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: -4px; /* Сдвигаю кнопку ближе к дате */
+}
+
+.manual-button:hover {
+  background-color: #f0f0f0;
+}
+
+.material-icons {
+  font-size: 25px; /* Уменьшил размер иконки */
+}
+
 .scroll-to-top {
   position: fixed;
   bottom: 30px;
@@ -213,15 +259,6 @@ onUnmounted(() => {
   justify-content: space-between;
   align-items: center;
   margin-bottom: 20px;
-}
-
-.current-date {
-  font-weight: 500;
-  color: #3a3939;
-  padding: 8px 12px;
-  border-radius: 4px;
-  font-size: 16px;
-  font-weight: 600;
 }
 
 .sticky-header {
