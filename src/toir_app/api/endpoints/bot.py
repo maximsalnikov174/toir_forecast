@@ -16,14 +16,21 @@ class TgSchedular:
 
     chat_id = settings.chat_id
 
-    def __init__(self, obj: ServiceWork):
+    def __init__(self, obj: ServiceWork, event: str):
         self.obj = obj
+        self.event = event
 
     def convert_model_to_text(self) -> str:
         """Обрабатывает поля модели `ServiceWork` в человекочитаемый текст."""
+        if self.event == 'done':
+            msg = ('📤 выполнено', f'\n📍 {self.obj.station.name}')
+        elif self.event == 'close':
+            msg = ('🏁 завершено', '')
         return (
-            f'Готово!\n🚚 {self.obj.car.grz}\n🔧 {self.obj.next_service.name}'
-            f'\n🧰 {self.obj.station.name}'
+            f'{msg[0]}\n\n'
+            f'🚚 {self.obj.car.grz}\n'
+            f'🔧 {self.obj.next_service.name}'
+            f'{msg[1]}'
         )
 
     def get_thread_by_organization(self) -> int:
