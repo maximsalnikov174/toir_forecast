@@ -132,7 +132,7 @@ async def completed_real_service_work(
     )
 
     # Отправка уведомления в Telegram:
-    schedular = TgSchedular(result)
+    schedular = TgSchedular(result, event='done')
     await schedular.send_notification()
 
     return result
