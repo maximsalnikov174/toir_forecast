@@ -4,7 +4,7 @@ from aiohttp import ClientSession
 from fastapi import HTTPException
 
 from core.config import settings
-from models import ServiceWork
+from models import EventForBot, ServiceWork, SpecialStatusForCar
 
 
 class TgSchedular:
@@ -16,32 +16,37 @@ class TgSchedular:
 
     chat_id = settings.chat_id
 
-    def __init__(self, obj: ServiceWork, event: str):
-        self.obj = obj
-        self.event = event
-
-    def convert_model_to_text(self) -> str:
+    def convert_model_to_text(self, obj, event: str) -> str:
         """Обрабатывает поля модели `ServiceWork` в человекочитаемый текст."""
-        if self.event == 'done':
-            msg = ('📤 выполнено', f'\n📍 {self.obj.station.name}')
-        elif self.event == 'close':
-            msg = ('🏁 завершено', '')
+
+        if event == EventForBot.DONE:
+            msg = ('🔚🚚💨 Выполнено', f'\n📍 {obj.station.name}')
+        elif event == EventForBot.CLOSE:
+            msg = ('✅📝 Карточка успешно закрыта', '')
+        elif event == EventForBot.END_FOR_STATUS:
+            msg = ('⏳ Истёк статус ТС', '')
+
+        if isinstance(obj, ServiceWork):
+            elem = f'🔧 {obj.next_service.name}'
+        elif isinstance(obj, SpecialStatusForCar):
+            elem = f'🏷️ {obj.special_status.name}'
+
         return (
             f'{msg[0]}\n\n'
-            f'🚚 {self.obj.car.grz}\n'
-            f'🔧 {self.obj.next_service.name}'
+            f'🚚 {obj.car.grz}\n'
+            f'{elem}'
             f'{msg[1]}'
         )
 
-    def get_thread_by_organization(self) -> int:
+    def _get_thread_by_organization(self, obj) -> int:
         """Определяет `thread_id` с учётом подразделения ТС.
 
         ## Warning
         Костыль с `+ 1` под конкретно созданную ТГ-группу.
         """
-        return self.obj.car.organization_id + 1
+        return obj.car.organization_id + 1
 
-    async def send_notification(self):
+    async def send_notification(self, obj, event: str):
         """Функция отправки уведомления в Telegram"""
         try:
             async with ClientSession() as session:
@@ -51,8 +56,8 @@ class TgSchedular:
                 )
                 payload = {
                     'chat_id': self.chat_id,
-                    'message_thread_id': self.get_thread_by_organization(),
-                    'text': self.convert_model_to_text()
+                    'message_thread_id': self._get_thread_by_organization(obj),
+                    'text': self.convert_model_to_text(obj=obj, event=event)
                 }
                 async with session.post(url, json=payload) as resp:
                     if resp.status != 200:
@@ -68,3 +73,6 @@ class TgSchedular:
     #     """Функция рассылки уведомлений в Telegram группе контактов."""
     #     for chat_id in chat_ids:
     #         await self.send_notification(chat_id, text)
+
+
+bot_schedular = TgSchedular()

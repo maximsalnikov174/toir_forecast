@@ -9,7 +9,7 @@ from sqlalchemy.sql.expression import func
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from api.endpoints.bot import TgSchedular
+from api.endpoints.bot import bot_schedular
 from constants import PATTERN_DATE_OEBS
 from crud.car import (
     get_car_by_pk,
@@ -23,6 +23,7 @@ from crud.service_status import get_multi_service_status
 from logger.logger import logger
 from models import (
     Car,
+    EventForBot,
     Organization,
     ServiceName,
     ServiceStatus,
@@ -213,8 +214,10 @@ async def add_service_works_in_archive(
 
         if kwargs:
             # Отправка сообщения в тред цеха телеги:
-            schedular = TgSchedular(obj=service_work, event='close')
-            await schedular.send_notification()
+            await bot_schedular.send_notification(
+                obj=service_work,
+                event=EventForBot.CLOSE,
+            )
 
             logger.info(
                 f'🏁 «{kwargs["car_grz"]}». '

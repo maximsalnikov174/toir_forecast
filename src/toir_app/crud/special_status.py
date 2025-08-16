@@ -7,9 +7,11 @@ from sqlalchemy import ScalarResult, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload, selectinload
 
+from api.endpoints.bot import bot_schedular
 from exception import NotFoundError
 from logger.logger import logger
 from models import (
+    EventForBot,
     Role,
     SpecialStatus,
     SpecialStatusForCar,
@@ -77,6 +79,13 @@ async def deactivate_list_of_special_status_for_car(
             special_status_for_car=card,
             session=session
         )
+
+        # Отправка сообщения в телегу о закрытии статуса ТС:
+        await bot_schedular.send_notification(
+            obj=card,
+            event=EventForBot.END_FOR_STATUS
+        )
+
         logger.info(
             f'Закрыт статус «{card.special_status.name}» для «{card.car.grz}».'
         )
