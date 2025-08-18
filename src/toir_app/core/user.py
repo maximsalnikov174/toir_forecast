@@ -18,6 +18,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
+from api.endpoints.bot import bot_schedular
 from constants import (
     COMPANY_DOMAIN,
     ENDPOINT_URL_FOR_GET_TOKEN,
@@ -122,6 +123,13 @@ class UserManager(IntegerIDMixin, BaseUserManager[User, int]):
         """Действие после успешной регистрации пользователя."""
         # Вместо print здесь можно было бы настроить отправку письма.
         logger.info(f'Пользователь {user.email} зарегистрирован.')
+        msg = (
+            f'👤 Новый пользователь: {user.name} {user.surname}\n'
+            f'e-mail: {user.email}\n'
+            f'подразделение #{user.organization_id}\n'
+            f'роль #{user.role_id}'
+        )
+        await bot_schedular.send_notification_for_admin(msg=msg)
 
 
 async def get_user_manager(user_db=Depends(get_user_db)):
