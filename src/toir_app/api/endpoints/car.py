@@ -12,7 +12,7 @@ from crud.car import (
     get_car_history,
     get_cars_with_request_and_special_status,
 )
-from crud.service_status import check_service_status_by_param
+from crud.service_status import dao_service_status
 from crud.service_work import get_last_request_reading_by_car
 from models import Car, User
 from schemas.car import (
@@ -44,7 +44,10 @@ async def get_all_cars_with_selected_request_status(
 ):
     """Возвращает список ТС с выбранным Присвоенным Статусом."""
     # Проверяем существование выбранного присвоенного статуса в БД:
-    await check_service_status_by_param(session, request_status_param)
+    await dao_service_status.check_exists(
+        id=request_status_param,
+        session=session,
+    )
 
     # TODO Проверяем существование выбранных статусов для ТС (на ВР и тд):
     # FIXME Попробовать здесь реализовать отбор без None
@@ -55,7 +58,31 @@ async def get_all_cars_with_selected_request_status(
         special_status_ids=special_status_ids,
         organization_id=organization_id,
         session=session,
-        hide_service_work_with_zvr=hide_service_work_with_zvr
+        hide_service_work_with_zvr=hide_service_work_with_zvr,
+    )
+    for car in cars:
+        car.indicators = await get_last_request_reading_by_car(car.id, session)
+
+    return cars
+
+
+@router.post(
+    '/with_many_statuses_for_masters',
+    response_model=list[CarExpandWithIndicators],
+    name='Срез списка машин (доступно мастерским)',
+    description=(
+        'Получение среза списка машин с ЗВР и незавершенными работами'
+    ),
+    response_model_exclude_none=True
+)
+async def get_all_cars_with_open_zvr(
+    session: AsyncSession = Depends(get_async_session)
+):
+    """Возвращает список ТС с открытыми ЗВР."""
+    cars = await get_cars_with_request_and_special_status(
+        session=session,
+        for_masters=True,
+        organization_id=1  # <-- здесь должна быть мастерская сотрудника
     )
     for car in cars:
         car.indicators = await get_last_request_reading_by_car(car.id, session)

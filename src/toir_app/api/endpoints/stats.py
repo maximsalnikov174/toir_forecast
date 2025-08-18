@@ -60,7 +60,6 @@ router = APIRouter()
 async def upload_file(
     file: UploadFile = File(...),
     user: User = Depends(current_user),
-
 ):
     """Обработка файла csv и загрузка данных в БД."""
     try:

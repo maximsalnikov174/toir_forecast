@@ -15,12 +15,9 @@ class DAOBase:
             obj_id: int,
             session: AsyncSession,
     ):
-        db_obj = await session.execute(
-            select(self.model).where(
-                self.model.id == obj_id
-            )
-        )
-        return db_obj.scalars().first()
+        stmt = select(self.model).where(self.model.id == obj_id).limit(1)
+        result = await session.scalar(stmt)
+        return result
 
     async def get_multi(
             self,
@@ -101,8 +98,23 @@ class DAOBase:
             attr_value: str,
             session: AsyncSession,
     ):
+        """Получение единичного объекта по параметру.
+
+        ## Args:
+            attr_name: Поле модели;
+            attr_value: Искомое значение;
+            session: Асинхронная сессия SQLAlchemy.
+
+        ## Returns:
+            Объект модели.
+        """
+        # Проверяем искомый параметр модели:
+        if not hasattr(self.model, attr_name):
+            raise AttributeError(
+                f'У {self.model.__name__} нет атрибута {attr_name}'
+            )
         attr = getattr(self.model, attr_name)
-        db_obj = await session.execute(
-            select(self.model).where(attr == attr_value)
-        )
-        return db_obj.scalars().first()
+
+        stmt = select(self.model).where(attr == attr_value).limit(1)
+        result = await session.scalar(stmt)
+        return result

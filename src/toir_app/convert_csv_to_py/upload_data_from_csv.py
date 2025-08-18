@@ -4,7 +4,7 @@ from typing import Any
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from crud.service_status import get_service_status_by_name
+from crud.service_status import dao_service_status
 from crud.service_work import (
     add_service_works_in_archive, get_last_service_with_current_service_id,
     update_reading_and_daily_distance,
@@ -123,7 +123,11 @@ async def create_service_work(
 
     # Рассчитываем и получаем глобальный статус для авто:
     upd_status = processing_service.calculated_status
-    upd_status = await get_service_status_by_name(upd_status.value, session)
+    upd_status = await dao_service_status.get_by_attribute(
+        attr_name='name',
+        attr_value=upd_status.value,
+        session=session
+    )
     processing_service.request_status_id = upd_status.id
 
     # Если глоб. статус изменился - для

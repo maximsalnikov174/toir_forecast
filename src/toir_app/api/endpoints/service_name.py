@@ -6,7 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.db import get_async_session
 from crud.service_name import get_service_name_with_request_status
-from crud.service_status import check_service_status_by_param
+from crud.service_status import dao_service_status
 from schemas.service_name import ServiceNameBase
 
 router = APIRouter()
@@ -37,7 +37,7 @@ async def get_all_service_names_with_selected_request_status(
         session: сессия.
     """
     # Проверяем существование выбранного присвоенного статуса в БД:
-    await check_service_status_by_param(session, request_status_param)
+    await dao_service_status.check_exists(request_status_param, session)
 
     return await get_service_name_with_request_status(
         request_status_id=request_status_param,
