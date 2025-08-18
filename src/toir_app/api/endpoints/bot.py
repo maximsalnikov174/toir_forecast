@@ -1,4 +1,5 @@
 import logging
+from typing import Optional
 
 from aiohttp import ClientSession
 from fastapi import HTTPException
@@ -20,9 +21,9 @@ class TgSchedular:
         """Обрабатывает поля модели `ServiceWork` в человекочитаемый текст."""
 
         if event == EventForBot.DONE:
-            msg = ('🔚🚚💨 Выполнено', f'\n📍 {obj.station.name}')
+            msg = ('Выполнено', f'\n📍 {obj.station.name}')
         elif event == EventForBot.CLOSE:
-            msg = ('✅📝 Карточка успешно закрыта', '')
+            msg = ('Карточка успешно закрыта', '')
         elif event == EventForBot.END_FOR_STATUS:
             msg = ('⏳ Истёк статус ТС', '')
 
@@ -46,8 +47,8 @@ class TgSchedular:
         """
         return obj.car.organization_id + 1
 
-    async def send_notification(self, obj, event: str):
-        """Функция отправки уведомления в Telegram"""
+    async def _send_notification(self, message, thread: Optional[int] = None):
+        """Функция отправки уведомления в Telegram."""
         try:
             async with ClientSession() as session:
                 url = (
@@ -56,8 +57,8 @@ class TgSchedular:
                 )
                 payload = {
                     'chat_id': self.chat_id,
-                    'message_thread_id': self._get_thread_by_organization(obj),
-                    'text': self.convert_model_to_text(obj=obj, event=event)
+                    'message_thread_id': thread,
+                    'text': message
                 }
                 async with session.post(url, json=payload) as resp:
                     if resp.status != 200:
@@ -68,6 +69,17 @@ class TgSchedular:
         except Exception as e:
             logging.error(f'Ошибка: {str(e)}')
             raise HTTPException(status_code=500, detail=str(e))
+
+    async def send_notification(self, obj, event: str):
+        """Функция отправки уведомления в Telegram в группу цеха."""
+        return await self._send_notification(
+            thread=self._get_thread_by_organization(obj=obj),
+            message=self.convert_model_to_text(obj=obj, event=event),
+        )
+
+    async def send_notification_for_admin(self, msg: str):
+        """Функция отправки уведомления в группу Админа."""
+        return await self._send_notification(message=msg)
 
     # async def mass_sending_notification(self, chat_ids: list[int], text: str):
     #     """Функция рассылки уведомлений в Telegram группе контактов."""
