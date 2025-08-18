@@ -9,6 +9,7 @@ from sqlalchemy.sql.expression import func
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
+from api.endpoints.bot import bot_schedular
 from constants import PATTERN_DATE_OEBS
 from crud.car import (
     get_car_by_pk,
@@ -22,6 +23,7 @@ from crud.service_status import get_multi_service_status
 from logger.logger import logger
 from models import (
     Car,
+    EventForBot,
     Organization,
     ServiceName,
     ServiceStatus,
@@ -92,6 +94,10 @@ async def get_last_service_with_current_service_id(
 
     stmt = (
         select(ServiceWork)
+        .options(
+            selectinload(ServiceWork.next_service),
+            selectinload(ServiceWork.car),
+        )
         .join(ServiceName, ServiceName.id == ServiceWork.last_service_id)
         .where(
             ServiceWork.car_id == car_id,
@@ -207,9 +213,15 @@ async def add_service_works_in_archive(
         # момента включения в отчет - пройдет некоторое время (и пробег).
 
         if kwargs:
+            # Отправка сообщения в тред цеха телеги:
+            await bot_schedular.send_notification(
+                obj=service_work,
+                event=EventForBot.CLOSE,
+            )
+
             logger.info(
                 f'🏁 «{kwargs["car_grz"]}». '
-                f'🛠️#{service_work.next_service_id} закрыт '
+                f'🛠️ {service_work.next_service.name} закрыт '
                 f'{kwargs["validated_service_work"].request_date.date()} '
                 'на пробеге '
                 f'{kwargs["validated_service_work"].last_service_reading}'

@@ -5,7 +5,7 @@ from typing import Annotated, Dict, List, Optional
 from fastapi import APIRouter, Body, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from api.endpoints.bot import TgSchedular
+from api.endpoints.bot import bot_schedular
 from core.db import get_async_session
 from core.user import current_user
 from crud.organization import get_current_organization
@@ -20,7 +20,7 @@ from crud.service_work import (
     get_service_work,
     update_completed_real_service_work
 )
-from models import Organization, SpecialStatus, User
+from models import EventForBot, Organization, SpecialStatus, User
 from schemas.service_work import (
     AddZvrSchema,
     ServiceWorkWithZVRNumber,
@@ -132,8 +132,7 @@ async def completed_real_service_work(
     )
 
     # Отправка уведомления в Telegram:
-    schedular = TgSchedular(result)
-    await schedular.send_notification()
+    await bot_schedular.send_notification(obj=result, event=EventForBot.DONE)
 
     return result
 

@@ -1,6 +1,6 @@
 from .static_model import (  # noqa
-    Status, SpecialStatusForCarBase, StaticOrganization, StationDefault,
-    UserRole,
+    EventForBot, Status, SpecialStatusForCarBase, StaticOrganization,
+    StationDefault, UserRole,
 )  # noqa
 from .car import Car  # noqa
 from .car_model import CarModel  # noqa

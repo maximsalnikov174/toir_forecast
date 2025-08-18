@@ -14,6 +14,7 @@ from fastapi import (
 from sqlalchemy.ext.asyncio import AsyncSession
 from tqdm import tqdm
 
+from api.endpoints.bot import bot_schedular
 from constants import ENCODING_DEFAULT, PATTERN_FOR_DATE_IN_CSV
 from convert_csv_to_py.upload_data import (
     need_to_upload_datas,
@@ -134,6 +135,10 @@ async def upload_file(
 
             # 3.6 Общий коммит сессии:
             await download_session.commit()
+
+            await bot_schedular.send_notification_for_admin(
+                msg=f'Файл {update_date} загружен',
+            )
 
     except StaticDataInDBNotFoundException:
         logger.info('Началась загрузка статических данных.')

@@ -4,6 +4,14 @@ from typing import Annotated, Optional
 from convert_csv_to_py.convertation import UsersServiceName as USN
 
 
+class EventForBot(str, Enum):
+    """События (триггеры) для бота."""
+
+    DONE = 'Выполнено (готово)'
+    CLOSE = 'Закрыто'
+    END_FOR_STATUS = 'Статус ТС истёк'
+
+
 class Status(str, Enum):
     """Расчётные статусы (для вида обслуживания) записи из OeBS."""
 
