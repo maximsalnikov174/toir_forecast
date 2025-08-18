@@ -16,8 +16,8 @@ class Status(str, Enum):
     """Расчётные статусы (для вида обслуживания) записи из OeBS."""
 
     DANGER = '🔴 Превышение'
-    TIME_HAS_COME = '🟡 Подошло'
-    WAIT_MOMENT = '🟢 Ожидается в периоде'
+    TIME_HAS_COME = '🌕 Подошло'
+    WAIT_MOMENT = '🍏 Ожидается в периоде'
     NO_NEED = '🔵 Нет необходимости'
     BAD_REQUEST = '❌ Не был расчитан'
 

@@ -4,7 +4,25 @@ from fastapi import HTTPException
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from crud.base import DAOBase
+from exception import ObjectIsExistException
 from models import ServiceStatus, Status
+
+
+class DAOServiceStatus(DAOBase):
+    """CRUD-класс для ServiceStatus."""
+
+    async def check_name_duplicate(
+            self, value: str, session: AsyncSession
+    ) -> None:
+        """Проверка расчётного статуса на дублирование имени."""
+        obj = await self.get_by_attribute('name', value, session)
+
+        if obj:  # ... если существует
+            raise ObjectIsExistException
+
+
+dao_service_status = DAOServiceStatus(ServiceStatus)
 
 
 async def get_multi_service_status(session: AsyncSession):

@@ -21,3 +21,21 @@ class ServiceStatusSchema(BaseModel):
     name: Status = Field(
         ..., title='Расчётный статус', serialization_alias='status_name'
     )
+
+
+class ServiceStatusUpdate(BaseModel):
+    """
+    Схема для обновления модели ServiceStatus для карточки вида серв. обслуж.
+
+    ## Примеры статусов:
+    - Превышение
+    - Входит в 10%
+    - Подойдет в этом месяце
+    - Не требуется
+
+    ## Поля:
+    - Имя статуса
+    """
+    name: Status = Field(
+        ..., title='Расчётный статус', serialization_alias='status_name'
+    )

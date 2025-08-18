@@ -45,3 +45,11 @@ class CarNotFoundException(NotFoundError):
 
 class CarInArchiveException(Exception):
     """Сигнал, что ТС находится (было переведено) в архив."""
+
+
+class ObjectIsExistException(Exception):
+    """Объект уже существует."""
+
+
+class ObjectNotFoundException(Exception):
+    """Объект в БД не найден."""
