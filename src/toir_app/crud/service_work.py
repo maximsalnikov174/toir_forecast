@@ -19,7 +19,7 @@ from crud.service_name import (
     get_service_name_group,
     get_service_name_with_request_status,
 )
-from crud.service_status import get_multi_service_status
+from crud.service_status import dao_service_status
 from logger.logger import logger
 from models import (
     Car,
@@ -298,7 +298,10 @@ async def get_active_service_work_count_for_all_service_status(
 ) -> dict[str, dict[str, int]]:
     """Получение сводных данных о количестве активных работ по статусам."""
     # Получение списка сервисных статусов:
-    service_statuses = await get_multi_service_status(session=session)
+    service_statuses = await dao_service_status.get_multi(
+        session=session,
+        sorted_param='id',
+    )
 
     # Подготовка пустого словаря:
     summary_data = {}

@@ -1,3 +1,5 @@
+from typing import Optional
+
 from fastapi.encoders import jsonable_encoder
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -22,10 +24,38 @@ class DAOBase:
 
     async def get_multi(
             self,
-            session: AsyncSession
+            session: AsyncSession,
+            sorted_param: Optional[str] = None,
     ):
-        db_objs = await session.execute(select(self.model))
-        return db_objs.scalars().all()
+        """
+        Получение списка объектов с возможностью сортировки.
+
+        ## Args:
+            session: Асинхронная сессия SQLAlchemy;
+            sorted_param: Поле для сортировки (опциональное).
+
+        ## Returns:
+            Список объектов модели.
+
+        ## Raises:
+            ValueError: Если указано несуществующее поле для сортировки.
+        """
+        try:
+            stmt = select(self.model)
+
+            if sorted_param:
+                if not hasattr(self.model, sorted_param):
+                    raise ValueError(
+                        f'Модель {self.model.__name__} '
+                        f'не имеет атрибута {sorted_param}.'
+                    )
+                stmt = stmt.order_by(getattr(self.model, sorted_param))
+
+            db_objs = await session.execute(stmt)
+            return db_objs.scalars().all()
+
+        except Exception:
+            return None  # FIXME должен сообщить об ошибке в запросе
 
     async def create(
             self,

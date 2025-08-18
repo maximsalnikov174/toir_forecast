@@ -3,9 +3,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.db import get_async_session
-from crud.service_status import (
-    get_multi_service_status, dao_service_status,
-)
+from crud.service_status import dao_service_status
 from exception import ObjectIsExistException, ObjectNotFoundException
 from schemas.service_status import ServiceStatusSchema, ServiceStatusUpdate
 
@@ -26,7 +24,7 @@ async def get_all_service_status(
     session: AsyncSession = Depends(get_async_session)
 ):
     """Возвращает список всех подразделений."""
-    return await get_multi_service_status(session)
+    return await dao_service_status.get_multi(session, sorted_param='id')
 
 
 @router.patch(

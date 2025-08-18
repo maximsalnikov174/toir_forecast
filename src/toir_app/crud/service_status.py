@@ -25,15 +25,6 @@ class DAOServiceStatus(DAOBase):
 dao_service_status = DAOServiceStatus(ServiceStatus)
 
 
-async def get_multi_service_status(session: AsyncSession):
-    """Получение всех расчётных статусов для сервисного обслуживания."""
-    result = await session.scalars(
-        select(ServiceStatus)
-        .order_by(ServiceStatus.id)
-    )
-    return result.all()
-
-
 async def get_service_status_by_name(name: str, session: AsyncSession):
     return await session.scalar(
         select(ServiceStatus)
