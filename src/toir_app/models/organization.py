@@ -1,4 +1,4 @@
-from sqlalchemy import Column, String
+from sqlalchemy import Boolean, Column, ForeignKey, Integer, String
 from sqlalchemy.orm import relationship
 
 from constants import (
@@ -25,6 +25,13 @@ class Organization(Base):
         String(ORGANIZATION_NORMAL_NAME_LEN),
         nullable=True,  # заглушка на этапе создания
         comment='Название цеха в привычном формате.'
+    )
+    station_id = Column(
+        Integer,
+        ForeignKey('station.id'),
+        nullable=True,
+        default=None,
+        comment='Связь с СТО (станцией тех обслуживания)',
     )
 
     cars = relationship(
