@@ -5,8 +5,13 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.db import get_async_session
-from crud.service_name import get_service_name_with_request_status
+from core.user import current_user
+from crud.service_name import (
+    get_service_name_with_request_status,
+    get_service_name_for_master,
+)
 from crud.service_status import dao_service_status
+from models import User
 from schemas.service_name import ServiceNameBase
 
 router = APIRouter()
@@ -46,4 +51,21 @@ async def get_all_service_names_with_selected_request_status(
         session=session,
         need_range=True,
         hide_service_work_with_zvr=hide_service_work_with_zvr
+    )
+
+
+@router.post(
+    '/all_service_names_for_master',
+    response_model=list[ServiceNameBase],
+    name='Срез видов ТО (доступно мастерским)',
+    description='Получение среза видов ТО для заполнения шапки таблицы.',
+    status_code=HTTPStatus.OK,
+)
+async def get_all_service_names_for_master(
+    user: User = Depends(current_user),
+    session: AsyncSession = Depends(get_async_session),
+):
+    return await get_service_name_for_master(
+        station_id=user.users_organization.station_id,
+        session=session
     )
