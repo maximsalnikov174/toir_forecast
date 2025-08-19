@@ -13,6 +13,7 @@ from crud.service_work import (
     check_users_can_edit_service_work,
     check_zvr_unique,
     create_main_table,
+    create_main_table_for_master,
     get_active_service_work_count_for_all_service_status,
     get_active_service_work_list_by_car,
     get_all_active_service_work_with_open_zvr,
@@ -279,4 +280,23 @@ async def get_table(
         organization_id=organization_id,
         session=session,
         hide_service_work_with_zvr=hide_service_work_with_zvr
+    )
+
+
+@router.post(
+    '/get_table_for_master',
+    name='Получение главной таблицы (доступно мастерским).',
+    description=(
+        'Получение в виде списка списков.'
+    ),
+    response_model=list[list[Optional[ServiceWorkWithZVRNumber]]],
+    response_model_exclude_none=True
+)
+async def get_table_for_master(
+    user: User = Depends(current_user),
+    session: AsyncSession = Depends(get_async_session),
+):
+    return await create_main_table_for_master(
+        user=user,
+        session=session,
     )
