@@ -18,6 +18,7 @@ from crud.car import (
 from crud.service_name import (
     get_service_name_group,
     get_service_name_with_request_status,
+    get_service_name_for_master
 )
 from crud.service_status import dao_service_status
 from logger.logger import logger
@@ -340,15 +341,23 @@ async def get_all_active_service_work_with_open_zvr(
 async def _get_service_work_for_car_and_service_name(
         car_id: Annotated[int, Car.id],
         service_name_id: Annotated[int, ServiceName.id],
-        request_status_id: Annotated[int, ServiceStatus.id],
-        special_status_ids: list[Optional[Annotated[int, SpecialStatus.id]]],
         session: AsyncSession,
-        hide_service_work_with_zvr: bool = False
+        station_id: Optional[int] = None,
+        hide_service_work_with_zvr: bool = False,
+        request_status_id: Optional[Annotated[int, ServiceStatus.id]] = None,
+        special_status_ids: Optional[
+            list[Optional[Annotated[int, SpecialStatus.id]]]
+        ] = None,
 ) -> Optional[ServiceWork]:
     """Получение ID записи ServiceWork если оно соответствует условиям.
 
-    Опция:
-        - hide_service_work_with_zvr=True (если нужно скрыть записи с ЗВР)
+    ## Args:
+    - `station_id`: если нужно собрать `service_work` для конкретного СТО;
+    - `hide_service_work_with_zvr = True`: если нужно скрыть запись с ЗВР;
+    - `request_status_id`: когда нужно получить `service_work` строже
+        определенного статуса;
+    - `special_status_ids`: когда нужно учесть установленные для ТС
+        специальные статусы.
     """
 
     # TODO Если ТС в архиве - должен сработать pass
@@ -359,24 +368,76 @@ async def _get_service_work_for_car_and_service_name(
             selectinload(ServiceWork.station)
         )
         .join(ServiceWork.car)
-        .outerjoin(Car.status_associations)
         .where(
-            ServiceWork.request_status_id <= request_status_id,
             ServiceWork.in_archive.is_(False),
             ServiceWork.next_service_id == service_name_id,
             Car.id == car_id,
-            or_(
-                Car.status_associations == None,
-                SpecialStatusForCar.special_status_id.in_(special_status_ids)
-            )
         )
     )
 
-    # Скрыть записи о сервисном обслуживании, если для них уже создан ЗВР:
-    if hide_service_work_with_zvr:
-        stmt = stmt.where(ServiceWork.zvr_number.is_(None))
+    # Собираем для мастерской:
+    if station_id:
+        stmt = stmt.where(ServiceWork.station_id == station_id)
+
+    # Собираем для цеха перевозки:
+    else:
+        stmt = (
+            stmt
+            .outerjoin(Car.status_associations)
+            .where(
+                ServiceWork.request_status_id <= request_status_id,
+                or_(
+                    Car.status_associations == None,  # может .is_(None)?
+                    SpecialStatusForCar.special_status_id.in_(
+                        special_status_ids
+                    )
+                )
+            )
+        )
+
+        # Скрыть записи о сервисном обслуживании, если для них уже создан ЗВР:
+        if hide_service_work_with_zvr:
+            stmt = stmt.where(ServiceWork.zvr_number.is_(None))
 
     return result if (result := await session.scalar(stmt)) else None
+
+
+async def create_main_table_for_master(
+        user: User,
+        session: AsyncSession,
+):
+    """Наполнение содержимым главной таблицы для мастерских."""
+    users_station = user.users_organization.station_id
+    total_data = []
+    # Получение списка всех названий сервисных операций:
+    # Выстраиваем шапку
+    all_service_name = await get_service_name_for_master(
+        station_id=users_station,
+        session=session,
+    )
+
+    # Получение списка ТС (выстраиваем строки):
+    all_cars = await get_cars_with_request_and_special_status(
+        for_masters=True,
+        organization_id=users_station,
+        session=session,
+    )
+
+    for car in all_cars:
+        one_row = []
+        for service_name in all_service_name:
+            if car and service_name:
+                one_row.append(
+                    await _get_service_work_for_car_and_service_name(
+                        car_id=car.id,
+                        service_name_id=service_name.id,
+                        station_id=users_station,
+                        session=session,
+                    )
+                )
+        total_data.append(one_row)
+
+    return total_data
 
 
 async def create_main_table(
