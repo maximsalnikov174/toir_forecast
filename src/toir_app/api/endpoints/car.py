@@ -67,7 +67,7 @@ async def get_all_cars_with_selected_request_status(
 
 
 @router.post(
-    '/with_many_statuses_for_masters',
+    '/with_many_statuses_for_master',
     response_model=list[CarExpandWithIndicators],
     name='Срез списка машин (доступно мастерским)',
     description=(
