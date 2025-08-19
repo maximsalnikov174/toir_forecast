@@ -165,16 +165,22 @@ async def get_car_by_full_grz(
 
 
 async def get_cars_with_request_and_special_status(
-    request_status_id: int,
-    special_status_ids: list[Optional[int]],
-    organization_id: int,
     session: AsyncSession,
-    hide_service_work_with_zvr: bool = False
+    *,
+    hide_service_work_with_zvr: bool = False,
+    for_masters: bool = False,
+    request_status_id: Optional[int] = None,
+    special_status_ids: Optional[list[Optional[int]]] = None,
+    organization_id: int,
 ) -> list[Optional[Car]]:
     """
     Возврат УНИКАЛЬНЫХ машин c учётом выбранных пользователем фильтров.
 
-    Filters:
+    ## Variants:
+    - для мастерской `for_master=True`
+    - для автоколонны
+
+    ## Filters:
         - расчётный статус (он и строже)
         - все ТС без статусов (FIXME пока обязательно)
         - список специальных статусов (опционально)
@@ -187,23 +193,33 @@ async def get_cars_with_request_and_special_status(
             selectinload(Car.service_works)
         )
         .join(Car.service_works)  # Явное соед. с service_works
-        .outerjoin(Car.status_associations)  # OUTER JOIN: статусы могут отс.
+        .outerjoin(Car.status_associations)  # статусы могут отс.
         .where(
-            ServiceWork.request_status_id <= request_status_id,
             ServiceWork.in_archive.is_(False),
-            Car.organization_id == organization_id,
             Car.in_archive.is_(False),
-            or_(
-                SpecialStatusForCar.id.is_(None),
-                SpecialStatusForCar.special_status_id.in_(special_status_ids)
-            )
         ).distinct()  # distinct - дедупликация (FIXME не уверен, что так)
         .order_by(Car.grz)
     )
 
-    # Скрыть записи о сервисном обслуживании, если для них уже создан ЗВР:
-    if hide_service_work_with_zvr:
-        stmt = stmt.where(ServiceWork.zvr_number.is_(None))
+    if for_masters:  # если пользователь - сотрудник цеха ремонта:
+        stmt = stmt.where(
+            ServiceWork.station_id == organization_id,
+            ServiceWork.zvr_number.is_not(None),
+            ServiceWork.service_work_completed.is_(None)
+        )
+    else:  # если пользователь - сотрудник цеха эксплуатации:
+        stmt = stmt.where(
+            Car.organization_id == organization_id,
+            ServiceWork.request_status_id <= request_status_id,
+            or_(
+                SpecialStatusForCar.id.is_(None),
+                SpecialStatusForCar.special_status_id.in_(special_status_ids)
+            )
+        )
+
+        # ... и ему надо cкрыть записи о серв.обсл., если для них создан ЗВР:
+        if hide_service_work_with_zvr:
+            stmt = stmt.where(ServiceWork.zvr_number.is_(None))
 
     cars = await session.execute(stmt)
 

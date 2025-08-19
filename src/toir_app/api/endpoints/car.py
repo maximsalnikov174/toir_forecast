@@ -76,13 +76,14 @@ async def get_all_cars_with_selected_request_status(
     response_model_exclude_none=True
 )
 async def get_all_cars_with_open_zvr(
-    session: AsyncSession = Depends(get_async_session)
+    user: User = Depends(current_user),
+    session: AsyncSession = Depends(get_async_session),
 ):
     """Возвращает список ТС с открытыми ЗВР."""
     cars = await get_cars_with_request_and_special_status(
         session=session,
         for_masters=True,
-        organization_id=1  # <-- здесь должна быть мастерская сотрудника
+        organization_id=user.users_organization.station_id
     )
     for car in cars:
         car.indicators = await get_last_request_reading_by_car(car.id, session)
