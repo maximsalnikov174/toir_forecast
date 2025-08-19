@@ -33,16 +33,18 @@
     />
 
     <div class="buttons-container">
-      <division-select />
-      <minimal-status />
-      <GroupTs />
-      <HideServiceWorkWithZvr />
-      <ToAccept
-        ref="toAcceptRef"
-        @tableDataFetched="handleTableDataFetched"
-        @servicesFetched="handleServicesFetched"
-        @carsFetched="handleCarsFetched"
-      />
+      <template v-if="shouldShowDivisionControls">
+        <division-select />
+        <minimal-status />
+        <GroupTs />
+        <HideServiceWorkWithZvr />
+        <ToAccept
+          ref="toAcceptRef"
+          @tableDataFetched="handleTableDataFetched"
+          @servicesFetched="handleServicesFetched"
+          @carsFetched="handleCarsFetched"
+        />
+      </template>
     </div>
 
     <div class="data-container">
@@ -100,7 +102,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, onMounted, onUnmounted, computed } from 'vue'
 import MinimalStatus from '../components/UI/Button/MinimalStatus.vue'
 import DivisionSelect from '../components/UI/Button/DivisionSelect.vue'
 import GroupTs from '../components/UI/Button/GroupTs.vue'
@@ -113,6 +115,19 @@ import LoginRegisterDialog from 'src/components/UI/Windows/LoginRegisterDialog.v
 import { useAuthStore } from 'src/stores/useAuthStore'
 import { getCurrentDateInDB } from 'src/components/Functions/CurrentDateInDB'
 import ColorsOfRepairShops from '../components/Cards/ColorsOfRepairShops.vue'
+
+
+
+const shouldShowDivisionControls = computed(() => {
+  // Если пользователь не авторизован - показываем элементы
+  if (!authStore.isAuth) return true
+
+  // Если пользователь авторизован, но нет информации об организации - показываем элементы
+  if (!authStore.user?.users_organization) return true
+
+  // Показываем элементы только если station_id равен null
+  return authStore.user.users_organization.station_id === null
+})
 
 
 const showScrollButton = ref(false)
