@@ -1,9 +1,45 @@
 from typing import Optional
+
 from sqlalchemy import and_, or_, select
-# from sqlalchemy.orm import joinedload
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from models import Car, ServiceName, ServiceWork, SpecialStatusForCar
+
+
+async def get_service_name_for_master(
+    station_id: int,
+    session: AsyncSession,
+) -> Optional[ServiceName]:
+    """Возврат УНИКАЛЬНЫХ видов сервисного обслуживания для мастерских.
+
+    ## Users filters:
+        + id мастерской, связанной с пользователем.
+
+    ## Default filters:
+        + запись о сервисном обслуживании не в архиве.
+        + дедупликация объектов ServiceName (вроде).
+        - (нет и нужно ли?) ТС не в архиве.
+
+    ## Order by:
+        - asc IDs ServiceName.
+    """
+    stmt = (
+        select(ServiceName)
+        .join(
+            ServiceWork,
+            ServiceName.id == ServiceWork.next_service_id,
+        )
+        .where(
+            ServiceWork.in_archive.is_(False),
+            ServiceWork.zvr_number.is_not(None),
+            ServiceWork.service_work_completed.is_(None),
+            ServiceWork.station_id == station_id,
+        )
+        .distinct()  # distinct - дедупликация
+        .order_by(ServiceName.id)  # сортировка по ID вида работ
+    )
+    result = await session.scalars(stmt)
+    return result.all()
 
 
 async def get_service_name_with_request_status(

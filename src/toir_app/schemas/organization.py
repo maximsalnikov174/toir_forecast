@@ -1,8 +1,10 @@
 from typing import Optional
 from pydantic import BaseModel, Field
 
-from constants import (ORGANIZATION_NORMAL_NAME_PATTERN,
-                                ORGANIZATION_BASE_NAME_PATTERN)
+from constants import (
+    ORGANIZATION_NORMAL_NAME_PATTERN,
+    ORGANIZATION_BASE_NAME_PATTERN,
+)
 
 
 class OrganizationBase(BaseModel):
@@ -28,5 +30,9 @@ class OrganizationResponse(OrganizationID, OrganizationBase):
         title='Номер цеха',
         description='Номер цеха перевозок (привычный)',
         pattern=ORGANIZATION_NORMAL_NAME_PATTERN,
-        examples=['2-МГ', '4-УСТ', '3-Л']
+        examples=['2-МГ', '4-УСТ', '3-Л', 'УРЛА', 'УРГА']
     )
+    station_id: Optional[int]
+
+    class Config:
+        from_attributes = True

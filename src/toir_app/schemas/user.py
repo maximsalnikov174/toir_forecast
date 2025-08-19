@@ -7,6 +7,7 @@ from fastapi_users import schemas
 from pydantic import Field, field_validator
 
 from constants import COMPANY_DOMAIN, PERSON_FULL_NAME_LEN
+from schemas.organization import OrganizationResponse
 
 
 class UserRead(schemas.BaseUser[int]):
@@ -19,12 +20,10 @@ class UserRead(schemas.BaseUser[int]):
         title='Фамилия',
         max_length=PERSON_FULL_NAME_LEN
     )
-    organization_id: int = Field(
-        ..., title='ID из таблицы подразделений.'
-    )
     role_id: int = Field(
         ..., title='ID из таблицы ролей в системе.'
     )
+    users_organization: OrganizationResponse
 
 
 class UserCreate(schemas.BaseUserCreate):
