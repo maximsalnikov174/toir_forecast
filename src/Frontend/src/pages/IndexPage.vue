@@ -80,18 +80,19 @@
           <div class="status-cards">
             <template v-for="(item, itemIndex) in tableData[rowIndex]" :key="itemIndex">
               <ServiceStatusCard
-                v-if="item"
-                :Divergence="item.divergence"
-                :LastServiceDate="item.last_service_date"
-                :DBSWCAN="item.days_between_service_work_completed_and_now"
-                :request_status_id="item.request_status_id"
-                :zvr_create_date="item.zvr_create_date"
-                :zvr_number="item.zvr_number"
-                :service_work_completed="item.service_work_completed"
-                :id="item.id"
-                :station="item.station"
-                @submitted="handleApply"
-              />
+              v-if="item"
+              :Divergence="item.divergence"
+              :LastServiceDate="item.last_service_date"
+              :DBSWCAN="item.days_between_service_work_completed_and_now"
+              :request_status_id="item.request_status_id"
+              :zvr_create_date="item.zvr_create_date"
+              :zvr_number="item.zvr_number"
+              :service_work_completed="item.service_work_completed"
+              :id="item.id"
+              :station="item.station"
+              @submitted="handleApply"
+              :onSubmitSuccessMaster="loadMasterData"
+            />
               <div v-else class="empty-status-card"></div>
             </template>
           </div>

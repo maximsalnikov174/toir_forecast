@@ -55,6 +55,7 @@
       @close="closeCompletionModal"
       @submitted="$emit('submitted')"
       :onSubmitSuccess="handleApply"
+      :onSubmitSuccessMaster="onSubmitSuccessMaster"
     />
   </div>
 </template>
@@ -113,6 +114,10 @@ const props = defineProps({
   station: {
     type: Object,
     default: () => ({ id: null })
+  },
+  onSubmitSuccessMaster: {
+    type: Function,
+    default: () => {}
   }
 });
 

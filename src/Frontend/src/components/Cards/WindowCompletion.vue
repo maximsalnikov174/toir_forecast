@@ -3,7 +3,7 @@
     <div class="window-container">
       <div class="window-header">
         <h3>ТС покинуло зону ТО</h3>
-        <button class="close-btn" @click="close"></button>
+        <button class="close-btn" @click="close">×</button>
       </div>
 
       <div class="window-content">
@@ -37,6 +37,10 @@ const props = defineProps({
     type: Function,
     default: () => {}
   },
+  onSubmitSuccessMaster: {
+    type: Function,
+    default: () => {}
+  },
 });
 
 const emit = defineEmits(['update:show', 'close', 'submitted']);
@@ -60,7 +64,8 @@ const complete = async () => {
     );
 
     emit('submitted');
-    props.onSubmitSuccess()  // Вызываем переданную функцию
+    props.onSubmitSuccessMaster(); // Вызываем функцию обновления данных мастера
+    props.onSubmitSuccess();  // Вызываем переданную функцию
     close();
   } catch (error) {
     console.error('Ошибка:', error);
