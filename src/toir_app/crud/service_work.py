@@ -377,7 +377,10 @@ async def _get_service_work_for_car_and_service_name(
 
     # Собираем для мастерской:
     if station_id:
-        stmt = stmt.where(ServiceWork.station_id == station_id)
+        stmt = stmt.where(
+            ServiceWork.station_id == station_id,
+            ServiceWork.service_work_completed.is_(None)
+        )
 
     # Собираем для цеха перевозки:
     else:
