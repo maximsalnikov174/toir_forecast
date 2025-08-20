@@ -166,6 +166,10 @@ const handleCarsFetched = (carsData) => {
 const handleAuth = () => {
   if (authStore.isAuth) {
     authStore.clearAuthData()
+    // Очищаем данные при выходе
+    tableData.value = []
+    services.value = []
+    cars.value = []
   } else {
     authDialog.value?.open()
   }
@@ -191,6 +195,12 @@ const loadMasterData = async () => {
     loading.value = true
 
     const token = authStore.token
+    if (!token) {
+      console.error('Токен не найден')
+      return
+    }
+
+    console.log('Загрузка данных для мастера...')
 
     // Загрузка данных таблицы
     const tableResponse = await api.post(
@@ -242,12 +252,31 @@ const loadMasterData = async () => {
   }
 }
 
-// Следим за изменениями авторизации
-watch(() => authStore.isAuth, (newVal) => {
-  if (newVal && isMasterUser.value) {
+// Следим за изменениями авторизации и station_id
+watch(() => [
+  authStore.isAuth,
+  authStore.user?.users_organization?.station_id
+], ([isAuth, stationId]) => {
+  if (isAuth && stationId !== null && stationId !== undefined) {
+    console.log('Пользователь авторизован как мастер, station_id:', stationId)
+    loadMasterData()
+  } else if (!isAuth) {
+    // Очищаем данные при выходе
+    tableData.value = []
+    services.value = []
+    cars.value = []
+  }
+}, { immediate: true, deep: true })
+
+// Также следим за изменениями пользователя
+watch(() => authStore.user, (newUser) => {
+  if (newUser?.users_organization?.station_id !== null &&
+      newUser?.users_organization?.station_id !== undefined &&
+      authStore.isAuth) {
+    console.log('Данные пользователя изменились, station_id:', newUser.users_organization.station_id)
     loadMasterData()
   }
-})
+}, { deep: true })
 
 onMounted(async () => {
   try {
@@ -260,8 +289,9 @@ onMounted(async () => {
 
   window.addEventListener('scroll', checkScrollPosition)
 
-  // Автоматически загружаем данные для мастера при монтировании
+  // Автоматически загружаем данные для мастера при монтировании, если пользователь уже авторизован
   if (isMasterUser.value) {
+    console.log('Автоматическая загрузка данных для мастера при монтировании')
     loadMasterData()
   }
 })
