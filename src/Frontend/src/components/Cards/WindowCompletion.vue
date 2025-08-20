@@ -2,12 +2,12 @@
   <div v-if="show" class="window-overlay" @click.self="close">
     <div class="window-container">
       <div class="window-header">
-        <h3>Перевод в статус 'завершено'</h3>
+        <h3>ТС покинуло зону ТО</h3>
         <button class="close-btn" @click="close"></button>
       </div>
 
       <div class="window-content">
-        <p>Подтверждаю, что работы выполнены, ТС принято с сервиса</p>
+        <p>Направить уведомление в цех эксплуатации для приемки?</p>
       </div>
 
       <div class="window-footer">

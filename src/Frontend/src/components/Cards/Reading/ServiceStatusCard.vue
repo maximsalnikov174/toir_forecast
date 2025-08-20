@@ -138,7 +138,7 @@ const shouldShowPlusIcon = computed(() => {
 
 const shouldShowHover = computed(() => {
   return hover.value &&
-         (authStore.user?.is_superuser || authStore.user?.users_organization.id === selectedDivId.value) &&
+         (authStore.user?.is_superuser || authStore.user?.users_organization.station_id !== null) &&
          !props.service_work_completed;
 });
 
