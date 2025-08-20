@@ -25,8 +25,20 @@
     <div v-if="zvr_create_date" class="zvr-create-date">{{ zvr_create_date }}</div>
     <div v-if="DBSWCAN" class="additional-text">{{ DBSWCAN }} </div>
 
-    <div v-if="shouldShowHover" class="hover-overlay" @click.stop="handleOverlayClick">
-      <div v-if="shouldShowPlusIcon" class="plus-icon">+</div>
+    <!-- Оверлей для основной карточки -->
+    <div
+      v-if="shouldShowHover"
+      class="hover-overlay"
+      @click.stop="handleOverlayClick"
+    ></div>
+
+    <!-- Отдельный оверлей для плюсика -->
+    <div
+      v-if="shouldShowPlusIcon"
+      class="plus-hover-overlay"
+      @click.stop="handleOverlayClick"
+    >
+      <div class="plus-icon">+</div>
     </div>
 
     <ModalWindow
@@ -119,7 +131,9 @@ const topBarClass = computed(() => {
 const serviceWorkId = ref(props.id);
 
 const shouldShowPlusIcon = computed(() => {
-  return props.zvr_number === null || props.zvr_number === '';
+  return hover.value &&
+  (authStore.user?.is_superuser || authStore.user?.users_organization.id === selectedDivId.value)&&
+  props.zvr_number === null || props.zvr_number === '';
 });
 
 const shouldShowHover = computed(() => {
@@ -195,12 +209,11 @@ const showBottomBar = computed(() => {
 </script>
 
 <style scoped>
-
 .zvr-create-date {
   position: absolute;
   width: 120px;
   height: 12px;
-  top: 22px; /* Позиционируем ниже additional-text или на его место */
+  top: 22px;
   left: 13px;
   font-family: 'Inter', sans-serif;
   font-weight: 400;
@@ -222,7 +235,6 @@ const showBottomBar = computed(() => {
   cursor: pointer;
 }
 
-/* Цвета для полосок в зависимости от station.id */
 .station-purple {
   background: purple;
 }
@@ -235,7 +247,6 @@ const showBottomBar = computed(() => {
   background: turquoise;
 }
 
-/* Общие стили для вертикальных полосок */
 .vertical-bar {
   position: absolute;
   width: 5px;
@@ -322,7 +333,20 @@ const showBottomBar = computed(() => {
   border-color: transparent #0000FF transparent transparent;
 }
 
+/* Обычный оверлей для карточек с ZVR номером */
 .hover-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(128, 0, 128, 0.3);
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+/* Отдельный оверлей для плюсика */
+.plus-hover-overlay {
   position: absolute;
   top: 0;
   left: 0;
