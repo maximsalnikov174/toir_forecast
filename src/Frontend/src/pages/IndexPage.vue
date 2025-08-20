@@ -102,7 +102,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted, computed } from 'vue'
+import { ref, onMounted, onUnmounted, computed, watch } from 'vue'
 import MinimalStatus from '../components/UI/Button/MinimalStatus.vue'
 import DivisionSelect from '../components/UI/Button/DivisionSelect.vue'
 import GroupTs from '../components/UI/Button/GroupTs.vue'
@@ -115,24 +115,30 @@ import LoginRegisterDialog from 'src/components/UI/Windows/LoginRegisterDialog.v
 import { useAuthStore } from 'src/stores/useAuthStore'
 import { getCurrentDateInDB } from 'src/components/Functions/CurrentDateInDB'
 import ColorsOfRepairShops from '../components/Cards/ColorsOfRepairShops.vue'
+import { api } from "../boot/axios.js";
 
-
+const loading = ref(false)
+const showScrollButton = ref(false)
+const colorsDialog = ref(null)
+const tableData = ref([])
+const services = ref([])
+const cars = ref([])
+const authStore = useAuthStore()
+const authDialog = ref(null)
+const currentDate = ref('Загрузка даты...')
+const toAcceptRef = ref(null)
 
 const shouldShowDivisionControls = computed(() => {
-  // Если пользователь не авторизован - показываем элементы
   if (!authStore.isAuth) return true
-
-  // Если пользователь авторизован, но нет информации об организации - показываем элементы
   if (!authStore.user?.users_organization) return true
-
-  // Показываем элементы только если station_id равен null
   return authStore.user.users_organization.station_id === null
 })
 
-
-const showScrollButton = ref(false)
-
-const colorsDialog = ref(null)
+const isMasterUser = computed(() => {
+  return authStore.isAuth &&
+         authStore.user?.users_organization &&
+         authStore.user.users_organization.station_id !== null
+})
 
 const checkScrollPosition = () => {
   showScrollButton.value = window.scrollY > 300
@@ -144,13 +150,6 @@ const scrollToTop = () => {
     behavior: 'smooth',
   })
 }
-
-const tableData = ref([])
-const services = ref([])
-const cars = ref([])
-const authStore = useAuthStore()
-const authDialog = ref(null)
-const currentDate = ref('Загрузка даты...')
 
 const handleTableDataFetched = (data) => {
   tableData.value = data
@@ -166,27 +165,89 @@ const handleCarsFetched = (carsData) => {
 
 const handleAuth = () => {
   if (authStore.isAuth) {
-    // Выход из системы
     authStore.clearAuthData()
   } else {
-    // Показываем диалог авторизации
     authDialog.value?.open()
   }
 }
 
 const handleDialogClose = () => {
-  // Можно добавить дополнительную логику при закрытии диалога
+  // Дополнительная логика при закрытии диалога
 }
-
-const toAcceptRef = ref(null)
 
 const handleApply = () => {
   toAcceptRef.value?.handleApply()
 }
 
 const handleStatusAdded = () => {
-  toAcceptRef.value?.handleApply() // Или toAcceptRef.value?.refreshData(), в зависимости от вашей реализации
+  toAcceptRef.value?.handleApply()
 }
+
+// Функция для загрузки данных мастера
+const loadMasterData = async () => {
+  if (!isMasterUser.value) return
+
+  try {
+    loading.value = true
+
+    const token = authStore.token
+
+    // Загрузка данных таблицы
+    const tableResponse = await api.post(
+      '/service_work/get_table_for_master',
+      [],
+      {
+        headers: {
+          'accept': 'application/json',
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        }
+      }
+    )
+    const filteredData = tableResponse.data.filter(item => item !== null)
+    handleTableDataFetched(filteredData)
+
+    // Загрузка сервисов
+    const servicesResponse = await api.post(
+      '/service_name/all_service_names_for_master',
+      [],
+      {
+        headers: {
+          'accept': 'application/json',
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        }
+      }
+    )
+    handleServicesFetched(servicesResponse.data)
+
+    // Загрузка автомобилей
+    const carsResponse = await api.post(
+      '/car/with_many_statuses_for_master',
+      [],
+      {
+        headers: {
+          'accept': 'application/json',
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        }
+      }
+    )
+    handleCarsFetched(carsResponse.data)
+
+  } catch (error) {
+    console.error('Ошибка при загрузке данных мастера:', error)
+  } finally {
+    loading.value = false
+  }
+}
+
+// Следим за изменениями авторизации
+watch(() => authStore.isAuth, (newVal) => {
+  if (newVal && isMasterUser.value) {
+    loadMasterData()
+  }
+})
 
 onMounted(async () => {
   try {
@@ -196,11 +257,13 @@ onMounted(async () => {
     currentDate.value = 'Ошибка загрузки даты'
     console.error(error)
   }
-})
 
-onMounted(() => {
   window.addEventListener('scroll', checkScrollPosition)
-  // ... остальной код onMounted
+
+  // Автоматически загружаем данные для мастера при монтировании
+  if (isMasterUser.value) {
+    loadMasterData()
+  }
 })
 
 onUnmounted(() => {
@@ -209,16 +272,17 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
+/* Стили остаются без изменений */
 .date-and-manual {
   display: flex;
   align-items: center;
-  gap: 4px; /* Уменьшил отступ между датой и кнопкой */
+  gap: 4px;
 }
 
 .current-date {
   font-weight: 500;
   color: #3a3939;
-  padding: 8px 8px 8px 12px; /* Уменьшил правый отступ */
+  padding: 8px 8px 8px 12px;
   border-radius: 4px;
   font-size: 16px;
   font-weight: 600;
@@ -229,12 +293,12 @@ onUnmounted(() => {
   border: none;
   cursor: pointer;
   color: #000000;
-  padding: 4px; /* Уменьшил padding */
+  padding: 4px;
   border-radius: 4px;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-left: -4px; /* Сдвигаю кнопку ближе к дате */
+  margin-left: -4px;
 }
 
 .manual-button:hover {
@@ -242,7 +306,7 @@ onUnmounted(() => {
 }
 
 .material-icons {
-  font-size: 25px; /* Уменьшил размер иконки */
+  font-size: 25px;
 }
 
 .scroll-to-top {
