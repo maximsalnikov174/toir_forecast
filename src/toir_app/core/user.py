@@ -4,6 +4,7 @@ from typing import Optional, Union
 from fastapi import Depends, Request
 from fastapi_users import (
     BaseUserManager,
+    exceptions,
     FastAPIUsers,
     IntegerIDMixin,
     InvalidPasswordException,
@@ -113,6 +114,35 @@ class UserManager(IntegerIDMixin, BaseUserManager[User, int]):
                     'Одумайтесь, пароль должен содержать'
                     f' не менее {MIN_PASSWORD_LEN} символов'
                 )
+            )
+
+    async def authenticate(self, credentials):
+        """Аутентификация пользователя.
+
+        ## CHECKING:
+        - неправильный email;
+        - неправильный пароль;
+
+        ## RETURNS:
+        - уведомление в админ-чат Telegram (независимо от результата);
+        - передача пользователя дальше в `/login` или `None + Exception`.
+        """
+        try:
+            result = await super().authenticate(credentials)
+            if not result:
+                await bot_schedular.send_notification_for_admin(
+                    f'🤦‍♂️ {credentials.username} не прошел аутентификацию.\n'
+                    'Проблемы с паролем.'
+                )
+            else:
+                await bot_schedular.send_notification_for_admin(
+                    f'👋 {credentials.username} вошёл в систему.'
+                )
+                return result
+
+        except InvalidEmailException:
+            await bot_schedular.send_notification_for_admin(
+                f'🤦‍♂️ {credentials.username} неверно указал свой email.'
             )
 
     async def on_after_register(
