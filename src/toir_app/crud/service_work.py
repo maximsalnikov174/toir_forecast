@@ -490,7 +490,9 @@ async def create_main_table(
 
 def check_users_can_edit_service_work(
         user: User,
-        service_work: ServiceWork
+        service_work: ServiceWork,
+        *,
+        for_master: bool = False,
 ) -> None:
     """Проверка полномочий юзера для редактирования карточки `ServiceWork`.
 
@@ -498,24 +500,49 @@ def check_users_can_edit_service_work(
     - Пользователь должен быть валидирован админом.
     - Если пользователь имеет права «Только чтение» или он является сотрудником
     другого подразделения - действия невозможны.
+    - Настроена валидация для мастерских (описать)
     """
     if not user.is_verified:
         raise HTTPException(
             status_code=HTTPStatus.FORBIDDEN,
-            detail='Требуется подтверждение администратора!'
+            detail=(
+                'Требуется подтверждение аккаунта пользователя '
+                'администратором!'
+            )
         )
 
+    # Проверка роли "только чтение" (кроме суперюзеров)
     if (
         user.users_role.name == UserRole.READ_ONLY.value
-        or (
-            service_work.car.organization_id != user.organization_id
-            and not user.is_superuser
-        )
+        and not user.is_superuser
     ):
         raise HTTPException(
             status_code=HTTPStatus.FORBIDDEN,
             detail='Недостаточно прав!'
         )
+
+    # Проверка принадлежности к подразделению (кроме суперюзеров)
+    if not user.is_superuser:
+        if for_master:
+            # Для мастера: проверка станции
+            if (
+                service_work.station_id and user.users_organization and
+                service_work.station_id != user.users_organization.station_id
+            ):
+                raise HTTPException(
+                    status_code=HTTPStatus.FORBIDDEN,
+                    detail='Недостаточно прав! Нужна «Мастерская»'
+                )
+        else:
+            # Для обычного пользователя: проверка организации
+            if (
+                service_work.car and service_work.car.organization_id and
+                service_work.car.organization_id != user.organization_id
+            ):
+                raise HTTPException(
+                    status_code=HTTPStatus.FORBIDDEN,
+                    detail='Недостаточно прав! Нужен «перевозчик»!'
+                )
 
 
 async def get_db_status(session: AsyncSession) -> dict[str, str]:
@@ -534,11 +561,18 @@ async def update_completed_real_service_work(
         user: User,
         session: AsyncSession
 ):
-    """Обновление поля фактического завершения работ в service_work."""
+    """Обновление `service_work_completed` (фактического завершения работ)
+
+    Для `service_work`, которые были фактически сделаны (только мастерская).
+    """
     service_work = await get_service_work(service_work_id, session)
 
     if service_work:
-        check_users_can_edit_service_work(user, service_work)
+        check_users_can_edit_service_work(
+            user=user,
+            service_work=service_work,
+            for_master=True
+        )
         if not service_work.zvr_number:
             raise HTTPException(
                 status_code=HTTPStatus.UNPROCESSABLE_ENTITY,

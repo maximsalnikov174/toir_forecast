@@ -75,7 +75,7 @@ async def add_zvr_to_service_work(
             detail='У данной работы ЗВР уже существует.'
         )
 
-    check_users_can_edit_service_work(user, service_work)
+    check_users_can_edit_service_work(user=user, service_work=service_work)
     await check_zvr_unique(zvr_attr.zvr_number, session)
 
     try:
