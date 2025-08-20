@@ -115,7 +115,7 @@ import LoginRegisterDialog from 'src/components/UI/Windows/LoginRegisterDialog.v
 import { useAuthStore } from 'src/stores/useAuthStore'
 import { getCurrentDateInDB } from 'src/components/Functions/CurrentDateInDB'
 import ColorsOfRepairShops from '../components/Cards/ColorsOfRepairShops.vue'
-import { api } from "../boot/axios.js";
+import { masterApi } from "src/components/Functions/masterApi.js";
 
 const loading = ref(false)
 const showScrollButton = ref(false)
@@ -202,48 +202,12 @@ const loadMasterData = async () => {
 
     console.log('Загрузка данных для мастера...')
 
-    // Загрузка данных таблицы
-    const tableResponse = await api.post(
-      '/service_work/get_table_for_master',
-      [],
-      {
-        headers: {
-          'accept': 'application/json',
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        }
-      }
-    )
-    const filteredData = tableResponse.data.filter(item => item !== null)
-    handleTableDataFetched(filteredData)
+    // Используем API функции из отдельного файла
+    const masterData = await masterApi.loadAllMasterData(token)
 
-    // Загрузка сервисов
-    const servicesResponse = await api.post(
-      '/service_name/all_service_names_for_master',
-      [],
-      {
-        headers: {
-          'accept': 'application/json',
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        }
-      }
-    )
-    handleServicesFetched(servicesResponse.data)
-
-    // Загрузка автомобилей
-    const carsResponse = await api.post(
-      '/car/with_many_statuses_for_master',
-      [],
-      {
-        headers: {
-          'accept': 'application/json',
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        }
-      }
-    )
-    handleCarsFetched(carsResponse.data)
+    handleTableDataFetched(masterData.tableData)
+    handleServicesFetched(masterData.services)
+    handleCarsFetched(masterData.cars)
 
   } catch (error) {
     console.error('Ошибка при загрузке данных мастера:', error)
