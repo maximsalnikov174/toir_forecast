@@ -135,7 +135,7 @@ export default defineComponent({
     })
 
     const showPlusIcon = computed(() => {
-      return authStore.user?.is_superuser || authStore.user?.organization_id === selectedDivId.value
+      return authStore.user?.is_superuser || authStore.user?.users_organization.id === selectedDivId.value
     })
 
     const statusImage = computed(() => {
