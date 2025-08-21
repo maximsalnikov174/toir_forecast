@@ -4,6 +4,11 @@
     @mouseover="hover = true"
     @mouseleave="hover = false"
     @click="handleCardClick"
+    @drop.prevent="handleDrop"
+    @dragover.prevent="dragOver = true"
+    @dragenter.prevent="handleDragEnter"
+    @dragleave="handleDragLeave"
+    :class="{ 'drag-over': dragOver }"
   >
     <!-- Верхняя полоска -->
     <div
@@ -41,6 +46,17 @@
       <div class="plus-icon">+</div>
     </div>
 
+    <!-- Оверлей для drag-and-drop -->
+    <div
+      v-if="dragOver"
+      class="drag-overlay"
+    >
+      <div class="drag-content">
+        <div class="drag-icon">📁</div>
+        <div class="drag-text">Перетащите файл сюда</div>
+      </div>
+    </div>
+
     <ModalWindow
       v-model:show="showModal"
       :serviceWorkId="serviceWorkId"
@@ -68,6 +84,8 @@ import ModalWindow from '../ModalWindow.vue';
 import WindowCompletion from '../WindowCompletion.vue';
 
 const hover = ref(false);
+const dragOver = ref(false);
+const dragCounter = ref(0); // Счетчик для отслеживания входа/выхода
 const showModal = ref(false);
 const showCompletionModal = ref(false);
 const { selectedDivId } = useFilterStore();
@@ -121,6 +139,8 @@ const props = defineProps({
   }
 });
 
+const emit = defineEmits(['file-dropped', 'submitted']);
+
 const topBarClass = computed(() => {
   if (!props.station?.id) return '';
 
@@ -162,6 +182,38 @@ const handleOverlayClick = () => {
     openCompletionModal();
   } else {
     openModal();
+  }
+};
+
+const handleDragEnter = (e) => {
+  e.preventDefault();
+  dragCounter.value++;
+  dragOver.value = true;
+};
+
+const handleDragLeave = (e) => {
+  e.preventDefault();
+  dragCounter.value--;
+
+  // Сбрасываем состояние только когда курсор полностью вышел за пределы элемента
+  if (dragCounter.value === 0) {
+    dragOver.value = false;
+  }
+};
+
+const handleDrop = (event) => {
+  dragOver.value = false;
+  dragCounter.value = 0;
+
+  // Получаем перетащенные файлы
+  const files = event.dataTransfer.files;
+
+  if (files.length > 0) {
+    // Эмитируем событие с файлом и ID карточки
+    emit('file-dropped', {
+      file: files[0],
+      cardId: props.id
+    });
   }
 };
 
@@ -238,6 +290,13 @@ const showBottomBar = computed(() => {
   position: relative;
   flex-shrink: 0;
   cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.service-status-card.drag-over {
+  border: 1px dashed #ffffff;
+  background-color: rgba(106, 13, 173, 0.1);
+  transform: scale(1);
 }
 
 .station-purple {
@@ -348,6 +407,7 @@ const showBottomBar = computed(() => {
   background-color: rgba(128, 0, 128, 0.3);
   border-radius: 8px;
   cursor: pointer;
+  z-index: 5;
 }
 
 /* Отдельный оверлей для плюсика */
@@ -363,6 +423,7 @@ const showBottomBar = computed(() => {
   align-items: center;
   justify-content: center;
   cursor: pointer;
+  z-index: 5;
 }
 
 .plus-icon {
@@ -370,5 +431,34 @@ const showBottomBar = computed(() => {
   font-weight: bold;
   color: white;
   text-shadow: 0 0 3px rgba(0, 0, 0, 0.5);
+}
+
+/* Оверлей для drag-and-drop */
+.drag-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 99%;
+  height: 100%;
+  background-color: rgba(106, 13, 173, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none; /* Важно: предотвращаем взаимодействие с оверлеем */
+}
+
+.drag-content {
+  text-align: center;
+}
+
+.drag-icon {
+  font-size: 24px;
+  margin-bottom: 5px;
+}
+
+.drag-text {
+  font-size: 12px;
+  font-weight: bold;
+  color: #ffffff;
 }
 </style>
