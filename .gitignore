@@ -27,6 +27,7 @@ share/python-wheels/
 MANIFEST
 .vscode/
 csv_data/
+pdf_data/
 logs/
 *toir.db
 *db.bak

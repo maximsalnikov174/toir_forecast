@@ -22,6 +22,7 @@ CAR_GRZ_LEN = 20  # Длина гос рег знака (У 123 АЕ 174)
 SERVICE_STATUS_NAME_LEN = 40  # Длина вида обслуживания (ТО-1, ТО ГБО и тд)
 STATION_NAME_LEN = 10
 MAX_SPECIAL_STATUS_VALID = 180
+IMG_LOCATION_LEN = 10
 
 pattern_grz = (
     r'^([АВЕКМНОРСТУХ]{1,2})\s'
@@ -36,6 +37,8 @@ pattern_grz_input_user = (
     r'([АВЕКМНОРСТУХ]{2})?\s?'
     r'([1,7][4,7]4*)'
 )
+EXTRUDE_SYMBOLS_IN_HEADER = r'[\n\s-]'  # удаление шума из шапки таблицы pdf
+SNB_PATTERN = r'^СНБ\|\d{3}\|\d{8}$'
 ORGANIZATION_BASE_NAME_PATTERN = r'^Ю\d{2}$'
 ORGANIZATION_NORMAL_NAME_PATTERN = r'^(?:\d-)[А-Я]{1,3}|[А-Я]{3,4}$'
 WORDS_AND_DIGITS = r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[a-zA-Z\d!@%^*-_+=]+$'

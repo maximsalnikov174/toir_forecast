@@ -53,3 +53,7 @@ class ObjectIsExistException(Exception):
 
 class ObjectNotFoundException(Exception):
     """Объект в БД не найден."""
+
+
+class InsufficientDataError(Exception):
+    """Указание на отсутствие полноты данных в таблице."""
