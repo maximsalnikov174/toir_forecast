@@ -2,18 +2,24 @@ from datetime import datetime as dt
 from http import HTTPStatus
 from typing import Annotated, Dict, List, Optional
 
-from fastapi import APIRouter, Body, Depends, HTTPException, Query
+from fastapi import (
+    APIRouter, Body, Depends, HTTPException, Query, status, UploadFile
+)
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from api.endpoints.bot import bot_schedular
+from convert_pdf_to_py.unit_of_bom import get_payload_data_in_pdf_file
 from core.db import get_async_session
+# from core.minio import get_minio_client
 from core.user import current_user
+# from crud.docs_material import dao_bom
 from crud.organization import get_current_organization
 from crud.service_work import (
     check_users_can_edit_service_work,
     check_zvr_unique,
     create_main_table,
     create_main_table_for_master,
+    dao_service_work,
     get_active_service_work_count_for_all_service_status,
     get_active_service_work_list_by_car,
     get_all_active_service_work_with_open_zvr,
@@ -22,10 +28,13 @@ from crud.service_work import (
     update_completed_real_service_work
 )
 from models import EventForBot, Organization, SpecialStatus, User
+# from schemas.docs_material import BOMRead
 from schemas.service_work import (
     AddZvrSchema,
     ServiceWorkWithZVRNumber,
 )
+from schemas.unit_of_bom import UnitOfBOMRead
+
 
 router = APIRouter()
 
@@ -300,3 +309,71 @@ async def get_table_for_master(
         user=user,
         session=session,
     )
+
+
+# @router.post(
+#     '/{service_work_id}/bom',  # /service_work/1/bom
+#     response_model=BOMRead,
+#     status_code=status.HTTP_201_CREATED,
+#     dependencies=[Depends(current_user)]
+# )
+# async def upload_docs(
+#     service_work_id: int,
+#     file: UploadFile,
+#     session: AsyncSession = Depends(get_async_session),
+# ):
+#     """Отправка документа в карточку операции."""
+#     service_work = await dao_service_work.get_with_docs(
+#         obj_id=service_work_id,
+#         session=session,
+#     )
+
+#     if service_work is None:
+#         raise HTTPException(
+#             status_code=status.HTTP_404_NOT_FOUND,
+#             detail=f'Карточка работы #{service_work_id} не найдена',
+#         )
+
+#     client = get_minio_client()
+
+#     return await dao_bom.create_with_file(
+#         service_work_id=service_work_id,
+#         file=file,
+#         client=client
+#     )
+
+
+@router.post(
+    '/unit_of_bom',  # /service_work/1/unit_of_bom
+    response_model=UnitOfBOMRead,
+    status_code=status.HTTP_201_CREATED,
+    dependencies=[Depends(current_user)]
+)
+async def parse_docs(
+    service_work_id: int,
+    file: UploadFile,
+    user: User = Depends(current_user),
+    session: AsyncSession = Depends(get_async_session),
+):
+    """Отправка документа в карточку операции."""
+    service_work = await dao_service_work.get(
+        obj_id=service_work_id,
+        session=session,
+    )
+
+    if service_work is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f'Карточка работы #{service_work_id} не найдена',
+        )
+
+    units_of_bom = await get_payload_data_in_pdf_file(file=file)
+
+    result = UnitOfBOMRead(
+        unit_of_bom_list=units_of_bom,
+        service_work_id=service_work_id,
+        user_id=user.id,
+    )
+    # Теперь можно отправлять в БД
+
+    return result

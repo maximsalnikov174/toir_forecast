@@ -1,13 +1,17 @@
-from typing import Optional
+from typing import Generic, Optional, Type, TypeVar
 
 from fastapi.encoders import jsonable_encoder
+from pydantic import BaseModel
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 
-class DAOBase:
+T = TypeVar('T', bound=BaseModel)
 
-    def __init__(self, model):
+
+class DAOBase(Generic[T]):
+
+    def __init__(self, model: Type[T]):
         self.model = model
 
     async def get(

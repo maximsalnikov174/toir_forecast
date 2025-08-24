@@ -1,9 +1,10 @@
 import json
 import re
-from pathlib import Path
+from io import BytesIO
 from typing import Optional
 
 import pdfplumber
+from fastapi import UploadFile
 from pydantic import ValidationError
 
 from constants import EXTRUDE_SYMBOLS_IN_HEADER
@@ -20,20 +21,32 @@ target_headers = {
 }
 
 
-def get_payload_data_in_pdf_file(path: str) -> Optional[list[UnitOfBOMSchema]]:
+async def get_payload_data_in_pdf_file(
+        file: UploadFile,
+) -> Optional[list[UnitOfBOMSchema]]:
     """Сбор данных (дописать)."""
-    abs_file_path = f'{Path.cwd()}/pdf_data/{path}'
+    try:
+        # Читаем файл асинхронно
+        contents = await file.read()
 
-    with pdfplumber.open(abs_file_path) as pdf:
-        first_page = pdf.pages[0]
-        table = first_page.find_table()
+        # Используем BytesIO для работы с pdfplumber
+        data = BytesIO(contents)
 
-        if table is None:
-            return None
+        with pdfplumber.open(data) as pdf:
+            first_page = pdf.pages[0]
+            table = first_page.extract_table()
 
-        data = table.extract()
-        obj = parse_data_in_table_from_delivery(data)
-        return obj
+            if table is None:
+                return None
+
+            # data = table.extract()
+            obj = parse_data_in_table_from_delivery(table)
+            return obj
+
+    except Exception as e:
+        # Логируем ошибку
+        print(f"Ошибка при обработке PDF: {e}")
+        return None
 
 # делать проверку, сходится ли подразделение карточки service_work
 # (в каком Ю находится) c подразделением в отгрузке (подсказка для "нужно ли
@@ -105,7 +118,3 @@ def parse_data_in_table_from_delivery(
     except IndexError as e:
         print(f'Ошибка индекса: {e}')
         return None
-
-
-if __name__ == '__main__':
-    print(get_payload_data_in_pdf_file(path='mtl244_example.pdf'))
