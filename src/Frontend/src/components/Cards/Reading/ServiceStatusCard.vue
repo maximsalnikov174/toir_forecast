@@ -46,6 +46,16 @@
       <div class="plus-icon">+</div>
     </div>
 
+    <!-- Оверлей для документа (для station_id === 99) -->
+    <div
+      v-if="shouldShowDocumentHover"
+      class="document-hover-overlay"
+      @click.stop="handleDocumentClick"
+    >
+      <div class="document-icon">📄</div>
+      <div class="document-text">Просмотр документа</div>
+    </div>
+
     <!-- Оверлей для drag-and-drop -->
     <div
       v-if="dragOver"
@@ -73,6 +83,45 @@
       :onSubmitSuccess="handleApply"
       :onSubmitSuccessMaster="onSubmitSuccessMaster"
     />
+
+    <!-- Модальное окно для отображения таблицы доставки -->
+    <q-dialog v-model="showDeliveryModal" persistent>
+      <q-card class="delivery-modal">
+
+        <q-card-section class="q-pt-none delivery-content">
+          <!-- Обычная HTML таблица с явными границами -->
+          <table class="delivery-table bordered-table">
+            <thead>
+              <tr>
+                <th class="cell-border">Доставка</th>
+                <th class="cell-border">Номенклатурный номер</th>
+                <th class="cell-border">Кол-во запрошено</th>
+                <th class="cell-border">Организация получатель</th>
+                <th class="cell-border">Описание</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="item in deliveryData" :key="item.id">
+                <td class="cell-border">{{ item.delivery_info }}</td>
+                <td class="cell-border">{{ item.nomenclature_number }}</td>
+                <td class="cell-border text-center">{{ item.quantity_requested }}</td>
+                <td class="cell-border">{{ item.recipient_organization }}</td>
+                <td class="cell-border">{{ item.description }}</td>
+              </tr>
+              <tr v-if="deliveryData.length === 0">
+                <td colspan="5" class="cell-border text-center text-grey">
+                  Нет данных о доставке
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </q-card-section>
+
+        <q-card-actions align="right">
+          <q-btn label="Закрыть" color="primary" v-close-popup />
+        </q-card-actions>
+      </q-card>
+    </q-dialog>
   </div>
 </template>
 
@@ -87,12 +136,17 @@ import WindowCompletion from '../WindowCompletion.vue';
 
 const hover = ref(false);
 const dragOver = ref(false);
-const dragCounter = ref(0); // Счетчик для отслеживания входа/выхода
+const dragCounter = ref(0);
 const showModal = ref(false);
 const showCompletionModal = ref(false);
+const showDeliveryModal = ref(false);
 const { selectedDivId } = useFilterStore();
 const authStore = useAuthStore();
 const $q = useQuasar();
+
+// Данные для таблицы доставки
+const deliveryData = ref([]);
+const loading = ref(false);
 
 const showNotify = (options) => {
   $q.notify(options);
@@ -143,10 +197,14 @@ const props = defineProps({
   onSubmitSuccessMaster: {
     type: Function,
     default: () => {}
+  },
+  documentUrl: {
+    type: String,
+    default: null
   }
 });
 
-const emit = defineEmits(['file-dropped', 'submitted']);
+const emit = defineEmits(['file-dropped', 'submitted', 'document-click']);
 
 const topBarClass = computed(() => {
   if (!props.station?.id) return '';
@@ -162,6 +220,12 @@ const topBarClass = computed(() => {
 
 const serviceWorkId = ref(props.id);
 
+// Показывать иконку документа для пользователей со station_id === 99
+const shouldShowDocumentHover = computed(() => {
+  return hover.value &&
+         authStore.user?.users_organization?.station_id === 99;
+});
+
 const shouldShowPlusIcon = computed(() => {
   return hover.value &&
   (authStore.user?.is_superuser || authStore.user?.users_organization.id === selectedDivId.value)&&
@@ -173,6 +237,49 @@ const shouldShowHover = computed(() => {
          (authStore.user?.is_superuser || authStore.user?.users_organization.station_id !== null) &&
          !props.service_work_completed;
 });
+
+// Загрузка данных о доставке
+const loadDeliveryData = async () => {
+  loading.value = true;
+  try {
+    // Здесь должен быть API запрос для получения данных
+    // Временно используем mock данные
+    deliveryData.value = [
+      {
+        id: 1,
+        delivery_info: 'Доставка №12345',
+        nomenclature_number: 'ABC-123',
+        quantity_requested: 5,
+        recipient_organization: 'ООО "Ромашка"',
+        description: 'Запчасти для оборудования'
+      },
+      {
+        id: 2,
+        delivery_info: 'Доставка №12346',
+        nomenclature_number: 'XYZ-789',
+        quantity_requested: 3,
+        recipient_organization: 'ИП Иванов',
+        description: 'Расходные материалы'
+      },
+      {
+        id: 3,
+        delivery_info: 'Доставка №12347',
+        nomenclature_number: 'DEF-456',
+        quantity_requested: 10,
+        recipient_organization: 'ЗАО "Вектор"',
+        description: 'Инструменты'
+      }
+    ];
+  } catch  {
+    showNotify({
+      type: 'negative',
+      message: 'Ошибка при загрузке данных о доставке',
+      timeout: 3000
+    });
+  } finally {
+    loading.value = false;
+  }
+};
 
 const handleCardClick = () => {
   if (props.divId) {
@@ -192,6 +299,12 @@ const handleOverlayClick = () => {
   }
 };
 
+// Обработчик клика по документу
+const handleDocumentClick = async () => {
+  await loadDeliveryData();
+  showDeliveryModal.value = true;
+};
+
 const handleDragEnter = (e) => {
   e.preventDefault();
   dragCounter.value++;
@@ -202,7 +315,6 @@ const handleDragLeave = (e) => {
   e.preventDefault();
   dragCounter.value--;
 
-  // Сбрасываем состояние только когда курсор полностью вышел за пределы элемента
   if (dragCounter.value === 0) {
     dragOver.value = false;
   }
@@ -215,7 +327,6 @@ const handleDrop = async (event) => {
   const files = event.dataTransfer.files;
   if (files.length === 0) return;
 
-  // Проверяем размер файла (максимум 10MB)
   const maxSize = 10 * 1024 * 1024;
   if (files[0].size > maxSize) {
     showNotify({
@@ -236,13 +347,6 @@ const handleDrop = async (event) => {
         headers: {
           'Content-Type': 'multipart/form-data',
           'Authorization': `Bearer ${authStore.token}`
-        },
-        onUploadProgress: (progressEvent) => {
-          
-          const percent = Math.round(
-            (progressEvent.loaded * 100) / progressEvent.total
-          );
-          console.log(`Загружено: ${percent}%`);
         }
       }
     );
@@ -425,7 +529,7 @@ const showBottomBar = computed(() => {
   font-weight: 400;
   font-size: 10px;
   line-height: 100%;
-  color: #000000;
+  color: #000000; /* ИСПРАВЛЕНО: убраны кавычки и добавлен цвет */
 }
 
 .status-indicator {
@@ -492,6 +596,43 @@ const showBottomBar = computed(() => {
   text-shadow: 0 0 3px rgba(0, 0, 0, 0.5);
 }
 
+/* Оверлей для документа (для station_id === 99) */
+.document-hover-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 128, 0, 0.3);
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 6;
+  transition: background-color 0.2s ease;
+}
+
+.document-hover-overlay:hover {
+  background-color: rgba(0, 128, 0, 0.5);
+}
+
+.document-icon {
+  font-size: 32px;
+  margin-bottom: 5px;
+  filter: drop-shadow(0 0 2px rgba(0, 0, 0, 0.5));
+}
+
+.document-text {
+  font-size: 12px;
+  font-weight: bold;
+  color: white;
+  text-shadow: 0 0 2px rgba(0, 0, 0, 0.7);
+  text-align: center;
+  max-width: 90%;
+}
+
 /* Оверлей для drag-and-drop */
 .drag-overlay {
   position: absolute;
@@ -503,7 +644,7 @@ const showBottomBar = computed(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  pointer-events: none; /* Важно: предотвращаем взаимодействие с оверлеем */
+  pointer-events: none;
 }
 
 .drag-content {
@@ -519,5 +660,86 @@ const showBottomBar = computed(() => {
   font-size: 12px;
   font-weight: bold;
   color: #ffffff;
+}
+
+/* Стили для модального окна доставки */
+.delivery-modal {
+  min-width: 1000px;
+  max-width: 95vw;
+  max-height: 80vh;
+}
+
+.delivery-content {
+  max-height: 60vh;
+  overflow-y: auto;
+  padding: 0;
+}
+
+/* Стили для обычной HTML таблицы с явными границами и увеличенными ячейками */
+.bordered-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: 'Inter', sans-serif;
+  border: 2px solid #ddd;
+}
+
+.bordered-table th,
+.bordered-table td {
+  border: 1px solid #bdbdbd;
+  padding: 16px 12px;
+  font-size: 14px;
+  vertical-align: middle;
+  min-height: 50px;
+}
+
+.bordered-table th {
+  background-color: #e0e0e0;
+  font-weight: bold;
+  text-align: left;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  font-size: 15px;
+  padding: 18px 12px;
+}
+
+.bordered-table th.cell-border {
+  border-bottom: 2px solid #9e9e9e;
+}
+
+.bordered-table td.cell-border {
+  border: 1px solid #bdbdbd;
+}
+
+.bordered-table tr:hover {
+  background-color: #f5f5f5;
+}
+
+.bordered-table th:nth-child(3),
+.bordered-table td:nth-child(3) {
+  text-align: center;
+}
+
+/* Чередование цветов строк */
+.bordered-table tr:nth-child(even) {
+  background-color: #fafafa;
+}
+
+.bordered-table tr:nth-child(even):hover {
+  background-color: #f0f0f0;
+}
+
+.text-center {
+  text-align: center;
+}
+
+.text-grey {
+  color: #9e9e9e;
+  font-style: italic;
+}
+
+/* Убедимся, что все ячейки имеют границы */
+.cell-border {
+  border: 1px solid #bdbdbd !important;
 }
 </style>
