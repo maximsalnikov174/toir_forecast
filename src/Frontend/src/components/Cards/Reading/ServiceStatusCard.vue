@@ -77,6 +77,8 @@
 </template>
 
 <script setup>
+import { api } from 'boot/axios';
+import { useQuasar } from 'quasar';
 import { computed, ref } from 'vue';
 import { useFilterStore } from 'src/components/Functions/FilterStoreAcceptButton';
 import { useAuthStore } from 'src/stores/useAuthStore';
@@ -90,6 +92,11 @@ const showModal = ref(false);
 const showCompletionModal = ref(false);
 const { selectedDivId } = useFilterStore();
 const authStore = useAuthStore();
+const $q = useQuasar();
+
+const showNotify = (options) => {
+  $q.notify(options);
+};
 
 const props = defineProps({
   Divergence: {
@@ -201,18 +208,70 @@ const handleDragLeave = (e) => {
   }
 };
 
-const handleDrop = (event) => {
+const handleDrop = async (event) => {
   dragOver.value = false;
   dragCounter.value = 0;
 
-  // Получаем перетащенные файлы
   const files = event.dataTransfer.files;
+  if (files.length === 0) return;
 
-  if (files.length > 0) {
-    // Эмитируем событие с файлом и ID карточки
+  // Проверяем размер файла (максимум 10MB)
+  const maxSize = 10 * 1024 * 1024;
+  if (files[0].size > maxSize) {
+    showNotify({
+      type: 'negative',
+      message: 'Файл слишком большой (максимум 10MB)'
+    });
+    return;
+  }
+
+  try {
+    const formData = new FormData();
+    formData.append('bom_file', files[0]);
+
+    const response = await api.post(
+      `/api/service_works/${props.id}/bom`,
+      formData,
+      {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+          'Authorization': `Bearer ${authStore.token}`
+        },
+        onUploadProgress: (progressEvent) => {
+          
+          const percent = Math.round(
+            (progressEvent.loaded * 100) / progressEvent.total
+          );
+          console.log(`Загружено: ${percent}%`);
+        }
+      }
+    );
+
     emit('file-dropped', {
       file: files[0],
-      cardId: props.id
+      cardId: props.id,
+      response: response.data
+    });
+
+    showNotify({
+      type: 'positive',
+      message: 'Файл успешно загружен',
+      timeout: 2000
+    });
+
+  } catch (error) {
+    const errorMessage = error.response?.data?.detail || 'Ошибка при загрузке файла';
+
+    emit('file-dropped-error', {
+      file: files[0],
+      cardId: props.id,
+      error: error
+    });
+
+    showNotify({
+      type: 'negative',
+      message: errorMessage,
+      timeout: 3000
     });
   }
 };
