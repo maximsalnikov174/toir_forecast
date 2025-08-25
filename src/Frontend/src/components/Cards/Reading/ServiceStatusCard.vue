@@ -87,7 +87,6 @@
     <!-- Модальное окно для отображения таблицы доставки -->
     <q-dialog v-model="showDeliveryModal" persistent>
       <q-card class="delivery-modal">
-
         <q-card-section class="q-pt-none delivery-content">
           <!-- Обычная HTML таблица с явными границами -->
           <table class="delivery-table bordered-table">
@@ -95,26 +94,57 @@
               <tr>
                 <th class="cell-border">Доставка</th>
                 <th class="cell-border">Номенклатурный номер</th>
+                <th class="cell-border">Штрих-код</th>
                 <th class="cell-border">Кол-во запрошено</th>
                 <th class="cell-border">Организация получатель</th>
                 <th class="cell-border">Описание</th>
               </tr>
             </thead>
             <tbody>
-              <tr v-for="item in deliveryData" :key="item.id">
-                <td class="cell-border">{{ item.delivery_info }}</td>
-                <td class="cell-border">{{ item.nomenclature_number }}</td>
-                <td class="cell-border text-center">{{ item.quantity_requested }}</td>
-                <td class="cell-border">{{ item.recipient_organization }}</td>
-                <td class="cell-border">{{ item.description }}</td>
+              <tr
+                v-for="(item, index) in deliveryData"
+                :key="item.id"
+                :class="{ 'active-row': currentRowIndex === index && currentCellIndex >= 0 }"
+                @click="handleRowClick(index, $event)"
+              >
+                <td
+                  class="cell-border"
+                  :class="{ 'active-cell': currentRowIndex === index && currentCellIndex === 0 }"
+                >{{ item.delivery_info }}</td>
+                <td
+                  class="cell-border"
+                  :class="{ 'active-cell': currentRowIndex === index && currentCellIndex === 1 }"
+                >{{ item.nomenclature_number }}</td>
+                <td
+                  class="cell-border text-center"
+                  :class="{ 'active-cell': currentRowIndex === index && currentCellIndex === 2 }"
+                >
+                  <canvas :ref="'barcodeCanvas_' + item.id" class="barcode-canvas"></canvas>
+                </td>
+                <td
+                  class="cell-border text-center"
+                  :class="{ 'active-cell': currentRowIndex === index && currentCellIndex === 3 }"
+                >{{ item.quantity_requested }}</td>
+                <td
+                  class="cell-border"
+                  :class="{ 'active-cell': currentRowIndex === index && currentCellIndex === 4 }"
+                >{{ item.recipient_organization }}</td>
+                <td
+                  class="cell-border"
+                  :class="{ 'active-cell': currentRowIndex === index && currentCellIndex === 5 }"
+                >{{ item.description }}</td>
               </tr>
               <tr v-if="deliveryData.length === 0">
-                <td colspan="5" class="cell-border text-center text-grey">
+                <td colspan="6" class="cell-border text-center text-grey">
                   Нет данных о доставке
                 </td>
               </tr>
             </tbody>
           </table>
+        </q-card-section>
+
+        <q-card-section class="copy-status" v-if="copyStatus">
+          {{ copyStatus }}
         </q-card-section>
 
         <q-card-actions align="right">
@@ -128,11 +158,12 @@
 <script setup>
 import { api } from 'boot/axios';
 import { useQuasar } from 'quasar';
-import { computed, ref } from 'vue';
+import { computed, ref, nextTick, watch } from 'vue';
 import { useFilterStore } from 'src/components/Functions/FilterStoreAcceptButton';
 import { useAuthStore } from 'src/stores/useAuthStore';
 import ModalWindow from '../ModalWindow.vue';
 import WindowCompletion from '../WindowCompletion.vue';
+import JsBarcode from 'jsbarcode';
 
 const hover = ref(false);
 const dragOver = ref(false);
@@ -147,6 +178,11 @@ const $q = useQuasar();
 // Данные для таблицы доставки
 const deliveryData = ref([]);
 const loading = ref(false);
+
+// Переменные для отслеживания текущей позиции копирования
+const currentRowIndex = ref(-1);
+const currentCellIndex = ref(-1);
+const copyStatus = ref('');
 
 const showNotify = (options) => {
   $q.notify(options);
@@ -238,6 +274,140 @@ const shouldShowHover = computed(() => {
          !props.service_work_completed;
 });
 
+// Функция для генерации штрих-кодов
+const generateBarcodes = () => {
+  nextTick(() => {
+    deliveryData.value.forEach(item => {
+      const canvasRef = 'barcodeCanvas_' + item.id;
+      const canvas = document.querySelector(`[ref="${canvasRef}"]`);
+
+      if (canvas && item.nomenclature_number) {
+        try {
+          JsBarcode(canvas, item.nomenclature_number, {
+            format: "CODE128",
+            width: 2,
+            height: 40,
+            displayValue: false,
+            margin: 5
+          });
+        } catch (error) {
+          console.error('Ошибка генерации штрих-кода:', error);
+        }
+      }
+    });
+  });
+};
+
+// Обработчик клика по строке таблицы
+const handleRowClick = (rowIndex, event) => {
+  // Если клик был по canvas (штрих-коду), не обрабатываем
+  if (event.target.tagName === 'CANVAS') return;
+
+  // Если это новая строка, сбрасываем индекс ячейки
+  if (rowIndex !== currentRowIndex.value) {
+    currentRowIndex.value = rowIndex;
+    currentCellIndex.value = 0;
+  } else {
+    // Переходим к следующей ячейке
+    currentCellIndex.value = (currentCellIndex.value + 1) % 6;
+  }
+
+  // Копируем содержимое текущей ячейки
+  const cellValue = getCellValue(rowIndex, currentCellIndex.value);
+  copyToClipboard(cellValue);
+
+  // Показываем статус копирования
+  const columnNames = ['Доставка', 'Номенклатурный номер', 'Штрих-код', 'Кол-во', 'Организация', 'Описание'];
+  copyStatus.value = `Скопировано: ${columnNames[currentCellIndex.value]} - ${cellValue}`;
+
+  // Автоматически скрываем статус через 2 секунды
+  setTimeout(() => {
+    copyStatus.value = '';
+  }, 2000);
+};
+
+// Получение значения ячейки
+const getCellValue = (rowIndex, cellIndex) => {
+  const row = deliveryData.value[rowIndex];
+  if (!row) return '';
+
+  switch (cellIndex) {
+    case 0: return row.delivery_info || '';
+    case 1: return row.nomenclature_number || '';
+    case 2: return row.nomenclature_number || ''; // Для штрих-кода используем тот же номер
+    case 3: return row.quantity_requested || '';
+    case 4: return row.recipient_organization || '';
+    case 5: return row.description || '';
+    default: return '';
+  }
+};
+
+// Копирование текста в буфер обмена (работает с HTTP)
+const copyToClipboard = (text) => {
+  // Создаем временный textarea элемент
+  const textArea = document.createElement('textarea');
+  textArea.value = text;
+  textArea.style.position = 'fixed';
+  textArea.style.top = '0';
+  textArea.style.left = '0';
+  textArea.style.opacity = '0';
+
+  document.body.appendChild(textArea);
+  textArea.focus();
+  textArea.select();
+
+  try {
+    // Пытаемся использовать современный API
+    if (navigator.clipboard && window.isSecureContext) {
+      navigator.clipboard.writeText(text).then(() => {
+        console.log('Текст скопирован через Clipboard API');
+      }).catch(err => {
+        console.error('Ошибка Clipboard API:', err);
+        // Fallback для HTTP
+        fallbackCopy(textArea);
+      });
+    } else {
+      // Fallback для HTTP
+      fallbackCopy(textArea);
+    }
+  } catch (err) {
+    console.error('Ошибка копирования:', err);
+    fallbackCopy(textArea);
+  } finally {
+    document.body.removeChild(textArea);
+  }
+};
+
+// Fallback метод копирования для HTTP
+const fallbackCopy = () => {
+  try {
+    // Старый метод для HTTP
+    const successful = document.execCommand('copy');
+    if (successful) {
+      console.log('Текст скопирован через execCommand');
+    } else {
+      console.error('Не удалось скопировать текст');
+      showNotify({
+        type: 'negative',
+        message: 'Не удалось скопировать текст. Разрешите доступ к буферу обмена.',
+        timeout: 3000
+      });
+    }
+  } catch (err) {
+    console.error('Ошибка fallback копирования:', err);
+    showNotify({
+      type: 'negative',
+      message: 'Не удалось скопировать текст',
+      timeout: 3000
+    });
+  }
+};
+
+// Следим за изменениями в данных доставки и генерируем штрих-коды
+watch(deliveryData, () => {
+  generateBarcodes();
+});
+
 // Загрузка данных о доставке
 const loadDeliveryData = async () => {
   loading.value = true;
@@ -270,6 +440,9 @@ const loadDeliveryData = async () => {
         description: 'Инструменты'
       }
     ];
+
+    // Генерируем штрих-коды после загрузки данных
+    generateBarcodes();
   } catch  {
     showNotify({
       type: 'negative',
@@ -301,6 +474,11 @@ const handleOverlayClick = () => {
 
 // Обработчик клика по документу
 const handleDocumentClick = async () => {
+  // Сбрасываем состояние копирования при открытии модального окна
+  currentRowIndex.value = -1;
+  currentCellIndex.value = -1;
+  copyStatus.value = '';
+
   await loadDeliveryData();
   showDeliveryModal.value = true;
 };
@@ -664,7 +842,7 @@ const showBottomBar = computed(() => {
 
 /* Стили для модального окна доставки */
 .delivery-modal {
-  min-width: 1000px;
+  min-width: 1100px;
   max-width: 95vw;
   max-height: 80vh;
 }
@@ -690,6 +868,8 @@ const showBottomBar = computed(() => {
   font-size: 14px;
   vertical-align: middle;
   min-height: 50px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
 }
 
 .bordered-table th {
@@ -701,6 +881,7 @@ const showBottomBar = computed(() => {
   z-index: 1;
   font-size: 15px;
   padding: 18px 12px;
+  cursor: default;
 }
 
 .bordered-table th.cell-border {
@@ -716,7 +897,9 @@ const showBottomBar = computed(() => {
 }
 
 .bordered-table th:nth-child(3),
-.bordered-table td:nth-child(3) {
+.bordered-table td:nth-child(3),
+.bordered-table th:nth-child(4),
+.bordered-table td:nth-child(4) {
   text-align: center;
 }
 
@@ -727,6 +910,16 @@ const showBottomBar = computed(() => {
 
 .bordered-table tr:nth-child(even):hover {
   background-color: #f0f0f0;
+}
+
+/* Стили для активной строки и ячейки */
+.active-row {
+  background-color: #e3f2fd !important;
+}
+
+.active-cell {
+  background-color: #bbdefb !important;
+  font-weight: bold;
 }
 
 .text-center {
@@ -741,5 +934,24 @@ const showBottomBar = computed(() => {
 /* Убедимся, что все ячейки имеют границы */
 .cell-border {
   border: 1px solid #bdbdbd !important;
+}
+
+/* Стили для canvas штрих-кода */
+.barcode-canvas {
+  display: block;
+  margin: 0 auto;
+  max-width: 100%;
+  height: 50px;
+}
+
+/* Стили для статуса копирования */
+.copy-status {
+  background-color: #e8f5e9;
+  color: #2e7d32;
+  padding: 8px 16px;
+  border-radius: 4px;
+  margin: 10px 16px;
+  font-weight: 500;
+  text-align: center;
 }
 </style>
