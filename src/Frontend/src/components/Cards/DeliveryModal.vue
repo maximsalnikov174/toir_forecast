@@ -39,28 +39,28 @@
                 class="cell-border text-center"
                 :class="{
                   'active-cell': currentRowIndex === index && currentCellIndex === 2,
-                  'copied-cell': copiedCells.has(`${index}-3`)
+                  'copied-cell': copiedCells.has(`${index}-2`)
                 }"
               >{{ item.quantity_requested }}</td>
               <td
                 class="cell-border"
                 :class="{
                   'active-cell': currentRowIndex === index && currentCellIndex === 3,
-                  'copied-cell': copiedCells.has(`${index}-4`)
+                  'copied-cell': copiedCells.has(`${index}-3`)
                 }"
               >{{ item.recipient_organization }}</td>
               <td
                 class="cell-border"
                 :class="{
                   'active-cell': currentRowIndex === index && currentCellIndex === 4,
-                  'copied-cell': copiedCells.has(`${index}-5`)
+                  'copied-cell': copiedCells.has(`${index}-4`)
                 }"
               >{{ item.description }}</td>
               <td
                 class="cell-border text-center"
                 :class="{
                   'active-cell': currentRowIndex === index && currentCellIndex === 5,
-                  'copied-cell': copiedCells.has(`${index}-2`)
+                  'copied-cell': copiedCells.has(`${index}-5`)
                 }"
                 @click.stop="handleBarcodeClick"
               >
@@ -195,7 +195,7 @@ const handleRowClick = (rowIndex, event) => {
     // Пропускаем ячейку со штрих-кодом (индекс 2)
     currentCellIndex.value = (currentCellIndex.value + 1) % 6;
     // Если попали на ячейку со штрих-кодом, переходим к следующей
-    if (currentCellIndex.value === 2) {
+    if (currentCellIndex.value === 5) {
       currentCellIndex.value = (currentCellIndex.value + 1) % 6;
     }
   }
@@ -207,12 +207,6 @@ const handleRowClick = (rowIndex, event) => {
   const cellId = `${rowIndex}-${currentCellIndex.value}`;
   copiedCells.value.add(cellId);
 
-  const columnNames = ['Доставка', 'Номенклатурный номер','Кол-во', 'Организация', 'Описание','Штрих-код'];
-  copyStatus.value = `Скопировано: ${columnNames[currentCellIndex.value]} - ${cellValue}`;
-
-  setTimeout(() => {
-    copyStatus.value = '';
-  }, 5000);
 };
 
 // Сброс выделения скопированных ячеек
