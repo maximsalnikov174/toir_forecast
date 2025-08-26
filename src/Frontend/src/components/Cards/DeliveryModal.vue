@@ -38,28 +38,28 @@
               <td
                 class="cell-border text-center"
                 :class="{
-                  'active-cell': currentRowIndex === index && currentCellIndex === 3,
+                  'active-cell': currentRowIndex === index && currentCellIndex === 2,
                   'copied-cell': copiedCells.has(`${index}-3`)
                 }"
               >{{ item.quantity_requested }}</td>
               <td
                 class="cell-border"
                 :class="{
-                  'active-cell': currentRowIndex === index && currentCellIndex === 4,
+                  'active-cell': currentRowIndex === index && currentCellIndex === 3,
                   'copied-cell': copiedCells.has(`${index}-4`)
                 }"
               >{{ item.recipient_organization }}</td>
               <td
                 class="cell-border"
                 :class="{
-                  'active-cell': currentRowIndex === index && currentCellIndex === 5,
+                  'active-cell': currentRowIndex === index && currentCellIndex === 4,
                   'copied-cell': copiedCells.has(`${index}-5`)
                 }"
               >{{ item.description }}</td>
               <td
                 class="cell-border text-center"
                 :class="{
-                  'active-cell': currentRowIndex === index && currentCellIndex === 2,
+                  'active-cell': currentRowIndex === index && currentCellIndex === 5,
                   'copied-cell': copiedCells.has(`${index}-2`)
                 }"
                 @click.stop="handleBarcodeClick"
@@ -124,12 +124,19 @@ watch(() => props.modelValue, (value) => {
   showModal.value = value;
   if (value) {
     generateBarcodes();
+  } else {
+    // Сбрасываем все состояния при закрытии через пропс
+    resetAllStates();
   }
 });
 
 watch(showModal, (value) => {
   if (value !== props.modelValue) {
     emit('update:modelValue', value);
+  }
+  if (!value) {
+    // Сбрасываем все состояния при закрытии через кнопку
+    resetAllStates();
   }
 });
 
@@ -168,6 +175,14 @@ const generateBarcodes = () => {
   });
 };
 
+// Сброс всех состояний
+const resetAllStates = () => {
+  currentRowIndex.value = -1;
+  currentCellIndex.value = -1;
+  copyStatus.value = '';
+  copiedCells.value.clear();
+};
+
 // Обработчик клика по строке таблицы
 const handleRowClick = (rowIndex, event) => {
   // Если клик был по canvas (штрих-коду), не обрабатываем
@@ -192,7 +207,7 @@ const handleRowClick = (rowIndex, event) => {
   const cellId = `${rowIndex}-${currentCellIndex.value}`;
   copiedCells.value.add(cellId);
 
-  const columnNames = ['Доставка', 'Номенклатурный номер', 'Кол-во', 'Организация', 'Описание','Штрих-код',];
+  const columnNames = ['Доставка', 'Номенклатурный номер','Кол-во', 'Организация', 'Описание','Штрих-код'];
   copyStatus.value = `Скопировано: ${columnNames[currentCellIndex.value]} - ${cellValue}`;
 
   setTimeout(() => {
@@ -213,10 +228,10 @@ const getCellValue = (rowIndex, cellIndex) => {
   switch (cellIndex) {
     case 0: return row.delivery_info || '';
     case 1: return row.nomenclature_number || '';
-    case 2: return ''; // Пустая строка для штрих-кода
-    case 3: return row.quantity_requested || '';
-    case 4: return row.recipient_organization || '';
-    case 5: return row.description || '';
+    case 2: return row.quantity_requested || '';
+    case 3: return row.recipient_organization || '';
+    case 4: return row.description || '';
+    case 5: return ''; // Пустая строка для штрих-кода
     default: return '';
   }
 };
@@ -277,7 +292,6 @@ const showNotify = (options) => {
 
 const closeModal = () => {
   showModal.value = false;
-  copiedCells.value.clear(); // Очищаем скопированные ячейки при закрытии
   emit('close');
 };
 
