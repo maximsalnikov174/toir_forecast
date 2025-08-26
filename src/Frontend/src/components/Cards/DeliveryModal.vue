@@ -31,13 +31,6 @@
               >{{ item.nomenclature_number }}</td>
               <td
                 class="cell-border text-center"
-                :class="{ 'active-cell': currentRowIndex === index && currentCellIndex === 2 }"
-                @click.stop="handleBarcodeClick"
-              >
-                <canvas :ref="el => setBarcodeRef(el, item.id)" class="barcode-canvas"></canvas>
-              </td>
-              <td
-                class="cell-border text-center"
                 :class="{ 'active-cell': currentRowIndex === index && currentCellIndex === 3 }"
               >{{ item.quantity_requested }}</td>
               <td
@@ -48,6 +41,13 @@
                 class="cell-border"
                 :class="{ 'active-cell': currentRowIndex === index && currentCellIndex === 5 }"
               >{{ item.description }}</td>
+              <td
+                class="cell-border text-center"
+                :class="{ 'active-cell': currentRowIndex === index && currentCellIndex === 2 }"
+                @click.stop="handleBarcodeClick"
+              >
+                <canvas :ref="el => setBarcodeRef(el, item.id)" class="barcode-canvas"></canvas>
+              </td>
             </tr>
             <tr v-if="deliveryData.length === 0">
               <td colspan="6" class="cell-border text-center text-grey">
