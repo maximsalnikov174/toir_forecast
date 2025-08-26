@@ -8,10 +8,10 @@
             <tr>
               <th class="cell-border">Доставка</th>
               <th class="cell-border">Номенклатурный номер</th>
-              <th class="cell-border">Штрих-код</th>
               <th class="cell-border">Кол-во запрошено</th>
               <th class="cell-border">Организация получатель</th>
               <th class="cell-border">Описание</th>
+              <th class="cell-border">Штрих-код</th>
             </tr>
           </thead>
           <tbody>
@@ -23,27 +23,45 @@
             >
               <td
                 class="cell-border"
-                :class="{ 'active-cell': currentRowIndex === index && currentCellIndex === 0 }"
+                :class="{
+                  'active-cell': currentRowIndex === index && currentCellIndex === 0,
+                  'copied-cell': copiedCells.has(`${index}-0`)
+                }"
               >{{ item.delivery_info }}</td>
               <td
                 class="cell-border"
-                :class="{ 'active-cell': currentRowIndex === index && currentCellIndex === 1 }"
+                :class="{
+                  'active-cell': currentRowIndex === index && currentCellIndex === 1,
+                  'copied-cell': copiedCells.has(`${index}-1`)
+                }"
               >{{ item.nomenclature_number }}</td>
               <td
                 class="cell-border text-center"
-                :class="{ 'active-cell': currentRowIndex === index && currentCellIndex === 3 }"
+                :class="{
+                  'active-cell': currentRowIndex === index && currentCellIndex === 3,
+                  'copied-cell': copiedCells.has(`${index}-3`)
+                }"
               >{{ item.quantity_requested }}</td>
               <td
                 class="cell-border"
-                :class="{ 'active-cell': currentRowIndex === index && currentCellIndex === 4 }"
+                :class="{
+                  'active-cell': currentRowIndex === index && currentCellIndex === 4,
+                  'copied-cell': copiedCells.has(`${index}-4`)
+                }"
               >{{ item.recipient_organization }}</td>
               <td
                 class="cell-border"
-                :class="{ 'active-cell': currentRowIndex === index && currentCellIndex === 5 }"
+                :class="{
+                  'active-cell': currentRowIndex === index && currentCellIndex === 5,
+                  'copied-cell': copiedCells.has(`${index}-5`)
+                }"
               >{{ item.description }}</td>
               <td
                 class="cell-border text-center"
-                :class="{ 'active-cell': currentRowIndex === index && currentCellIndex === 2 }"
+                :class="{
+                  'active-cell': currentRowIndex === index && currentCellIndex === 2,
+                  'copied-cell': copiedCells.has(`${index}-2`)
+                }"
                 @click.stop="handleBarcodeClick"
               >
                 <canvas :ref="el => setBarcodeRef(el, item.id)" class="barcode-canvas"></canvas>
@@ -64,6 +82,12 @@
 
       <q-card-actions align="right">
         <q-btn label="Закрыть" color="primary" @click="closeModal" />
+        <q-btn
+          label="Сбросить выделение"
+          color="secondary"
+          @click="resetCopiedCells"
+          v-if="copiedCells.size > 0"
+        />
       </q-card-actions>
     </q-card>
   </q-dialog>
@@ -80,6 +104,7 @@ const currentRowIndex = ref(-1);
 const currentCellIndex = ref(-1);
 const copyStatus = ref('');
 const barcodeRefs = ref({});
+const copiedCells = ref(new Set()); // Храним ID скопированных ячеек
 
 const emit = defineEmits(['close', 'update:modelValue']);
 
@@ -163,12 +188,21 @@ const handleRowClick = (rowIndex, event) => {
   const cellValue = getCellValue(rowIndex, currentCellIndex.value);
   copyToClipboard(cellValue);
 
-  const columnNames = ['Доставка', 'Номенклатурный номер', 'Штрих-код', 'Кол-во', 'Организация', 'Описание'];
+  // Добавляем ячейку в множество скопированных
+  const cellId = `${rowIndex}-${currentCellIndex.value}`;
+  copiedCells.value.add(cellId);
+
+  const columnNames = ['Доставка', 'Номенклатурный номер', 'Кол-во', 'Организация', 'Описание','Штрих-код',];
   copyStatus.value = `Скопировано: ${columnNames[currentCellIndex.value]} - ${cellValue}`;
 
   setTimeout(() => {
     copyStatus.value = '';
-  }, 2000);
+  }, 5000);
+};
+
+// Сброс выделения скопированных ячеек
+const resetCopiedCells = () => {
+  copiedCells.value.clear();
 };
 
 // Получение значения ячейки
@@ -243,6 +277,7 @@ const showNotify = (options) => {
 
 const closeModal = () => {
   showModal.value = false;
+  copiedCells.value.clear(); // Очищаем скопированные ячейки при закрытии
   emit('close');
 };
 
@@ -338,6 +373,24 @@ onMounted(() => {
 .active-cell {
   background-color: #bbdefb !important;
   font-weight: bold;
+}
+
+/* Стили для скопированных ячеек */
+.copied-cell {
+  background-color: #c8e6c9 !important; /* Светло-зеленый фон */
+  border: 2px solid #4caf50 !important; /* Зеленая рамка */
+  font-weight: bold;
+  position: relative;
+}
+
+.copied-cell::after {
+  content: "✓";
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  color: #4caf50;
+  font-weight: bold;
+  font-size: 12px;
 }
 
 .text-center {
