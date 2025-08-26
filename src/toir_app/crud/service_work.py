@@ -11,6 +11,7 @@ from sqlalchemy.orm import selectinload
 
 from api.endpoints.bot import bot_schedular
 from constants import PATTERN_DATE_OEBS
+from crud.base import DAOBase
 from crud.car import (
     get_car_by_pk,
     get_cars_with_request_and_special_status,
@@ -38,6 +39,26 @@ from schemas.service_work import (
     CarAtributesInServiceWork,
     ServiceWorkBase,
 )
+
+
+class DAOServiceWork(DAOBase[ServiceWork]):
+    """DAO для работы с моделью карточек работ."""
+
+    # async def get_with_docs(
+    #         self,
+    #         obj_id: int,
+    #         session: AsyncSession,
+    # ) -> Optional[ServiceWork]:
+    #     """Получение карточки работы с документами по идентификатору."""
+    #     stmt = (
+    #         select(self.model)
+    #         .options(selectinload(self.model.docs_in_service_work))
+    #         .where(self.model.id == obj_id)
+    #     )
+    #     return await session.scalar(stmt)
+
+
+dao_service_work = DAOServiceWork(ServiceWork)
 
 
 async def get_service_work(
@@ -379,7 +400,7 @@ async def _get_service_work_for_car_and_service_name(
     if station_id:
         stmt = stmt.where(
             ServiceWork.station_id == station_id,
-            ServiceWork.service_work_completed.is_(None)
+            ServiceWork.service_work_completed.is_(None),
         )
 
     # Собираем для цеха перевозки:
@@ -499,11 +520,16 @@ def check_users_can_edit_service_work(
 ) -> None:
     """Проверка полномочий юзера для редактирования карточки `ServiceWork`.
 
+    ## Args:
+    - `for_master` если у пользователя нужно проверить связь с мастерской при
+    наступлении события, когда ранее выбранная механиком в карточке
+    `servise_work` `station_id` сверяется с `station_id` связанной
+    с `organization_id` пользователя.
+
     ## Важно:
-    - Пользователь должен быть валидирован админом.
-    - Если пользователь имеет права «Только чтение» или он является сотрудником
-    другого подразделения - действия невозможны.
-    - Настроена валидация для мастерских (описать)
+    - ЛЮБОЙ `user` должен быть валидирован админом (`is_verified=True`).
+    - Если `user` имеет права `READ_ONLY` или он является сотрудником
+    другого `organization` (подразделения) - действия невозможны.
     """
     if not user.is_verified:
         raise HTTPException(

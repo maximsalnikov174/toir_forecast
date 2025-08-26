@@ -115,6 +115,35 @@ class UserManager(IntegerIDMixin, BaseUserManager[User, int]):
                 )
             )
 
+    async def authenticate(self, credentials):
+        """Аутентификация пользователя.
+
+        ## CHECKING:
+        - неправильный email;
+        - неправильный пароль;
+
+        ## RETURNS:
+        - уведомление в админ-чат Telegram (независимо от результата);
+        - передача пользователя дальше в `/login` или `None + Exception`.
+        """
+        try:
+            result = await super().authenticate(credentials)
+            if not result:
+                await bot_schedular.send_notification_for_admin(
+                    f'🤦‍♂️ {credentials.username} не прошел аутентификацию.\n'
+                    'Проблемы с паролем.'
+                )
+            else:
+                await bot_schedular.send_notification_for_admin(
+                    f'👋 {credentials.username} вошёл в систему.'
+                )
+                return result
+
+        except InvalidEmailException:
+            await bot_schedular.send_notification_for_admin(
+                f'🤦‍♂️ {credentials.username} неверно указал свой email.'
+            )
+
     async def on_after_register(
         self,
         user: User,

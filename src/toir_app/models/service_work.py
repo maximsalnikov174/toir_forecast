@@ -10,7 +10,7 @@ from sqlalchemy import (
     Integer,
     String,
 )
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import Mapped, relationship
 
 from constants import EXCESS_VALUE, LEN_ZVR_TOTAL
 from core.db import Base
@@ -126,6 +126,15 @@ class ServiceWork(Base):
     station = relationship(
         'Station',
         back_populates='station_works'
+    )
+    docs_in_service_work: Mapped[list['MaintenanceBillOfMaterials']] = (
+        relationship(
+            'MaintenanceBillOfMaterials',
+            back_populates='service_work',
+            cascade='all, delete-orphan',
+            passive_deletes=True,
+            lazy='selectin',
+        )
     )
 
     @property

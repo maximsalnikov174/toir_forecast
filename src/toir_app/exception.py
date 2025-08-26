@@ -53,3 +53,15 @@ class ObjectIsExistException(Exception):
 
 class ObjectNotFoundException(Exception):
     """Объект в БД не найден."""
+
+
+class InsufficientDataError(Exception):
+    """Указание на отсутствие полноты данных в таблице."""
+
+
+class BarcodeInAreaNotFoundException(Exception):
+    """Штрих-код не найден в указанной области."""
+
+
+class BarcodeNotValidException(Exception):
+    """Штрих-код не соответствует шаблону."""

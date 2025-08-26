@@ -93,6 +93,10 @@ async def upload_file(
             # Следующие строчки - место для БОЛЬШОГО рефакторинга:
             # Можно (читать-НУЖНО!) проверять, чтобы не было в сессии и в базе
 
+            await bot_schedular.send_notification_for_admin(
+                msg='⚠️ Началось обновление базы данных',
+            )
+
             # 3.1 Собираем список всех ТС из файла RMT-321:
             for element in tqdm(stmt):
                 car_list.append(

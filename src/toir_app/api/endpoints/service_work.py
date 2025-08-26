@@ -2,18 +2,24 @@ from datetime import datetime as dt
 from http import HTTPStatus
 from typing import Annotated, Dict, List, Optional
 
-from fastapi import APIRouter, Body, Depends, HTTPException, Query
+from fastapi import (
+    APIRouter, Body, Depends, HTTPException, Query, status, UploadFile
+)
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from api.endpoints.bot import bot_schedular
+from convert_pdf_to_py.unit_of_bom import get_payload_data_in_pdf_file
 from core.db import get_async_session
+# from core.minio import get_minio_client
 from core.user import current_user
-from crud.organization import get_current_organization
+from crud.docs_material import dao_doc_bom, dao_unit_of_bom
+from crud.organization import dao_organization, get_current_organization
 from crud.service_work import (
     check_users_can_edit_service_work,
     check_zvr_unique,
     create_main_table,
     create_main_table_for_master,
+    dao_service_work,
     get_active_service_work_count_for_all_service_status,
     get_active_service_work_list_by_car,
     get_all_active_service_work_with_open_zvr,
@@ -21,10 +27,17 @@ from crud.service_work import (
     get_service_work,
     update_completed_real_service_work
 )
+from exception import ObjectIsExistException
 from models import EventForBot, Organization, SpecialStatus, User
+# from schemas.docs_material import BOMRead
 from schemas.service_work import (
     AddZvrSchema,
     ServiceWorkWithZVRNumber,
+)
+from schemas.unit_of_bom import (
+    BOMDocsCreate,
+    UnitOfBOMRead,
+    UnitOfBOMWithDocsCreate,
 )
 
 router = APIRouter()
@@ -300,3 +313,118 @@ async def get_table_for_master(
         user=user,
         session=session,
     )
+
+
+# @router.post(
+#     '/{service_work_id}/bom',  # /service_work/1/bom
+#     response_model=BOMRead,
+#     status_code=status.HTTP_201_CREATED,
+#     dependencies=[Depends(current_user)]
+# )
+# async def upload_docs(
+#     service_work_id: int,
+#     file: UploadFile,
+#     session: AsyncSession = Depends(get_async_session),
+# ):
+#     """Отправка документа в карточку операции."""
+#     service_work = await dao_service_work.get_with_docs(
+#         obj_id=service_work_id,
+#         session=session,
+#     )
+
+#     if service_work is None:
+#         raise HTTPException(
+#             status_code=status.HTTP_404_NOT_FOUND,
+#             detail=f'Карточка работы #{service_work_id} не найдена',
+#         )
+
+#     client = get_minio_client()
+
+#     return await dao_bom.create_with_file(
+#         service_work_id=service_work_id,
+#         file=file,
+#         client=client
+#     )
+
+
+@router.post(
+    '/unit_of_bom',  # /service_work/1/unit_of_bom
+    response_model=UnitOfBOMRead,
+    status_code=status.HTTP_201_CREATED,
+    dependencies=[Depends(current_user)]
+)
+async def parse_docs(
+    service_work_id: int,
+    file: UploadFile,
+    user: User = Depends(current_user),
+    session: AsyncSession = Depends(get_async_session),
+):
+    """Отправка документа в карточку операции."""
+    try:
+        service_work = await dao_service_work.get(
+            obj_id=service_work_id,
+            session=session,
+        )
+
+        if service_work is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f'Карточка работы #{service_work_id} не найдена',
+            )
+
+        # Получаем данные из файла pdf и загоняем их в модель:
+        data = await get_payload_data_in_pdf_file(file=file)
+
+        # Находим подразделение (нужен ID), указанное в документах, в БД:
+        organization = await dao_organization.get_by_attribute(
+            attr_name='name',
+            attr_value=data.unit_of_bom_doc.from_organization,
+            session=session
+        )
+
+        # Проверяем, что ID доставки и указанный штрих-код уникальны:
+        for attr in ('delivery', 'bar_code'):
+            await dao_doc_bom.check_exists(
+                attr_name=attr,
+                attr_value=getattr(data.unit_of_bom_doc, attr),
+                session=session,
+            )
+
+        # Создаем объект документа BOM:
+        bom_doc = BOMDocsCreate(
+            delivery=data.unit_of_bom_doc.delivery,
+            from_organization=organization.id,
+            service_work_id=service_work_id,
+            user_id=user.id,
+            bar_code=data.bar_code
+        )
+        bom = await dao_doc_bom.create(obj_in=bom_doc, session=session)
+
+        # Создаем записи о материалах, указанные в документах:
+        for unit in data.unit_of_bom_list:
+            uob_for_create = UnitOfBOMWithDocsCreate(
+                snb=unit.snb,
+                material_name=unit.material_name,
+                material_count=unit.material_count,
+                maintenance_bom_id=bom.id
+            )
+            await dao_unit_of_bom.create(
+                obj_in=uob_for_create,
+                session=session,
+            )
+
+        # FIXME!!! Как решить проблему отката назад, если что-то пошло не так?
+
+        # Получаем обновленную карточку документа с материалами:
+        return await dao_doc_bom.get_full(obj_id=bom.id, session=session)
+
+    except ObjectIsExistException:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail='Данные в файле PDF не уникальны (что недопустимо)',
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f'Непредвиденная ошибка: {e}',
+        )

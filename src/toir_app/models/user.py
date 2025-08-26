@@ -1,6 +1,6 @@
 from fastapi_users_db_sqlalchemy import SQLAlchemyBaseUserTable
 from sqlalchemy import Column, ForeignKey, Integer, String
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import Mapped, relationship
 
 from constants import PERSON_FULL_NAME_LEN
 from core.db import Base
@@ -46,6 +46,13 @@ class User(SQLAlchemyBaseUserTable[int], Base):
     assigned_statuses = relationship(
         'SpecialStatusForCar',
         back_populates='user'
+    )
+    docs_by_user: Mapped[list['MaintenanceBillOfMaterials']] = relationship(
+        'MaintenanceBillOfMaterials',
+        back_populates='user',
+        cascade='all, delete-orphan',
+        passive_deletes=True,
+        lazy='selectin',
     )
 
     def __repr__(self):

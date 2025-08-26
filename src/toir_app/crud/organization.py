@@ -6,8 +6,18 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from constants import VEHICLE_ORGANOZATIONS
+from crud.base import DAOBase
 from exception import StaticDataInDBNotFoundException
 from models import Organization
+
+
+class DAOOrganization(DAOBase[Organization]):
+    """DAO для работы с моделью подразделений."""
+
+    model = Organization
+
+
+dao_organization = DAOOrganization(Organization)
 
 
 async def get_organization_list(

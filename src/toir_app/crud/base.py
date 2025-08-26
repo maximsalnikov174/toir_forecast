@@ -1,13 +1,18 @@
-from typing import Optional
+from typing import Generic, Optional, Type, TypeVar
 
 from fastapi.encoders import jsonable_encoder
+from pydantic import BaseModel
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from exception import ObjectIsExistException
 
-class DAOBase:
+T = TypeVar('T', bound=BaseModel)
 
-    def __init__(self, model):
+
+class DAOBase(Generic[T]):
+
+    def __init__(self, model: Type[T]):
         self.model = model
 
     async def get(
@@ -118,3 +123,14 @@ class DAOBase:
         stmt = select(self.model).where(attr == attr_value).limit(1)
         result = await session.scalar(stmt)
         return result
+
+    async def check_exists(
+            self,
+            attr_name: str,
+            attr_value: str,
+            session: AsyncSession
+    ) -> None:
+        """Проверяем существование объекта в БД."""
+        result = await self.get_by_attribute(attr_name, attr_value, session)
+        if result is not None:
+            raise ObjectIsExistException
