@@ -11,6 +11,7 @@ from sqlalchemy.orm import selectinload
 
 from api.endpoints.bot import bot_schedular
 from constants import PATTERN_DATE_OEBS
+from crud.base import DAOBase
 from crud.car import (
     get_car_by_pk,
     get_cars_with_request_and_special_status,
@@ -38,6 +39,26 @@ from schemas.service_work import (
     CarAtributesInServiceWork,
     ServiceWorkBase,
 )
+
+
+class DAOServiceWork(DAOBase[ServiceWork]):
+    """DAO для работы с моделью карточек работ."""
+
+    # async def get_with_docs(
+    #         self,
+    #         obj_id: int,
+    #         session: AsyncSession,
+    # ) -> Optional[ServiceWork]:
+    #     """Получение карточки работы с документами по идентификатору."""
+    #     stmt = (
+    #         select(self.model)
+    #         .options(selectinload(self.model.docs_in_service_work))
+    #         .where(self.model.id == obj_id)
+    #     )
+    #     return await session.scalar(stmt)
+
+
+dao_service_work = DAOServiceWork(ServiceWork)
 
 
 async def get_service_work(

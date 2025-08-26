@@ -14,3 +14,4 @@ from .station import Station  # noqa
 from .stats import ServiceWorkState, ServiceStatusStats  # noqa
 from .user import User  # noqa
 from .role import Role  # noqa
+from .docs_material import MaintenanceBillOfMaterials, MaintenanceComponent  # noqa

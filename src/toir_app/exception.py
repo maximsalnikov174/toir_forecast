@@ -57,3 +57,11 @@ class ObjectNotFoundException(Exception):
 
 class InsufficientDataError(Exception):
     """Указание на отсутствие полноты данных в таблице."""
+
+
+class BarcodeInAreaNotFoundException(Exception):
+    """Штрих-код не найден в указанной области."""
+
+
+class BarcodeNotValidException(Exception):
+    """Штрих-код не соответствует шаблону."""

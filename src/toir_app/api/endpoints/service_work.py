@@ -12,8 +12,8 @@ from convert_pdf_to_py.unit_of_bom import get_payload_data_in_pdf_file
 from core.db import get_async_session
 # from core.minio import get_minio_client
 from core.user import current_user
-# from crud.docs_material import dao_bom
-from crud.organization import get_current_organization
+from crud.docs_material import dao_doc_bom, dao_unit_of_bom
+from crud.organization import dao_organization, get_current_organization
 from crud.service_work import (
     check_users_can_edit_service_work,
     check_zvr_unique,
@@ -27,14 +27,18 @@ from crud.service_work import (
     get_service_work,
     update_completed_real_service_work
 )
+from exception import ObjectIsExistException
 from models import EventForBot, Organization, SpecialStatus, User
 # from schemas.docs_material import BOMRead
 from schemas.service_work import (
     AddZvrSchema,
     ServiceWorkWithZVRNumber,
 )
-from schemas.unit_of_bom import UnitOfBOMRead
-
+from schemas.unit_of_bom import (
+    BOMDocsCreate,
+    UnitOfBOMRead,
+    UnitOfBOMWithDocsCreate,
+)
 
 router = APIRouter()
 
@@ -356,24 +360,71 @@ async def parse_docs(
     session: AsyncSession = Depends(get_async_session),
 ):
     """Отправка документа в карточку операции."""
-    service_work = await dao_service_work.get(
-        obj_id=service_work_id,
-        session=session,
-    )
-
-    if service_work is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f'Карточка работы #{service_work_id} не найдена',
+    try:
+        service_work = await dao_service_work.get(
+            obj_id=service_work_id,
+            session=session,
         )
 
-    units_of_bom = await get_payload_data_in_pdf_file(file=file)
+        if service_work is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f'Карточка работы #{service_work_id} не найдена',
+            )
 
-    result = UnitOfBOMRead(
-        unit_of_bom_list=units_of_bom,
-        service_work_id=service_work_id,
-        user_id=user.id,
-    )
-    # Теперь можно отправлять в БД
+        # Получаем данные из файла pdf и загоняем их в модель:
+        data = await get_payload_data_in_pdf_file(file=file)
 
-    return result
+        # Находим подразделение (нужен ID), указанное в документах, в БД:
+        organization = await dao_organization.get_by_attribute(
+            attr_name='name',
+            attr_value=data.unit_of_bom_doc.from_organization,
+            session=session
+        )
+
+        # Проверяем, что ID доставки и указанный штрих-код уникальны:
+        for attr in ('delivery', 'bar_code'):
+            await dao_doc_bom.check_exists(
+                attr_name=attr,
+                attr_value=getattr(data.unit_of_bom_doc, attr),
+                session=session,
+            )
+
+        # Создаем объект документа BOM:
+        bom_doc = BOMDocsCreate(
+            delivery=data.unit_of_bom_doc.delivery,
+            from_organization=organization.id,
+            service_work_id=service_work_id,
+            user_id=user.id,
+            bar_code=data.bar_code
+        )
+        bom = await dao_doc_bom.create(obj_in=bom_doc, session=session)
+
+        # Создаем записи о материалах, указанные в документах:
+        for unit in data.unit_of_bom_list:
+            uob_for_create = UnitOfBOMWithDocsCreate(
+                snb=unit.snb,
+                material_name=unit.material_name,
+                material_count=unit.material_count,
+                maintenance_bom_id=bom.id
+            )
+            await dao_unit_of_bom.create(
+                obj_in=uob_for_create,
+                session=session,
+            )
+
+        # FIXME!!! Как решить проблему отката назад, если что-то пошло не так?
+
+        # Получаем обновленную карточку документа с материалами:
+        return await dao_doc_bom.get_full(obj_id=bom.id, session=session)
+
+    except ObjectIsExistException:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail='Данные в файле PDF не уникальны (что недопустимо)',
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f'Непредвиденная ошибка: {e}',
+        )

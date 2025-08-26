@@ -23,6 +23,8 @@ SERVICE_STATUS_NAME_LEN = 40  # Длина вида обслуживания (Т
 STATION_NAME_LEN = 10
 MAX_SPECIAL_STATUS_VALID = 180
 IMG_LOCATION_LEN = 10
+SNB_LEN = 16
+SNB_DESCRIPTION = 300
 
 pattern_grz = (
     r'^([АВЕКМНОРСТУХ]{1,2})\s'
@@ -38,6 +40,7 @@ pattern_grz_input_user = (
     r'([1,7][4,7]4*)'
 )
 EXTRUDE_SYMBOLS_IN_HEADER = r'[\n\s-]'  # удаление шума из шапки таблицы pdf
+BAR_CODE_PATTERN = r'^P\d{14}$'
 SNB_PATTERN = r'^СНБ\|\d{3}\|\d{8}$'
 ORGANIZATION_BASE_NAME_PATTERN = r'^Ю\d{2}$'
 ORGANIZATION_NORMAL_NAME_PATTERN = r'^(?:\d-)[А-Я]{1,3}|[А-Я]{3,4}$'

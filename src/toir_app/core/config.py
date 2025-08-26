@@ -28,6 +28,19 @@ class Settings(BaseSettings):
     chat_id: int = 1
     tg_bot_token: str = 'some_token'
 
+    # # настройка minIO (пока не нужно)
+    # minio_endpoint: str = 'minio:9000'
+    # minio_bucket: str = 'sw_docs'
+    # minio_secure: bool = False
+    # minio_access_key: Optional[str] = None
+    # minio_secret_key: Optional[str] = None
+
+    # настройки для PDF-файла «задания на отгрузку»:
+    coord_x1: int = 430
+    coord_y1: int = 81
+    coord_x2: int = 600
+    coord_y2: int = 95
+
     @property
     def database_url(self) -> str:
         """Формирует строку подключения к базе данных."""
@@ -39,6 +52,11 @@ class Settings(BaseSettings):
                 f'@{host}:{self.db_port}/{self.postgres_db}'
             )
         return 'sqlite+aiosqlite:///./fast_toir.db'
+
+    @property
+    def get_barcode_area(self) -> tuple:
+        """Сообирает координаты из задания на отгрузку в кортеж."""
+        return (self.coord_x1, self.coord_y1, self.coord_x2, self.coord_y2)
 
     model_config = SettingsConfigDict(
         env_file='infra/.env',
