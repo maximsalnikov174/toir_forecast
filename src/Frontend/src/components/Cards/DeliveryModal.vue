@@ -32,6 +32,7 @@
               <td
                 class="cell-border text-center"
                 :class="{ 'active-cell': currentRowIndex === index && currentCellIndex === 2 }"
+                @click.stop="handleBarcodeClick"
               >
                 <canvas :ref="el => setBarcodeRef(el, item.id)" class="barcode-canvas"></canvas>
               </td>
@@ -114,6 +115,12 @@ const setBarcodeRef = (el, id) => {
   }
 };
 
+// Обработчик клика по штрих-коду (ничего не делает)
+const handleBarcodeClick = (event) => {
+  event.stopPropagation();
+  // Не копируем штрих-код, просто останавливаем всплытие события
+};
+
 // Функция для генерации штрих-кодов
 const generateBarcodes = () => {
   nextTick(() => {
@@ -138,13 +145,19 @@ const generateBarcodes = () => {
 
 // Обработчик клика по строке таблицы
 const handleRowClick = (rowIndex, event) => {
+  // Если клик был по canvas (штрих-коду), не обрабатываем
   if (event.target.tagName === 'CANVAS') return;
 
   if (rowIndex !== currentRowIndex.value) {
     currentRowIndex.value = rowIndex;
     currentCellIndex.value = 0;
   } else {
+    // Пропускаем ячейку со штрих-кодом (индекс 2)
     currentCellIndex.value = (currentCellIndex.value + 1) % 6;
+    // Если попали на ячейку со штрих-кодом, переходим к следующей
+    if (currentCellIndex.value === 2) {
+      currentCellIndex.value = (currentCellIndex.value + 1) % 6;
+    }
   }
 
   const cellValue = getCellValue(rowIndex, currentCellIndex.value);
@@ -166,7 +179,7 @@ const getCellValue = (rowIndex, cellIndex) => {
   switch (cellIndex) {
     case 0: return row.delivery_info || '';
     case 1: return row.nomenclature_number || '';
-    case 2: return row.nomenclature_number || '';
+    case 2: return ''; // Пустая строка для штрих-кода
     case 3: return row.quantity_requested || '';
     case 4: return row.recipient_organization || '';
     case 5: return row.description || '';
@@ -176,6 +189,8 @@ const getCellValue = (rowIndex, cellIndex) => {
 
 // Копирование текста в буфер обмена
 const copyToClipboard = (text) => {
+  if (!text) return; // Не копируем пустые строки
+
   const textArea = document.createElement('textarea');
   textArea.value = text;
   textArea.style.position = 'fixed';
@@ -345,6 +360,7 @@ onMounted(() => {
   margin: 0 auto;
   max-width: 100%;
   height: 50px;
+  cursor: default; /* Курсор по умолчанию для штрих-кода */
 }
 
 /* Стили для статуса копирования */
