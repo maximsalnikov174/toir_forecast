@@ -89,6 +89,7 @@
       v-model="showDeliveryModal"
       :delivery-data="deliveryData"
       @close="closeDeliveryModal"
+      :bar-code="barCodeValue"
     />
   </div>
 </template>

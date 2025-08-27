@@ -1,17 +1,25 @@
 <template>
   <q-dialog v-model="showModal" persistent>
     <q-card class="delivery-modal">
+      <q-card-section class="header-section">
+        <div class="header-content">
+          <div class="delivery-title">Доставка</div>
+          <div class="barcode-section">
+            <div class="barcode-label">Штрих-код:</div>
+            <canvas ref="barcodeCanvas" class="barcode-canvas"></canvas>
+          </div>
+        </div>
+      </q-card-section>
+
       <q-card-section class="q-pt-none delivery-content">
         <!-- Обычная HTML таблица с явными границами -->
         <table class="delivery-table bordered-table">
           <thead>
             <tr>
-              <th class="cell-border">Доставка</th>
               <th class="cell-border">Номенклатурный номер</th>
               <th class="cell-border">Кол-во запрошено</th>
               <th class="cell-border">Организация получатель</th>
               <th class="cell-border">Описание</th>
-              <th class="cell-border">Штрих-код</th>
             </tr>
           </thead>
           <tbody>
@@ -27,48 +35,31 @@
                   'active-cell': currentRowIndex === index && currentCellIndex === 0,
                   'copied-cell': copiedCells.has(`${index}-0`)
                 }"
-              >{{ item.delivery_info }}</td>
-              <td
-                class="cell-border"
-                :class="{
-                  'active-cell': currentRowIndex === index && currentCellIndex === 1,
-                  'copied-cell': copiedCells.has(`${index}-1`)
-                }"
               >{{ item.nomenclature_number }}</td>
               <td
                 class="cell-border text-center"
                 :class="{
+                  'active-cell': currentRowIndex === index && currentCellIndex === 1,
+                  'copied-cell': copiedCells.has(`${index}-1`)
+                }"
+              >{{ item.quantity_requested }}</td>
+              <td
+                class="cell-border"
+                :class="{
                   'active-cell': currentRowIndex === index && currentCellIndex === 2,
                   'copied-cell': copiedCells.has(`${index}-2`)
                 }"
-              >{{ item.quantity_requested }}</td>
+              >{{ item.recipient_organization }}</td>
               <td
                 class="cell-border"
                 :class="{
                   'active-cell': currentRowIndex === index && currentCellIndex === 3,
                   'copied-cell': copiedCells.has(`${index}-3`)
                 }"
-              >{{ item.recipient_organization }}</td>
-              <td
-                class="cell-border"
-                :class="{
-                  'active-cell': currentRowIndex === index && currentCellIndex === 4,
-                  'copied-cell': copiedCells.has(`${index}-4`)
-                }"
               >{{ item.description }}</td>
-              <td
-                class="cell-border text-center"
-                :class="{
-                  'active-cell': currentRowIndex === index && currentCellIndex === 5,
-                  'copied-cell': copiedCells.has(`${index}-5`)
-                }"
-                @click.stop="handleBarcodeClick"
-              >
-                <canvas :ref="el => setBarcodeRef(el, item.id)" class="barcode-canvas"></canvas>
-              </td>
             </tr>
             <tr v-if="deliveryData.length === 0">
-              <td colspan="6" class="cell-border text-center text-grey">
+              <td colspan="4" class="cell-border text-center text-grey">
                 Нет данных о доставке
               </td>
             </tr>
@@ -94,7 +85,7 @@
 </template>
 
 <script setup>
-import { ref, watch, nextTick, onMounted } from 'vue';
+import { ref, watch, nextTick, onMounted, computed } from 'vue';
 import { useQuasar } from 'quasar';
 import JsBarcode from 'jsbarcode';
 
@@ -103,7 +94,7 @@ const showModal = ref(false);
 const currentRowIndex = ref(-1);
 const currentCellIndex = ref(-1);
 const copyStatus = ref('');
-const barcodeRefs = ref({});
+const barcodeCanvas = ref(null);
 const copiedCells = ref(new Set()); // Храним ID скопированных ячеек
 
 const emit = defineEmits(['close', 'update:modelValue']);
@@ -116,14 +107,25 @@ const props = defineProps({
   deliveryData: {
     type: Array,
     default: () => []
+  },
+  barCode: {
+    type: String,
+    default: ''
   }
+});
+
+// Вычисляемое свойство для получения первого номенклатурного номера
+const firstNomenclatureNumber = computed(() => {
+  return props.deliveryData.length > 0
+    ? props.deliveryData[0].nomenclature_number
+    : props.barCode || 'NO_DATA';
 });
 
 // Синхронизируем значение модального окна
 watch(() => props.modelValue, (value) => {
   showModal.value = value;
   if (value) {
-    generateBarcodes();
+    generateBarcode();
   } else {
     // Сбрасываем все состояния при закрытии через пропс
     resetAllStates();
@@ -140,38 +142,24 @@ watch(showModal, (value) => {
   }
 });
 
-// Устанавливаем ref для штрих-кода
-const setBarcodeRef = (el, id) => {
-  if (el) {
-    barcodeRefs.value[id] = el;
-  }
-};
-
-// Обработчик клика по штрих-коду (ничего не делает)
-const handleBarcodeClick = (event) => {
-  event.stopPropagation();
-  // Не копируем штрих-код, просто останавливаем всплытие события
-};
-
-// Функция для генерации штрих-кодов
-const generateBarcodes = () => {
+// Функция для генерации штрих-кода
+const generateBarcode = () => {
   nextTick(() => {
-    props.deliveryData.forEach(item => {
-      const canvas = barcodeRefs.value[item.id];
-      if (canvas && item.nomenclature_number) {
-        try {
-          JsBarcode(canvas, item.nomenclature_number, {
-            format: "CODE128",
-            width: 2,
-            height: 40,
-            displayValue: false,
-            margin: 5
-          });
-        } catch {
-          console.error('Ошибка генерации штрих-кода');
-        }
+    if (barcodeCanvas.value && firstNomenclatureNumber.value) {
+      try {
+        JsBarcode(barcodeCanvas.value, firstNomenclatureNumber.value, {
+          format: "CODE128",
+          width: 2,
+          height: 60,
+          displayValue: true,
+          margin: 10,
+          fontSize: 16,
+          textMargin: 5
+        });
+      } catch {
+        console.error('Ошибка генерации штрих-кода');
       }
-    });
+    }
   });
 };
 
@@ -184,20 +172,12 @@ const resetAllStates = () => {
 };
 
 // Обработчик клика по строке таблицы
-const handleRowClick = (rowIndex, event) => {
-  // Если клик был по canvas (штрих-коду), не обрабатываем
-  if (event.target.tagName === 'CANVAS') return;
-
+const handleRowClick = (rowIndex) => {
   if (rowIndex !== currentRowIndex.value) {
     currentRowIndex.value = rowIndex;
     currentCellIndex.value = 0;
   } else {
-    // Пропускаем ячейку со штрих-кодом (индекс 2)
-    currentCellIndex.value = (currentCellIndex.value + 1) % 6;
-    // Если попали на ячейку со штрих-кодом, переходим к следующей
-    if (currentCellIndex.value === 5) {
-      currentCellIndex.value = (currentCellIndex.value + 1) % 6;
-    }
+    currentCellIndex.value = (currentCellIndex.value + 1) % 4;
   }
 
   const cellValue = getCellValue(rowIndex, currentCellIndex.value);
@@ -206,7 +186,6 @@ const handleRowClick = (rowIndex, event) => {
   // Добавляем ячейку в множество скопированных
   const cellId = `${rowIndex}-${currentCellIndex.value}`;
   copiedCells.value.add(cellId);
-
 };
 
 // Сброс выделения скопированных ячеек
@@ -222,12 +201,10 @@ const getCellValue = (rowIndex, cellIndex) => {
   if (!row) return '';
 
   switch (cellIndex) {
-    case 0: return row.delivery_info || '';
-    case 1: return row.nomenclature_number || '';
-    case 2: return row.quantity_requested || '';
-    case 3: return row.recipient_organization || '';
-    case 4: return row.description || '';
-    case 5: return ''; // Пустая строка для штрих-кода
+    case 0: return row.nomenclature_number || '';
+    case 1: return row.quantity_requested || '';
+    case 2: return row.recipient_organization || '';
+    case 3: return row.description || '';
     default: return '';
   }
 };
@@ -291,27 +268,64 @@ const closeModal = () => {
   emit('close');
 };
 
-// Следим за изменениями в данных доставки и генерируем штрих-коды
+// Следим за изменениями в данных доставки и генерируем штрих-код
 watch(() => props.deliveryData, () => {
-  generateBarcodes();
+  generateBarcode();
 }, { deep: true });
 
 onMounted(() => {
   if (props.modelValue) {
-    generateBarcodes();
+    generateBarcode();
   }
 });
 </script>
 
 <style scoped>
 .delivery-modal {
-  min-width: 1100px;
+  min-width: 900px;
   max-width: 95vw;
   max-height: 80vh;
 }
 
+.header-section {
+  background-color: #f5f5f5;
+  border-bottom: 1px solid #ddd;
+  padding: 16px;
+}
+
+.header-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.delivery-title {
+  font-size: 20px;
+  font-weight: bold;
+  color: #333;
+}
+
+.barcode-section {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.barcode-label {
+  font-size: 16px;
+  font-weight: 500;
+}
+
+.barcode-canvas {
+  height: 70px;
+  background: white;
+  padding: 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
 .delivery-content {
-  max-height: 60vh;
+  max-height: 50vh;
   overflow-y: auto;
   padding: 0;
 }
@@ -359,10 +373,8 @@ onMounted(() => {
   background-color: #f5f5f5;
 }
 
-.bordered-table th:nth-child(3),
-.bordered-table td:nth-child(3),
-.bordered-table th:nth-child(4),
-.bordered-table td:nth-child(4) {
+.bordered-table th:nth-child(2),
+.bordered-table td:nth-child(2) {
   text-align: center;
 }
 
@@ -415,15 +427,6 @@ onMounted(() => {
 /* Убедимся, что все ячейки имеют границы */
 .cell-border {
   border: 1px solid #bdbdbd !important;
-}
-
-/* Стили для canvas штрих-кода */
-.barcode-canvas {
-  display: block;
-  margin: 0 auto;
-  max-width: 100%;
-  height: 50px;
-  cursor: default; /* Курсор по умолчанию для штрих-кода */
 }
 
 /* Стили для статуса копирования */
