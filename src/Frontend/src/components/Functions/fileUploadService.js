@@ -1,4 +1,3 @@
-// src/services/fileUploadService.js
 import { api } from 'boot/axios';
 import { useAuthStore } from 'src/stores/useAuthStore';
 
@@ -13,13 +12,14 @@ export const useFileUploadService = () => {
 
     try {
       const formData = new FormData();
-      formData.append('bom_file', file);
+      formData.append('file', file);
 
       const response = await api.post(
-        `/api/service_works/${serviceWorkId}/bom`,
+        `/service_work/unit_of_bom?service_work_id=${serviceWorkId}`,
         formData,
         {
           headers: {
+            'accept': 'application/json',
             'Content-Type': 'multipart/form-data',
             'Authorization': `Bearer ${authStore.token}`
           }
