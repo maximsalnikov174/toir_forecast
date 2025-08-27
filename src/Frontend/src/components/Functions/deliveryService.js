@@ -10,7 +10,6 @@ class DeliveryService {
     try {
       const response = await api.get(`/service_work/${serviceWorkId}/unit_of_bom`);
 
-      // API возвращает массив, берем первый элемент
       return response.data[0] || {};
     } catch (error) {
       console.error('Ошибка при загрузке данных о доставке:', error);
