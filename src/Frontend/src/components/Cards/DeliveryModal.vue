@@ -212,6 +212,8 @@ const handleRowClick = (rowIndex, event) => {
 // Сброс выделения скопированных ячеек
 const resetCopiedCells = () => {
   copiedCells.value.clear();
+  currentCellIndex.value = -1;
+  currentRowIndex.value = -1;
 };
 
 // Получение значения ячейки
