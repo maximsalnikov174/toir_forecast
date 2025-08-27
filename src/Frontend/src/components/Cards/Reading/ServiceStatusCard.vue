@@ -86,11 +86,11 @@
 
     <!-- Модальное окно для отображения таблицы доставки -->
     <DeliveryModal
-      v-model="showDeliveryModal"
-      :delivery-data="deliveryData"
-      @close="closeDeliveryModal"
-      :bar-code="barCodeValue"
-    />
+    v-model="showDeliveryModal"
+    :delivery-data="deliveryData"
+    @close="closeDeliveryModal"
+    :bar-code="barCodeValue"
+  />
   </div>
 </template>
 
@@ -103,6 +103,7 @@ import { useFileUploadService } from '../../Functions/fileUploadService'; // И�
 import ModalWindow from '../ModalWindow.vue';
 import WindowCompletion from '../WindowCompletion.vue';
 import DeliveryModal from '../DeliveryModal.vue';
+import { deliveryService } from '../../Functions/deliveryService'; // Импортируем сервис
 
 const hover = ref(false);
 const dragOver = ref(false);
@@ -115,7 +116,7 @@ const authStore = useAuthStore();
 const $q = useQuasar();
 const { uploadFile } = useFileUploadService(); // Используем сервис
 // Данные для таблицы доставки
-const deliveryData = ref([]);
+const deliveryData = ref({});
 const loading = ref(false);
 
 const showNotify = (options) => {
@@ -212,40 +213,14 @@ const shouldShowHover = computed(() => {
 const loadDeliveryData = async () => {
   loading.value = true;
   try {
-    // Здесь должен быть API запрос для получения данных
-    // Временно используем mock данные
-    deliveryData.value = [
-      {
-        id: 1,
-        delivery_info: 'Доставка №12345',
-        nomenclature_number: 'ABC-123',
-        quantity_requested: 5,
-        recipient_organization: 'ООО "Ромашка"',
-        description: 'Запчасти для оборудования'
-      },
-      {
-        id: 2,
-        delivery_info: 'Доставка №12346',
-        nomenclature_number: 'XYZ-789',
-        quantity_requested: 3,
-        recipient_organization: 'ИП Иванов',
-        description: 'Расходные материалы'
-      },
-      {
-        id: 3,
-        delivery_info: 'Доставка №12347',
-        nomenclature_number: 'DEF-456',
-        quantity_requested: 10,
-        recipient_organization: 'ЗАО "Вектор"',
-        description: 'Инструменты'
-      }
-    ];
-  } catch {
+    deliveryData.value = await deliveryService.getDeliveryData(props.id);
+  } catch (error) {
     showNotify({
       type: 'negative',
-      message: 'Ошибка при загрузке данных о доставке',
+      message: error.message || 'Ошибка при загрузке данных о доставке',
       timeout: 3000
     });
+    deliveryData.value = {};
   } finally {
     loading.value = false;
   }

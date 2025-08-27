@@ -3,7 +3,13 @@
     <q-card class="delivery-modal">
       <q-card-section class="header-section">
         <div class="header-content">
-          <div class="delivery-title">Доставка</div>
+          <div class="delivery-info">
+            <div class="delivery-title">Доставка №{{ deliveryData.delivery }}</div>
+            <div class="delivery-details">
+              <div>От организации: {{ fromOrganizationName }}</div>
+              <div>ID работы: {{ deliveryData.service_work_id }}</div>
+            </div>
+          </div>
           <div class="barcode-section">
             <div class="barcode-label">Штрих-код:</div>
             <canvas ref="barcodeCanvas" class="barcode-canvas"></canvas>
@@ -12,20 +18,18 @@
       </q-card-section>
 
       <q-card-section class="q-pt-none delivery-content">
-        <!-- Обычная HTML таблица с явными границами -->
         <table class="delivery-table bordered-table">
           <thead>
             <tr>
-              <th class="cell-border">Номенклатурный номер</th>
-              <th class="cell-border">Кол-во запрошено</th>
-              <th class="cell-border">Организация получатель</th>
-              <th class="cell-border">Описание</th>
+              <th class="cell-border">СНБ</th>
+              <th class="cell-border">Наименование материала</th>
+              <th class="cell-border">Количество</th>
             </tr>
           </thead>
           <tbody>
             <tr
-              v-for="(item, index) in deliveryData"
-              :key="item.id"
+              v-for="(item, index) in deliveryData.components"
+              :key="index"
               :class="{ 'active-row': currentRowIndex === index && currentCellIndex >= 0 }"
               @click="handleRowClick(index, $event)"
             >
@@ -35,32 +39,25 @@
                   'active-cell': currentRowIndex === index && currentCellIndex === 0,
                   'copied-cell': copiedCells.has(`${index}-0`)
                 }"
-              >{{ item.nomenclature_number }}</td>
+              >{{ item.snb }}</td>
               <td
-                class="cell-border text-center"
+                class="cell-border"
                 :class="{
                   'active-cell': currentRowIndex === index && currentCellIndex === 1,
                   'copied-cell': copiedCells.has(`${index}-1`)
                 }"
-              >{{ item.quantity_requested }}</td>
+              >{{ item.material_name }}</td>
               <td
-                class="cell-border"
+                class="cell-border text-center"
                 :class="{
                   'active-cell': currentRowIndex === index && currentCellIndex === 2,
                   'copied-cell': copiedCells.has(`${index}-2`)
                 }"
-              >{{ item.recipient_organization }}</td>
-              <td
-                class="cell-border"
-                :class="{
-                  'active-cell': currentRowIndex === index && currentCellIndex === 3,
-                  'copied-cell': copiedCells.has(`${index}-3`)
-                }"
-              >{{ item.description }}</td>
+              >{{ item.material_count }}</td>
             </tr>
-            <tr v-if="deliveryData.length === 0">
-              <td colspan="4" class="cell-border text-center text-grey">
-                Нет данных о доставке
+            <tr v-if="!deliveryData.components || deliveryData.components.length === 0">
+              <td colspan="3" class="cell-border text-center text-grey">
+                Нет данных о компонентах
               </td>
             </tr>
           </tbody>
@@ -88,6 +85,7 @@
 import { ref, watch, nextTick, onMounted, computed } from 'vue';
 import { useQuasar } from 'quasar';
 import JsBarcode from 'jsbarcode';
+import { deliveryService } from '../Functions/deliveryService';
 
 const $q = useQuasar();
 const showModal = ref(false);
@@ -95,7 +93,7 @@ const currentRowIndex = ref(-1);
 const currentCellIndex = ref(-1);
 const copyStatus = ref('');
 const barcodeCanvas = ref(null);
-const copiedCells = ref(new Set()); // Храним ID скопированных ячеек
+const copiedCells = ref(new Set());
 
 const emit = defineEmits(['close', 'update:modelValue']);
 
@@ -105,8 +103,8 @@ const props = defineProps({
     default: false
   },
   deliveryData: {
-    type: Array,
-    default: () => []
+    type: Object,
+    default: () => ({})
   },
   barCode: {
     type: String,
@@ -114,11 +112,14 @@ const props = defineProps({
   }
 });
 
-// Вычисляемое свойство для получения первого номенклатурного номера
-const firstNomenclatureNumber = computed(() => {
-  return props.deliveryData.length > 0
-    ? props.deliveryData[0].nomenclature_number
-    : props.barCode || 'NO_DATA';
+// Вычисляемое свойство для названия организации
+const fromOrganizationName = computed(() => {
+  return deliveryService.getOrganizationName(props.deliveryData.from_organization);
+});
+
+// Вычисляемое свойство для штрих-кода
+const barcodeValue = computed(() => {
+  return props.deliveryData.bar_code || props.barCode || 'NO_DATA';
 });
 
 // Синхронизируем значение модального окна
@@ -127,7 +128,6 @@ watch(() => props.modelValue, (value) => {
   if (value) {
     generateBarcode();
   } else {
-    // Сбрасываем все состояния при закрытии через пропс
     resetAllStates();
   }
 });
@@ -137,7 +137,6 @@ watch(showModal, (value) => {
     emit('update:modelValue', value);
   }
   if (!value) {
-    // Сбрасываем все состояния при закрытии через кнопку
     resetAllStates();
   }
 });
@@ -145,9 +144,9 @@ watch(showModal, (value) => {
 // Функция для генерации штрих-кода
 const generateBarcode = () => {
   nextTick(() => {
-    if (barcodeCanvas.value && firstNomenclatureNumber.value) {
+    if (barcodeCanvas.value && barcodeValue.value) {
       try {
-        JsBarcode(barcodeCanvas.value, firstNomenclatureNumber.value, {
+        JsBarcode(barcodeCanvas.value, barcodeValue.value, {
           format: "CODE128",
           width: 2,
           height: 60,
@@ -156,8 +155,8 @@ const generateBarcode = () => {
           fontSize: 16,
           textMargin: 5
         });
-      } catch {
-        console.error('Ошибка генерации штрих-кода');
+      } catch (error) {
+        console.error('Ошибка генерации штрих-кода:', error);
       }
     }
   });
@@ -177,13 +176,12 @@ const handleRowClick = (rowIndex) => {
     currentRowIndex.value = rowIndex;
     currentCellIndex.value = 0;
   } else {
-    currentCellIndex.value = (currentCellIndex.value + 1) % 4;
+    currentCellIndex.value = (currentCellIndex.value + 1) % 3;
   }
 
   const cellValue = getCellValue(rowIndex, currentCellIndex.value);
   copyToClipboard(cellValue);
 
-  // Добавляем ячейку в множество скопированных
   const cellId = `${rowIndex}-${currentCellIndex.value}`;
   copiedCells.value.add(cellId);
 };
@@ -197,21 +195,20 @@ const resetCopiedCells = () => {
 
 // Получение значения ячейки
 const getCellValue = (rowIndex, cellIndex) => {
-  const row = props.deliveryData[rowIndex];
-  if (!row) return '';
+  const component = props.deliveryData.components?.[rowIndex];
+  if (!component) return '';
 
   switch (cellIndex) {
-    case 0: return row.nomenclature_number || '';
-    case 1: return row.quantity_requested || '';
-    case 2: return row.recipient_organization || '';
-    case 3: return row.description || '';
+    case 0: return component.snb || '';
+    case 1: return component.material_name || '';
+    case 2: return component.material_count?.toString() || '';
     default: return '';
   }
 };
 
 // Копирование текста в буфер обмена
 const copyToClipboard = (text) => {
-  if (!text) return; // Не копируем пустые строки
+  if (!text) return;
 
   const textArea = document.createElement('textarea');
   textArea.value = text;
@@ -226,9 +223,7 @@ const copyToClipboard = (text) => {
 
   try {
     if (navigator.clipboard && window.isSecureContext) {
-      navigator.clipboard.writeText(text).catch(() => {
-        fallbackCopy();
-      });
+      navigator.clipboard.writeText(text).catch(fallbackCopy);
     } else {
       fallbackCopy();
     }
@@ -239,17 +234,10 @@ const copyToClipboard = (text) => {
   }
 };
 
-// Fallback метод копирования для HTTP
+// Fallback метод копирования
 const fallbackCopy = () => {
   try {
-    const successful = document.execCommand('copy');
-    if (!successful) {
-      showNotify({
-        type: 'negative',
-        message: 'Не удалось скопировать текст. Разрешите доступ к буферу обмена.',
-        timeout: 3000
-      });
-    }
+    document.execCommand('copy');
   } catch {
     showNotify({
       type: 'negative',
@@ -268,7 +256,7 @@ const closeModal = () => {
   emit('close');
 };
 
-// Следим за изменениями в данных доставки и генерируем штрих-код
+// Следим за изменениями в данных доставки
 watch(() => props.deliveryData, () => {
   generateBarcode();
 }, { deep: true });
@@ -282,7 +270,7 @@ onMounted(() => {
 
 <style scoped>
 .delivery-modal {
-  min-width: 900px;
+  min-width: 1000px;
   max-width: 95vw;
   max-height: 80vh;
 }
@@ -296,30 +284,45 @@ onMounted(() => {
 .header-content {
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: flex-start;
+  gap: 20px;
+}
+
+.delivery-info {
+  flex: 1;
 }
 
 .delivery-title {
   font-size: 20px;
   font-weight: bold;
   color: #333;
+  margin-bottom: 8px;
+}
+
+.delivery-details {
+  font-size: 14px;
+  color: #666;
+}
+
+.delivery-details div {
+  margin-bottom: 4px;
 }
 
 .barcode-section {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 12px;
+  gap: 8px;
 }
 
 .barcode-label {
   font-size: 16px;
-  font-weight: 500;
+  font-weight: 700;
 }
 
 .barcode-canvas {
-  height: 70px;
+  height: 90px;
   background: white;
-  padding: 8px;
   border: 1px solid #ddd;
   border-radius: 4px;
 }
@@ -330,7 +333,7 @@ onMounted(() => {
   padding: 0;
 }
 
-/* Стили для обычной HTML таблицы с явными границами и увеличенными ячейками */
+/* Стили для таблицы */
 .bordered-table {
   width: 100%;
   border-collapse: collapse;
@@ -373,9 +376,10 @@ onMounted(() => {
   background-color: #f5f5f5;
 }
 
-.bordered-table th:nth-child(2),
-.bordered-table td:nth-child(2) {
+.bordered-table th:nth-child(3),
+.bordered-table td:nth-child(3) {
   text-align: center;
+  width: 100px;
 }
 
 /* Чередование цветов строк */
@@ -399,8 +403,8 @@ onMounted(() => {
 
 /* Стили для скопированных ячеек */
 .copied-cell {
-  background-color: #c8e6c9 !important; /* Светло-зеленый фон */
-  border: 2px solid #4caf50 !important; /* Зеленая рамка */
+  background-color: #c8e6c9 !important;
+  border: 2px solid #4caf50 !important;
   font-weight: bold;
   position: relative;
 }
@@ -424,12 +428,10 @@ onMounted(() => {
   font-style: italic;
 }
 
-/* Убедимся, что все ячейки имеют границы */
 .cell-border {
   border: 1px solid #bdbdbd !important;
 }
 
-/* Стили для статуса копирования */
 .copy-status {
   background-color: #e8f5e9;
   color: #2e7d32;
