@@ -10,6 +10,7 @@
 
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from crud.base import DAOBase
 from models import MaintenanceBillOfMaterials, MaintenanceComponent  # User
@@ -29,6 +30,37 @@ class DocBOMDAO(DAOBase[MaintenanceBillOfMaterials]):
         )
         result = await session.scalar(stmt)
         return result
+
+    async def get_multi_by_attribute(
+            self,
+            attr_name: str,
+            attr_value: str,
+            session: AsyncSession,
+    ):
+        """Получение списка объектов по параметру.
+
+        ## Args:
+            attr_name: Поле модели;
+            attr_value: Искомое значение;
+            session: Асинхронная сессия SQLAlchemy.
+
+        ## Returns:
+            список объектов модели.
+        """
+        # Проверяем искомый параметр модели:
+        if not hasattr(self.model, attr_name):
+            raise AttributeError(
+                f'У {self.model.__name__} нет атрибута {attr_name}'
+            )
+        attr = getattr(self.model, attr_name)
+
+        stmt = (
+            select(self.model)
+            .where(attr == attr_value)
+            .options(selectinload(self.model.components))
+        )
+        result = await session.scalars(stmt)
+        return result.all()
 
     # async def create_with_file(
     #         self,

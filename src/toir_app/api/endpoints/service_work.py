@@ -347,6 +347,43 @@ async def get_table_for_master(
 #     )
 
 
+@router.get(
+        '/{service_work_id}/unit_of_bom',
+        response_model=list[UnitOfBOMRead],
+        status_code=status.HTTP_200_OK,
+        name='Получение списка документов с материалами (доступно всем).',
+)
+async def get_docs(
+    service_work_id: int,
+    session: AsyncSession = Depends(get_async_session),
+):
+    """Получение списка документов к карточке операции."""
+    try:
+        service_work = await dao_service_work.get(
+            obj_id=service_work_id,
+            session=session,
+        )
+
+        if service_work is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f'Карточка работы #{service_work_id} не найдена',
+            )
+
+        bom = await dao_doc_bom.get_multi_by_attribute(
+            attr_name='service_work_id',
+            attr_value=service_work_id,
+            session=session,
+        )
+        return bom
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f'Непредвиденная ошибка: {e}',
+        )
+
+
 @router.post(
     '/unit_of_bom',  # /service_work/1/unit_of_bom
     response_model=UnitOfBOMRead,
