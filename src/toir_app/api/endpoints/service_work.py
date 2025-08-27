@@ -383,12 +383,17 @@ async def parse_docs(
         )
 
         # Проверяем, что ID доставки и указанный штрих-код уникальны:
-        for attr in ('delivery', 'bar_code'):
-            await dao_doc_bom.check_exists(
-                attr_name=attr,
-                attr_value=getattr(data.unit_of_bom_doc, attr),
-                session=session,
-            )
+        await dao_doc_bom.check_exists(
+            attr_name='delivery',
+            attr_value=getattr(data.unit_of_bom_doc, 'delivery'),
+            session=session,
+        )
+
+        await dao_doc_bom.check_exists(
+            attr_name='bar_code',
+            attr_value=getattr(data, 'bar_code'),
+            session=session,
+        )
 
         # Создаем объект документа BOM:
         bom_doc = BOMDocsCreate(
