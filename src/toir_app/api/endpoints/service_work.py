@@ -442,7 +442,7 @@ async def parse_docs(
 
         # Проверка нескольких прав пользователя:
         # 1. Только работы, связанные с мастерской сотрудника:
-        check_users_can_edit_service_work(user, service_work, for_master=True)
+        check_users_can_edit_service_work(user, service_work, for_station=True)
         # 2. Только для пользователя с ролью Мастер и суперюзера:
         check_user_can_add_docs_in_service_work(user)
 
