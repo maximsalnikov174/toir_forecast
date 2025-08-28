@@ -17,20 +17,6 @@ class DeliveryService {
       throw new Error('Не удалось загрузить данные о доставке');
     }
   }
-
-  /**
-   * Получить название организации по ID
-   * @param {number} organizationId - ID организации
-   * @returns {string} - Название организации
-   */
-  getOrganizationName(organizationId) {
-    const organizationMap = {
-      4: 'ООО "Поставщик 4"',
-      6: 'ООО "СНБ"',
-    };
-
-    return organizationMap[organizationId] || `Организация №${organizationId}`;
-  }
 }
 
 // Создаем и экспортируем экземпляр сервиса

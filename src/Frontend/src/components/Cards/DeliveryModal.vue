@@ -1,8 +1,8 @@
 <template>
   <q-dialog v-model="showModal" persistent>
     <q-card class="delivery-modal">
-      <!-- Навигация между доставками -->
-      <q-card-section v-if="hasMultipleDeliveries" class="navigation-section">
+     <!-- Навигация между доставками -->
+     <q-card-section v-if="hasMultipleDeliveries" class="navigation-section">
         <div class="navigation-controls">
           <q-btn
             icon="chevron_left"
@@ -39,7 +39,7 @@
               <span class="zvr-label">ЗВР:</span> {{ zvr_number }}
             </div>
             <div class="delivery-details">
-              <div>От организации: {{ fromOrganizationName }}</div>
+              <div>ID организации: {{ currentDelivery.from_organization }}</div>
               <div>ID работы: {{ currentDelivery.service_work_id }}</div>
             </div>
           </div>
@@ -124,7 +124,6 @@
 import { ref, watch, nextTick, onMounted, computed } from 'vue'
 import { useQuasar } from 'quasar'
 import JsBarcode from 'jsbarcode'
-import { deliveryService } from '../Functions/deliveryService'
 
 const $q = useQuasar()
 const showModal = ref(false)
@@ -174,11 +173,6 @@ const hasMultipleDeliveries = computed(() => {
 // Текущая доставка
 const currentDelivery = computed(() => {
   return deliveries.value[currentDeliveryIndex.value] || {}
-})
-
-// Вычисляемое свойство для названия организации
-const fromOrganizationName = computed(() => {
-  return deliveryService.getOrganizationName(currentDelivery.value.from_organization)
 })
 
 // Вычисляемое свойство для штрих-кода
@@ -410,7 +404,7 @@ onMounted(() => {
 }
 
 .zvr-label {
-  color: black;
+  color: black
 }
 
 .delivery-details {
