@@ -359,7 +359,7 @@ onMounted(() => {
 
 <style scoped>
 .delivery-modal {
-  min-width: 1000px;
+  width: 1000px;
   max-width: 95vw;
   max-height: 80vh;
 }
