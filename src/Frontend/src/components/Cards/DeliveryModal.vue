@@ -1,8 +1,19 @@
 <template>
   <q-dialog v-model="showModal" persistent>
     <q-card class="delivery-modal">
-     <!-- Навигация между доставками -->
-     <q-card-section v-if="hasMultipleDeliveries" class="navigation-section">
+      <!-- Крестик закрытия в правом верхнем углу -->
+      <q-btn
+        class="close-button"
+        icon="close"
+        flat
+        round
+        dense
+        @click="closeModal"
+        v-close-popup
+      />
+
+      <!-- Навигация между доставками -->
+      <q-card-section v-if="hasMultipleDeliveries" class="navigation-section">
         <div class="navigation-controls">
           <q-btn
             icon="chevron_left"
@@ -108,12 +119,18 @@
       </q-card-section>
 
       <q-card-actions align="right">
-        <q-btn label="Закрыть" color="primary" @click="closeModal" />
         <q-btn
           label="Сбросить выделение"
           color="secondary"
           @click="resetCopiedCells"
           v-if="copiedCells.size > 0"
+        />
+        <!-- Кнопка Внесено справа -->
+        <q-btn
+          label="Внесено"
+          color="positive"
+          @click="markAsEntered"
+          v-if="allCellsCopied"
         />
       </q-card-actions>
     </q-card>
@@ -133,8 +150,9 @@ const copyStatus = ref('')
 const barcodeCanvas = ref(null)
 const copiedCells = ref(new Set())
 const currentDeliveryIndex = ref(0)
+const enteredDeliveries = ref(new Set())
 
-const emit = defineEmits(['close', 'update:modelValue'])
+const emit = defineEmits(['close', 'update:modelValue', 'entered'])
 
 const props = defineProps({
   modelValue: {
@@ -178,6 +196,16 @@ const currentDelivery = computed(() => {
 // Вычисляемое свойство для штрих-кода
 const barcodeValue = computed(() => {
   return currentDelivery.value.bar_code || props.barCode || 'NO_DATA'
+})
+
+// Проверяем, все ли ячейки текущей доставки скопированы
+const allCellsCopied = computed(() => {
+  if (!currentDelivery.value.components || currentDelivery.value.components.length === 0) {
+    return false
+  }
+
+  const totalCells = currentDelivery.value.components.length * 3
+  return copiedCells.value.size >= totalCells && !enteredDeliveries.value.has(currentDelivery.value.delivery)
 })
 
 // Синхронизируем значение модального окна
@@ -331,6 +359,19 @@ const fallbackCopy = () => {
   }
 }
 
+// Отметка доставки как внесенной
+const markAsEntered = () => {
+  if (currentDelivery.value.delivery) {
+    enteredDeliveries.value.add(currentDelivery.value.delivery)
+    emit('entered', currentDelivery.value)
+    showNotify({
+      type: 'positive',
+      message: `Доставка №${currentDelivery.value.delivery} отмечена как внесенная`,
+      timeout: 3000,
+    })
+  }
+}
+
 const showNotify = (options) => {
   $q.notify(options)
 }
@@ -345,6 +386,7 @@ watch(
   () => props.deliveryData,
   () => {
     currentDeliveryIndex.value = 0
+    enteredDeliveries.value.clear()
     generateBarcode()
   },
   { deep: true },
@@ -362,6 +404,15 @@ onMounted(() => {
   width: 1000px;
   max-width: 2000px;
   max-height: 80vh;
+  position: relative;
+}
+
+/* Крестик закрытия в правом верхнем углу */
+.close-button {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 1000;
 }
 
 .header-section {
@@ -567,5 +618,11 @@ onMounted(() => {
   margin: 10px 16px;
   font-weight: 500;
   text-align: center;
+}
+
+/* Выравнивание кнопок действий справа */
+.q-card-actions {
+  justify-content: flex-end;
+  gap: 8px;
 }
 </style>
