@@ -90,6 +90,7 @@
     :delivery-data="deliveryData"
     @close="closeDeliveryModal"
     :bar-code="barCodeValue"
+    :zvr_number="zvr_number"
   />
   </div>
 </template>

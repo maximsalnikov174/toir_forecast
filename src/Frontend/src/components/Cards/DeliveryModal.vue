@@ -5,6 +5,7 @@
         <div class="header-content">
           <div class="delivery-info">
             <div class="delivery-title">Доставка №{{ deliveryData.delivery }}</div>
+            <div class="zvr-number" v-if="zvr_number">ЗВР: {{ zvr_number }}</div>
             <div class="delivery-details">
               <div>От организации: {{ fromOrganizationName }}</div>
               <div>ID работы: {{ deliveryData.service_work_id }}</div>
@@ -107,6 +108,10 @@ const props = defineProps({
     default: () => ({})
   },
   barCode: {
+    type: String,
+    default: ''
+  },
+  zvr_number: {
     type: String,
     default: ''
   }
@@ -297,6 +302,15 @@ onMounted(() => {
   font-weight: bold;
   color: #333;
   margin-bottom: 8px;
+}
+
+.zvr-number {
+  font-size: 16px;
+  font-weight: 600;
+  color: #07ec1a;
+  margin-bottom: 8px;
+  border-radius: 4px;
+  display: inline-block;
 }
 
 .delivery-details {
