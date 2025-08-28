@@ -24,6 +24,7 @@ class BOMDocs(BOMDocsDelivery):
     from_organization: str = (
         Field(..., pattern=ORGANIZATION_BASE_NAME_PATTERN)
     )
+    to_insert: bool = False
 
 
 class UnitOfBOM(BaseModel):
