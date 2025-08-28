@@ -56,6 +56,7 @@ class UserRole(str, Enum):
     ADMIN = 'Полный доступ'
     MASTER = 'Мастер (станции)'
     OPERATOR = 'Оператор (станции)'
+    DISPENSER = 'Раздатчик-контролер'
 
 
 class StaticOrganization(str, Enum):

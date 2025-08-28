@@ -1,6 +1,6 @@
 # from typing import TYPE_CHECKING
 
-from sqlalchemy import Integer, ForeignKey, String
+from sqlalchemy import Boolean, Integer, ForeignKey, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from constants import SNB_DESCRIPTION, SNB_LEN  # IMG_LOCATION_LEN
@@ -26,6 +26,11 @@ class MaintenanceBillOfMaterials(Base):
         nullable=False,
         unique=True,
         comment='Штрих-код документа',
+    )
+    to_insert: Mapped[bool] = mapped_column(
+        Boolean,
+        nullable=True,
+        comment='Документ обработан оператором'
     )
 
     # Связи с другими таблицами:

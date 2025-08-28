@@ -516,12 +516,12 @@ def check_users_can_edit_service_work(
         user: User,
         service_work: ServiceWork,
         *,
-        for_master: bool = False,
-) -> None:
+        for_station: bool = False,
+):
     """Проверка полномочий юзера для редактирования карточки `ServiceWork`.
 
     ## Args:
-    - `for_master` если у пользователя нужно проверить связь с мастерской при
+    - `for_station` если у пользователя нужно проверить связь с мастерской при
     наступлении события, когда ранее выбранная механиком в карточке
     `servise_work` `station_id` сверяется с `station_id` связанной
     с `organization_id` пользователя.
@@ -552,7 +552,15 @@ def check_users_can_edit_service_work(
 
     # Проверка принадлежности к подразделению (кроме суперюзеров)
     if not user.is_superuser:
-        if for_master:
+
+        if for_station:
+            # Ограничиваем доступ к редактированию операторам:
+            if user.users_role.name == UserRole.OPERATOR.value:
+                raise HTTPException(
+                    status_code=HTTPStatus.FORBIDDEN,
+                    detail='Недостаточно прав! Оператор только получает данные'
+                )
+
             # Для мастера: проверка станции
             if (
                 service_work.station_id and user.users_organization and
@@ -657,6 +665,10 @@ async def update_completed_real_service_work(
     """Обновление `service_work_completed` (фактического завершения работ)
 
     Для `service_work`, которые были фактически сделаны (только мастерская).
+
+    ARGS
+    ----
+    - `add_date=True` чтобы зафиксировать текущее (на момент запроса) время.
     """
     service_work = await get_service_work(service_work_id, session)
 
@@ -664,7 +676,7 @@ async def update_completed_real_service_work(
         check_users_can_edit_service_work(
             user=user,
             service_work=service_work,
-            for_master=True
+            for_station=True
         )
         if not service_work.zvr_number:
             raise HTTPException(
