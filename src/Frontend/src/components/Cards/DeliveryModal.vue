@@ -278,20 +278,44 @@ const resetAllStates = () => {
   currentDeliveryIndex.value = 0
 }
 
+// Найти первую не скопированную ячейку в строке
+const findFirstUncopiedCell = (rowIndex) => {
+  for (let cellIndex = 0; cellIndex < 3; cellIndex++) {
+    const cellId = `${rowIndex}-${cellIndex}`
+    if (!copiedCells.value.has(cellId)) {
+      return cellIndex
+    }
+  }
+  return -1 // Все ячейки уже скопированы
+}
+
 // Обработчик клика по строке таблицы
 const handleRowClick = (rowIndex) => {
+  // Если кликнули на другую строку, сбрасываем текущую ячейку
   if (rowIndex !== currentRowIndex.value) {
     currentRowIndex.value = rowIndex
-    currentCellIndex.value = 0
+    currentCellIndex.value = findFirstUncopiedCell(rowIndex)
   } else {
-    currentCellIndex.value = (currentCellIndex.value + 1) % 3
+    // Если кликнули на ту же строку, ищем следующую не скопированную ячейку
+    currentCellIndex.value = findFirstUncopiedCell(rowIndex)
   }
 
-  const cellValue = getCellValue(rowIndex, currentCellIndex.value)
-  copyToClipboard(cellValue)
+  // Если нашли не скопированную ячейку
+  if (currentCellIndex.value !== -1) {
+    const cellValue = getCellValue(rowIndex, currentCellIndex.value)
+    copyToClipboard(cellValue)
 
-  const cellId = `${rowIndex}-${currentCellIndex.value}`
-  copiedCells.value.add(cellId)
+    const cellId = `${rowIndex}-${currentCellIndex.value}`
+    copiedCells.value.add(cellId)
+  } else {
+    // Все ячейки в строке уже скопированы
+    currentCellIndex.value = -1
+    showNotify({
+      type: 'info',
+      message: 'Все ячейки в этой строке уже скопированы',
+      timeout: 2000,
+    })
+  }
 }
 
 // Сброс выделения скопированных ячеек
