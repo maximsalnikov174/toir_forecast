@@ -56,16 +56,15 @@
       <div class="document-text">Просмотр документа</div>
     </div>
 
-    <!-- Оверлей для drag-and-drop -->
     <div
-      v-if="dragOver"
-      class="drag-overlay"
-    >
-      <div class="drag-content">
-        <div class="drag-icon">📁</div>
-        <div class="drag-text">Перетащите файл сюда</div>
-      </div>
-    </div>
+  v-if="dragOver && isRole4"
+  class="drag-overlay"
+>
+  <div class="drag-content">
+    <div class="drag-icon">📁</div>
+    <div class="drag-text">Перетащите файл сюда</div>
+  </div>
+</div>
 
     <ModalWindow
       v-model:show="showModal"
@@ -119,6 +118,10 @@ const { uploadFile } = useFileUploadService(); // Используем серв�
 // Данные для таблицы доставки
 const deliveryData = ref({});
 const loading = ref(false);
+
+const isRole4 = computed(() => {
+  return authStore.user?.role_id === 4;
+});
 
 const showNotify = (options) => {
   $q.notify(options);
@@ -256,12 +259,16 @@ const closeDeliveryModal = () => {
 };
 
 const handleDragEnter = (e) => {
+  if (!isRole4.value) return;
+
   e.preventDefault();
   dragCounter.value++;
   dragOver.value = true;
 };
 
 const handleDragLeave = (e) => {
+  if (!isRole4.value) return;
+
   e.preventDefault();
   dragCounter.value--;
 
@@ -271,6 +278,8 @@ const handleDragLeave = (e) => {
 };
 
 const handleDrop = async (event) => {
+  if (!isRole4.value) return;
+
   dragOver.value = false;
   dragCounter.value = 0;
 
@@ -397,11 +406,6 @@ const showBottomBar = computed(() => {
   transition: all 0.2s ease;
 }
 
-.service-status-card.drag-over {
-  border: 1px dashed #ffffff;
-  background-color: rgba(106, 13, 173, 0.1);
-  transform: scale(1);
-}
 
 .station-purple {
   background: purple;
