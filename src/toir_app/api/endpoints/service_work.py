@@ -11,7 +11,7 @@ from api.endpoints.bot import bot_schedular
 from convert_pdf_to_py.unit_of_bom import get_payload_data_in_pdf_file
 from core.db import get_async_session
 # from core.minio import get_minio_client
-from core.user import current_user
+from core.user import current_user, current_superuser
 from crud.docs_material import dao_doc_bom, dao_unit_of_bom
 from crud.organization import dao_organization, get_current_organization
 from crud.service_work import (
@@ -25,7 +25,8 @@ from crud.service_work import (
     get_all_active_service_work_with_open_zvr,
     get_db_status,
     get_service_work,
-    update_completed_real_service_work
+    update_completed_real_service_work,
+    zvr_delete
 )
 from exception import ObjectIsExistException
 from models import EventForBot, Organization, SpecialStatus, User
@@ -154,7 +155,7 @@ async def completed_real_service_work(
 @router.patch(
     '/de_facto_drop',
     response_model=ServiceWorkWithZVRNumber,
-    dependencies=[Depends(current_user)],
+    dependencies=[Depends(current_superuser)],
     name=(
         'Отмена фактического выполнения работы'
         '(доступно суперпользователю)'
@@ -168,9 +169,33 @@ async def drop_completed_real_service_work(
     user: User = Depends(current_user),
     session: AsyncSession = Depends(get_async_session)
 ):
-    """Добавление признака фактического завершения работ в service_work."""
+    """Удаление признака фактического завершения работ в service_work."""
     return await update_completed_real_service_work(
         add_date=False,
+        service_work_id=service_work_id,
+        user=user,
+        session=session
+    )
+
+
+@router.patch(
+    '/zvr_drop',
+    response_model=ServiceWorkWithZVRNumber,
+    dependencies=[Depends(current_superuser)],
+    name=(
+        'Удаление ЗВР из работы'
+        '(доступно суперпользователю)'
+    ),
+    description='Для удаления ошибочно или неверно указанных ЗВР',
+    response_model_exclude_none=True,
+    status_code=HTTPStatus.CREATED
+)
+async def drop_zvr_from_service_work(
+    service_work_id: int,
+    user: User = Depends(current_user),
+    session: AsyncSession = Depends(get_async_session)
+):
+    return await zvr_delete(
         service_work_id=service_work_id,
         user=user,
         session=session
