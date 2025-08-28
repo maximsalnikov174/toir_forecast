@@ -15,6 +15,7 @@ from core.user import current_user, current_superuser
 from crud.docs_material import dao_doc_bom, dao_unit_of_bom
 from crud.organization import dao_organization, get_current_organization
 from crud.service_work import (
+    check_user_can_add_docs_in_service_work,
     check_users_can_edit_service_work,
     check_zvr_unique,
     create_main_table,
@@ -433,6 +434,17 @@ async def parse_docs(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=f'Карточка работы #{service_work_id} не найдена',
             )
+        if service_work.zvr_create_date is None:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f'Работа #{service_work_id} еще не связана с ЗВР',
+            )
+
+        # Проверка нескольких прав пользователя:
+        # 1. Только работы, связанные с мастерской сотрудника:
+        check_users_can_edit_service_work(user, service_work, for_master=True)
+        # 2. Только для пользователя с ролью Мастер и суперюзера:
+        check_user_can_add_docs_in_service_work(user)
 
         # Получаем данные из файла pdf и загоняем их в модель:
         data = await get_payload_data_in_pdf_file(file=file)

@@ -574,6 +574,18 @@ def check_users_can_edit_service_work(
                 )
 
 
+def check_user_can_add_docs_in_service_work(user: User):
+    """Проверка полномочий юзера для добавления материалов в «накладной»."""
+    if (
+        user.users_role.name != UserRole.MASTER.value
+        and not user.is_superuser
+    ):
+        raise HTTPException(
+            status_code=HTTPStatus.FORBIDDEN,
+            detail='Недостаточно прав! Накладную может вложить «мастер»!'
+        )
+
+
 async def get_db_status(session: AsyncSession) -> dict[str, str]:
     """Получение состояния об актуальности данных по ServiceWork."""
     max_date = await session.scalar(select(func.max(ServiceWork.request_date)))
