@@ -5,7 +5,9 @@
         <div class="header-content">
           <div class="delivery-info">
             <div class="delivery-title">Доставка №{{ deliveryData.delivery }}</div>
-            <div class="zvr-number" v-if="zvr_number">ЗВР: {{ zvr_number }}</div>
+            <div class="zvr-number" v-if="zvr_number">
+              <span class="zvr-label">ЗВР:</span> {{ zvr_number }}
+            </div>
             <div class="delivery-details">
               <div>От организации: {{ fromOrganizationName }}</div>
               <div>ID работы: {{ deliveryData.service_work_id }}</div>
@@ -38,23 +40,29 @@
                 class="cell-border"
                 :class="{
                   'active-cell': currentRowIndex === index && currentCellIndex === 0,
-                  'copied-cell': copiedCells.has(`${index}-0`)
+                  'copied-cell': copiedCells.has(`${index}-0`),
                 }"
-              >{{ item.snb }}</td>
+              >
+                {{ item.snb }}
+              </td>
               <td
                 class="cell-border"
                 :class="{
                   'active-cell': currentRowIndex === index && currentCellIndex === 1,
-                  'copied-cell': copiedCells.has(`${index}-1`)
+                  'copied-cell': copiedCells.has(`${index}-1`),
                 }"
-              >{{ item.material_name }}</td>
+              >
+                {{ item.material_name }}
+              </td>
               <td
                 class="cell-border text-center"
                 :class="{
                   'active-cell': currentRowIndex === index && currentCellIndex === 2,
-                  'copied-cell': copiedCells.has(`${index}-2`)
+                  'copied-cell': copiedCells.has(`${index}-2`),
                 }"
-              >{{ item.material_count }}</td>
+              >
+                {{ item.material_count }}
+              </td>
             </tr>
             <tr v-if="!deliveryData.components || deliveryData.components.length === 0">
               <td colspan="3" class="cell-border text-center text-grey">
@@ -83,68 +91,71 @@
 </template>
 
 <script setup>
-import { ref, watch, nextTick, onMounted, computed } from 'vue';
-import { useQuasar } from 'quasar';
-import JsBarcode from 'jsbarcode';
-import { deliveryService } from '../Functions/deliveryService';
+import { ref, watch, nextTick, onMounted, computed } from 'vue'
+import { useQuasar } from 'quasar'
+import JsBarcode from 'jsbarcode'
+import { deliveryService } from '../Functions/deliveryService'
 
-const $q = useQuasar();
-const showModal = ref(false);
-const currentRowIndex = ref(-1);
-const currentCellIndex = ref(-1);
-const copyStatus = ref('');
-const barcodeCanvas = ref(null);
-const copiedCells = ref(new Set());
+const $q = useQuasar()
+const showModal = ref(false)
+const currentRowIndex = ref(-1)
+const currentCellIndex = ref(-1)
+const copyStatus = ref('')
+const barcodeCanvas = ref(null)
+const copiedCells = ref(new Set())
 
-const emit = defineEmits(['close', 'update:modelValue']);
+const emit = defineEmits(['close', 'update:modelValue'])
 
 const props = defineProps({
   modelValue: {
     type: Boolean,
-    default: false
+    default: false,
   },
   deliveryData: {
     type: Object,
-    default: () => ({})
+    default: () => ({}),
   },
   barCode: {
     type: String,
-    default: ''
+    default: '',
   },
   zvr_number: {
     type: String,
-    default: ''
-  }
-});
+    default: '',
+  },
+})
 
 // Вычисляемое свойство для названия организации
 const fromOrganizationName = computed(() => {
-  return deliveryService.getOrganizationName(props.deliveryData.from_organization);
-});
+  return deliveryService.getOrganizationName(props.deliveryData.from_organization)
+})
 
 // Вычисляемое свойство для штрих-кода
 const barcodeValue = computed(() => {
-  return props.deliveryData.bar_code || props.barCode || 'NO_DATA';
-});
+  return props.deliveryData.bar_code || props.barCode || 'NO_DATA'
+})
 
 // Синхронизируем значение модального окна
-watch(() => props.modelValue, (value) => {
-  showModal.value = value;
-  if (value) {
-    generateBarcode();
-  } else {
-    resetAllStates();
-  }
-});
+watch(
+  () => props.modelValue,
+  (value) => {
+    showModal.value = value
+    if (value) {
+      generateBarcode()
+    } else {
+      resetAllStates()
+    }
+  },
+)
 
 watch(showModal, (value) => {
   if (value !== props.modelValue) {
-    emit('update:modelValue', value);
+    emit('update:modelValue', value)
   }
   if (!value) {
-    resetAllStates();
+    resetAllStates()
   }
-});
+})
 
 // Функция для генерации штрих-кода
 const generateBarcode = () => {
@@ -152,125 +163,133 @@ const generateBarcode = () => {
     if (barcodeCanvas.value && barcodeValue.value) {
       try {
         JsBarcode(barcodeCanvas.value, barcodeValue.value, {
-          format: "CODE128",
+          format: 'CODE128',
           width: 2,
           height: 60,
           displayValue: true,
           margin: 10,
           fontSize: 16,
-          textMargin: 5
-        });
+          textMargin: 5,
+        })
       } catch (error) {
-        console.error('Ошибка генерации штрих-кода:', error);
+        console.error('Ошибка генерации штрих-кода:', error)
       }
     }
-  });
-};
+  })
+}
 
 // Сброс всех состояний
 const resetAllStates = () => {
-  currentRowIndex.value = -1;
-  currentCellIndex.value = -1;
-  copyStatus.value = '';
-  copiedCells.value.clear();
-};
+  currentRowIndex.value = -1
+  currentCellIndex.value = -1
+  copyStatus.value = ''
+  copiedCells.value.clear()
+}
 
 // Обработчик клика по строке таблицы
 const handleRowClick = (rowIndex) => {
   if (rowIndex !== currentRowIndex.value) {
-    currentRowIndex.value = rowIndex;
-    currentCellIndex.value = 0;
+    currentRowIndex.value = rowIndex
+    currentCellIndex.value = 0
   } else {
-    currentCellIndex.value = (currentCellIndex.value + 1) % 3;
+    currentCellIndex.value = (currentCellIndex.value + 1) % 3
   }
 
-  const cellValue = getCellValue(rowIndex, currentCellIndex.value);
-  copyToClipboard(cellValue);
+  const cellValue = getCellValue(rowIndex, currentCellIndex.value)
+  copyToClipboard(cellValue)
 
-  const cellId = `${rowIndex}-${currentCellIndex.value}`;
-  copiedCells.value.add(cellId);
-};
+  const cellId = `${rowIndex}-${currentCellIndex.value}`
+  copiedCells.value.add(cellId)
+}
 
 // Сброс выделения скопированных ячеек
 const resetCopiedCells = () => {
-  copiedCells.value.clear();
-  currentCellIndex.value = -1;
-  currentRowIndex.value = -1;
-};
+  copiedCells.value.clear()
+  currentCellIndex.value = -1
+  currentRowIndex.value = -1
+}
 
 // Получение значения ячейки
 const getCellValue = (rowIndex, cellIndex) => {
-  const component = props.deliveryData.components?.[rowIndex];
-  if (!component) return '';
+  const component = props.deliveryData.components?.[rowIndex]
+  if (!component) return ''
 
   switch (cellIndex) {
-    case 0: return component.snb || '';
-    case 1: return component.material_name || '';
-    case 2: return component.material_count?.toString() || '';
-    default: return '';
+    case 0:
+      return component.snb || ''
+    case 1:
+      return component.material_name || ''
+    case 2:
+      return component.material_count?.toString() || ''
+    default:
+      return ''
   }
-};
+}
 
 // Копирование текста в буфер обмена
 const copyToClipboard = (text) => {
-  if (!text) return;
+  if (!text) return
 
-  const textArea = document.createElement('textarea');
-  textArea.value = text;
-  textArea.style.position = 'fixed';
-  textArea.style.top = '0';
-  textArea.style.left = '0';
-  textArea.style.opacity = '0';
+  const textArea = document.createElement('textarea')
+  textArea.value = text
+  textArea.style.position = 'fixed'
+  textArea.style.top = '0'
+  textArea.style.left = '0'
+  textArea.style.opacity = '0'
 
-  document.body.appendChild(textArea);
-  textArea.focus();
-  textArea.select();
+  document.body.appendChild(textArea)
+  textArea.focus()
+  textArea.select()
 
   try {
     if (navigator.clipboard && window.isSecureContext) {
-      navigator.clipboard.writeText(text).catch(fallbackCopy);
+      navigator.clipboard.writeText(text).catch(fallbackCopy)
     } else {
-      fallbackCopy();
+      fallbackCopy()
     }
   } catch {
-    fallbackCopy();
+    fallbackCopy()
   } finally {
-    document.body.removeChild(textArea);
+    document.body.removeChild(textArea)
   }
-};
+}
 
 // Fallback метод копирования
 const fallbackCopy = () => {
   try {
-    document.execCommand('copy');
+    document.execCommand('copy')
   } catch {
     showNotify({
       type: 'negative',
       message: 'Не удалось скопировать текст',
-      timeout: 3000
-    });
+      timeout: 3000,
+    })
   }
-};
+}
 
 const showNotify = (options) => {
-  $q.notify(options);
-};
+  $q.notify(options)
+}
 
 const closeModal = () => {
-  showModal.value = false;
-  emit('close');
-};
+  showModal.value = false
+  emit('close')
+}
 
 // Следим за изменениями в данных доставки
-watch(() => props.deliveryData, () => {
-  generateBarcode();
-}, { deep: true });
+watch(
+  () => props.deliveryData,
+  () => {
+    generateBarcode()
+  },
+  { deep: true },
+)
 
 onMounted(() => {
   if (props.modelValue) {
-    generateBarcode();
+    generateBarcode()
   }
-});
+})
 </script>
 
 <style scoped>
@@ -307,10 +326,14 @@ onMounted(() => {
 .zvr-number {
   font-size: 16px;
   font-weight: 600;
-  color: #07ec1a;
+  color: #35f51c;
   margin-bottom: 8px;
   border-radius: 4px;
   display: inline-block;
+}
+
+.zvr-label {
+  color: black
 }
 
 .delivery-details {
@@ -332,6 +355,7 @@ onMounted(() => {
 .barcode-label {
   font-size: 16px;
   font-weight: 700;
+  color: red;
 }
 
 .barcode-canvas {
@@ -424,7 +448,7 @@ onMounted(() => {
 }
 
 .copied-cell::after {
-  content: "✓";
+  content: '✓';
   position: absolute;
   top: 2px;
   right: 2px;
