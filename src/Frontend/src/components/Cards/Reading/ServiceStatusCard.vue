@@ -195,10 +195,10 @@ const topBarClass = computed(() => {
 
 const serviceWorkId = ref(props.id);
 
-// Показывать иконку документа для пользователей со station_id === 99
+// Показывать иконку документа для пользователей
 const shouldShowDocumentHover = computed(() => {
   return hover.value &&
-         authStore.user?.users_organization?.station_id === 99;
+         authStore.user?.role_id === 5;
 });
 
 const shouldShowPlusIcon = computed(() => {
@@ -209,7 +209,7 @@ const shouldShowPlusIcon = computed(() => {
 
 const shouldShowHover = computed(() => {
   return hover.value &&
-         (authStore.user?.is_superuser || authStore.user?.users_organization.station_id !== null) &&
+         (authStore.user?.is_superuser || authStore.user?.users_organization.station_id !== null || authStore.user?.role_id === 6) &&
          !props.service_work_completed;
 });
 
