@@ -17,7 +17,7 @@ class Settings(BaseSettings):
     superuser_name: str = 'Admin'
     superuser_surname: str = 'Adminov'
     superuser_organization: int = 1
-    superuser_role: int = 1
+    superuser_role: int = 3
     db_in_pg: bool = False
     postgres_db: str = 'toir_db'
     postgres_user: str = 'user'

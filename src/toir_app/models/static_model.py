@@ -49,11 +49,13 @@ class StationDefault(str, Enum):
 
 
 class UserRole(str, Enum):
-    """Полномочия Пользователей (read_only, can_edit, admin)."""
+    """Полномочия Пользователей (`read_only`, `admin`) и конкретные роли."""
 
     READ_ONLY = 'Только чтение'
-    CAN_EDIT = 'Редактирует свой цех'
+    MECHANIC = 'Редактирует свой цех'
     ADMIN = 'Полный доступ'
+    MASTER = 'Мастер (станции)'
+    OPERATOR = 'Оператор (станции)'
 
 
 class StaticOrganization(str, Enum):

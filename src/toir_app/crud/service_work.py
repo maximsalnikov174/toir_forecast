@@ -574,6 +574,18 @@ def check_users_can_edit_service_work(
                 )
 
 
+def check_user_can_add_docs_in_service_work(user: User):
+    """Проверка полномочий юзера для добавления материалов в «накладной»."""
+    if (
+        user.users_role.name != UserRole.MASTER.value
+        and not user.is_superuser
+    ):
+        raise HTTPException(
+            status_code=HTTPStatus.FORBIDDEN,
+            detail='Недостаточно прав! Накладную может вложить «мастер»!'
+        )
+
+
 async def get_db_status(session: AsyncSession) -> dict[str, str]:
     """Получение состояния об актуальности данных по ServiceWork."""
     max_date = await session.scalar(select(func.max(ServiceWork.request_date)))
@@ -582,6 +594,58 @@ async def get_db_status(session: AsyncSession) -> dict[str, str]:
             f'Актуально на {max_date.strftime(PATTERN_DATE_OEBS)}'
         )
     }
+
+
+async def zvr_delete(
+        service_work_id: Annotated[int, ServiceWork.id],
+        user: User,
+        session: AsyncSession
+) -> Optional[ServiceWork]:
+    """Удаление ЗВР из `service_work`.
+
+    PERMISSION
+    ----------
+    - Верифицированный сотрудник подразделения-перевозчика или суперюзер.
+
+    DETAIL
+    ------
+    Очищаются следующие поля:
+    - zvr_number;
+    - zvr_create_date;
+    - station_id;
+    - service_work_completed.
+    """
+    service_work = await get_service_work(service_work_id, session)
+
+    if service_work:
+        check_users_can_edit_service_work(
+            user=user,
+            service_work=service_work,
+        )
+        if not service_work.zvr_number:
+            raise HTTPException(
+                status_code=HTTPStatus.UNPROCESSABLE_ENTITY,
+                detail='ЗВР для данной работы нет.'
+            )
+
+    try:
+        service_work.zvr_number = None
+        service_work.zvr_create_date = None
+        service_work.station_id = None
+        service_work.service_work_completed = None
+
+        await session.commit()
+        await session.refresh(service_work)
+        return service_work
+
+    except Exception as e:
+        await session.rollback()
+        raise HTTPException(
+            HTTPStatus.INTERNAL_SERVER_ERROR,
+            detail=(
+                f'Непредвиденная ошибка случилась: {str(e)}'
+            )
+        )
 
 
 async def update_completed_real_service_work(
