@@ -71,6 +71,11 @@ class ServiceWork(Base):
         default=None,
         comment='Дата фактического завершения работ (но ЗВР пока не закрыт)'
     )
+    to_insert = Column(
+        Boolean,
+        nullable=True,
+        comment='Карточка обработана оператором (внесены материалы и люди)'
+    )
     in_archive = Column(
         Boolean,
         default=False,
