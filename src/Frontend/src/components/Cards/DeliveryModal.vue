@@ -1,16 +1,46 @@
 <template>
   <q-dialog v-model="showModal" persistent>
     <q-card class="delivery-modal">
+      <!-- Навигация между доставками -->
+      <q-card-section v-if="hasMultipleDeliveries" class="navigation-section">
+        <div class="navigation-controls">
+          <q-btn
+            icon="chevron_left"
+            color="primary"
+            @click="prevDelivery"
+            :disable="currentDeliveryIndex === 0"
+            round
+            dense
+          />
+          <div class="navigation-info">
+            Доставка {{ currentDeliveryIndex + 1 }} из {{ deliveries.length }}
+          </div>
+          <q-btn
+            icon="chevron_right"
+            color="primary"
+            @click="nextDelivery"
+            :disable="currentDeliveryIndex === deliveries.length - 1"
+            round
+            dense
+          />
+        </div>
+      </q-card-section>
+
       <q-card-section class="header-section">
         <div class="header-content">
           <div class="delivery-info">
-            <div class="delivery-title">Доставка №{{ deliveryData.delivery }}</div>
+            <div class="delivery-title">
+              Доставка №{{ currentDelivery.delivery }}
+              <span v-if="hasMultipleDeliveries" class="delivery-counter">
+                ({{ currentDeliveryIndex + 1 }} из {{ deliveries.length }})
+              </span>
+            </div>
             <div class="zvr-number" v-if="zvr_number">
               <span class="zvr-label">ЗВР:</span> {{ zvr_number }}
             </div>
             <div class="delivery-details">
               <div>От организации: {{ fromOrganizationName }}</div>
-              <div>ID работы: {{ deliveryData.service_work_id }}</div>
+              <div>ID работы: {{ currentDelivery.service_work_id }}</div>
             </div>
           </div>
           <div class="barcode-section">
@@ -31,7 +61,7 @@
           </thead>
           <tbody>
             <tr
-              v-for="(item, index) in deliveryData.components"
+              v-for="(item, index) in currentDelivery.components"
               :key="index"
               :class="{ 'active-row': currentRowIndex === index && currentCellIndex >= 0 }"
               @click="handleRowClick(index, $event)"
@@ -64,7 +94,7 @@
                 {{ item.material_count }}
               </td>
             </tr>
-            <tr v-if="!deliveryData.components || deliveryData.components.length === 0">
+            <tr v-if="!currentDelivery.components || currentDelivery.components.length === 0">
               <td colspan="3" class="cell-border text-center text-grey">
                 Нет данных о компонентах
               </td>
@@ -103,6 +133,7 @@ const currentCellIndex = ref(-1)
 const copyStatus = ref('')
 const barcodeCanvas = ref(null)
 const copiedCells = ref(new Set())
+const currentDeliveryIndex = ref(0)
 
 const emit = defineEmits(['close', 'update:modelValue'])
 
@@ -112,7 +143,7 @@ const props = defineProps({
     default: false,
   },
   deliveryData: {
-    type: Object,
+    type: [Object, Array],
     default: () => ({}),
   },
   barCode: {
@@ -125,14 +156,34 @@ const props = defineProps({
   },
 })
 
+// Вычисляемое свойство для массива доставок
+const deliveries = computed(() => {
+  if (Array.isArray(props.deliveryData)) {
+    return props.deliveryData
+  } else if (props.deliveryData && Object.keys(props.deliveryData).length > 0) {
+    return [props.deliveryData]
+  }
+  return []
+})
+
+// Проверка на наличие нескольких доставок
+const hasMultipleDeliveries = computed(() => {
+  return deliveries.value.length > 1
+})
+
+// Текущая доставка
+const currentDelivery = computed(() => {
+  return deliveries.value[currentDeliveryIndex.value] || {}
+})
+
 // Вычисляемое свойство для названия организации
 const fromOrganizationName = computed(() => {
-  return deliveryService.getOrganizationName(props.deliveryData.from_organization)
+  return deliveryService.getOrganizationName(currentDelivery.value.from_organization)
 })
 
 // Вычисляемое свойство для штрих-кода
 const barcodeValue = computed(() => {
-  return props.deliveryData.bar_code || props.barCode || 'NO_DATA'
+  return currentDelivery.value.bar_code || props.barCode || 'NO_DATA'
 })
 
 // Синхронизируем значение модального окна
@@ -156,6 +207,24 @@ watch(showModal, (value) => {
     resetAllStates()
   }
 })
+
+// Переключение на следующую доставку
+const nextDelivery = () => {
+  if (currentDeliveryIndex.value < deliveries.value.length - 1) {
+    currentDeliveryIndex.value++
+    resetCopiedCells()
+    generateBarcode()
+  }
+}
+
+// Переключение на предыдущую доставку
+const prevDelivery = () => {
+  if (currentDeliveryIndex.value > 0) {
+    currentDeliveryIndex.value--
+    resetCopiedCells()
+    generateBarcode()
+  }
+}
 
 // Функция для генерации штрих-кода
 const generateBarcode = () => {
@@ -184,6 +253,7 @@ const resetAllStates = () => {
   currentCellIndex.value = -1
   copyStatus.value = ''
   copiedCells.value.clear()
+  currentDeliveryIndex.value = 0
 }
 
 // Обработчик клика по строке таблицы
@@ -211,7 +281,7 @@ const resetCopiedCells = () => {
 
 // Получение значения ячейки
 const getCellValue = (rowIndex, cellIndex) => {
-  const component = props.deliveryData.components?.[rowIndex]
+  const component = currentDelivery.value.components?.[rowIndex]
   if (!component) return ''
 
   switch (cellIndex) {
@@ -280,6 +350,7 @@ const closeModal = () => {
 watch(
   () => props.deliveryData,
   () => {
+    currentDeliveryIndex.value = 0
     generateBarcode()
   },
   { deep: true },
@@ -323,6 +394,12 @@ onMounted(() => {
   margin-bottom: 8px;
 }
 
+.delivery-counter {
+  font-size: 16px;
+  color: #666;
+  font-weight: normal;
+}
+
 .zvr-number {
   font-size: 16px;
   font-weight: 600;
@@ -333,7 +410,7 @@ onMounted(() => {
 }
 
 .zvr-label {
-  color: black
+  color: black;
 }
 
 .delivery-details {
@@ -363,6 +440,24 @@ onMounted(() => {
   background: white;
   border: 1px solid #ddd;
   border-radius: 4px;
+}
+
+.navigation-section {
+  padding: 10px 16px;
+  background-color: #f0f0f0;
+  border-bottom: 1px solid #ddd;
+}
+
+.navigation-controls {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 20px;
+}
+
+.navigation-info {
+  font-weight: 600;
+  color: #333;
 }
 
 .delivery-content {
