@@ -25,7 +25,6 @@ from crud.service_work import (
     get_active_service_work_list_by_car,
     get_all_active_service_work_with_open_zvr,
     get_db_status,
-    get_service_work,
     update_completed_real_service_work,
     zvr_delete
 )
@@ -80,8 +79,8 @@ async def add_zvr_to_service_work(
     session: AsyncSession = Depends(get_async_session)
 ):
     """Добавление 7-значного ЗВР и ID мастерской к карточке `service_work`."""
-    service_work = await get_service_work(
-        service_work_id=zvr_attr.service_work_id,
+    service_work = await dao_service_work.get_service_work(
+        obj_id=zvr_attr.service_work_id,
         session=session,
     )
     if service_work and service_work.zvr_number is not None:
@@ -411,7 +410,68 @@ async def get_docs(
 
 
 @router.post(
-    '/unit_of_bom',  # /service_work/1/unit_of_bom
+    '/unit_of_bom/{bom_id}',
+    status_code=status.HTTP_201_CREATED,
+    dependencies=[Depends(current_user)],
+    name='Фиксация оператором мастерской внесения материалов в ЗВР.'
+)
+async def insert_docs(
+    bom_id: int,
+    user: User = Depends(current_user),
+    session: AsyncSession = Depends(get_async_session),
+):
+    """Фиксация внесения материалов в ЗВР."""
+    try:
+        # Проверяем карточку с документами:
+        doc_bom = await dao_doc_bom.get_full(obj_id=bom_id, session=session)
+        if doc_bom is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f'Карточка с документами #{bom_id} не найдена',
+            )
+
+        # Проверяем существование работы:
+        service_work = await dao_service_work.get_service_work(
+            obj_id=(service_work_id := doc_bom.service_work_id),
+            session=session,
+        )
+
+        # Проверяем права пользователя (может только оператор):
+        check_users_can_edit_service_work(
+            user=user,
+            service_work=service_work,
+            for_station=True,
+            operator_leniency=True  # послабление прав для оператора
+        )
+
+        # Переводим карточку doc_bom в статус выполнено:
+        doc_bom.to_insert = True
+        await session.commit()
+
+        # Проверка, что с service_work больше не связаны никакие документы
+        docs_exists = await dao_doc_bom.check_constrained_docs(
+            service_work_id=service_work_id,
+            session=session
+        )
+        # ... если больше документов не осталось:
+        if not docs_exists:
+            # ... можно отправлять уведомление:
+            await bot_schedular.send_notification(
+                obj=service_work,
+                event=EventForBot.DOC_INSERT
+            )
+            # Переводим карточку service_work в статус «доки оформлены»:
+            service_work.to_insert = True
+            await session.commit()
+            return True
+        return False
+
+    except Exception:
+        pass
+
+
+@router.post(
+    '/unit_of_bom',
     response_model=UnitOfBOMRead,
     status_code=status.HTTP_201_CREATED,
     dependencies=[Depends(current_user)]
@@ -475,7 +535,7 @@ async def parse_docs(
             from_organization=organization.id,
             service_work_id=service_work_id,
             user_id=user.id,
-            bar_code=data.bar_code
+            bar_code=data.bar_code,
         )
         bom = await dao_doc_bom.create(obj_in=bom_doc, session=session)
 

@@ -10,6 +10,7 @@ class EventForBot(str, Enum):
     DONE = 'Выполнено (готово)'
     CLOSE = 'Закрыто'
     END_FOR_STATUS = 'Статус ТС истёк'
+    DOC_INSERT = 'Документы обработаны'
 
 
 class Status(str, Enum):
