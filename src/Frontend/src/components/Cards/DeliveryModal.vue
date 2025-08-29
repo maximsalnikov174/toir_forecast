@@ -63,7 +63,7 @@
         </div>
       </q-card-section>
 
-      <q-card-section class="q-pt-none delivery-content">
+      <q-card-section class="q-pt-none delivery-content" @click="!isDeliveryBlocked && handleTableClick()">
         <table class="delivery-table bordered-table">
           <thead>
             <tr>
@@ -77,10 +77,9 @@
               v-for="(item, index) in currentDelivery.components"
               :key="index"
               :class="{
-                'active-row': currentRowIndex === index && currentCellIndex >= 0 && !isDeliveryBlocked,
+                'active-row': currentRowIndex === index && !isDeliveryBlocked,
                 'blocked-row': isDeliveryBlocked
               }"
-              @click="!isDeliveryBlocked && handleRowClick(index, $event)"
             >
               <td
                 class="cell-border"
@@ -120,6 +119,8 @@
             </tr>
           </tbody>
         </table>
+
+      
       </q-card-section>
 
       <q-card-section class="copy-status" v-if="copyStatus && !isDeliveryBlocked">
@@ -213,6 +214,21 @@ const barcodeValue = computed(() => {
   return currentDelivery.value.bar_code || props.barCode || 'NO_DATA'
 })
 
+// Находим следующую ячейку для копирования
+const findNextCellToCopy = () => {
+  if (!currentDelivery.value.components) return null
+
+  for (let rowIndex = 0; rowIndex < currentDelivery.value.components.length; rowIndex++) {
+    for (let cellIndex = 0; cellIndex < 3; cellIndex++) {
+      const cellId = `${rowIndex}-${cellIndex}`
+      if (!copiedCells.value.has(cellId)) {
+        return { rowIndex, cellIndex }
+      }
+    }
+  }
+  return null
+}
+
 // Проверяем, все ли ячейки текущей доставки скопированы
 const allCellsCopied = computed(() => {
   if (!currentDelivery.value.components || currentDelivery.value.components.length === 0 || isDeliveryBlocked.value) {
@@ -223,124 +239,47 @@ const allCellsCopied = computed(() => {
   return copiedCells.value.size >= totalCells && !enteredDeliveries.value.has(currentDelivery.value.delivery)
 })
 
-// Синхронизируем значение модального окна
-watch(
-  () => props.modelValue,
-  (value) => {
-    showModal.value = value
-    if (value) {
-      generateBarcode()
-    } else {
-      resetAllStates()
-    }
-  },
-)
-
-watch(showModal, (value) => {
-  if (value !== props.modelValue) {
-    emit('update:modelValue', value)
-  }
-  if (!value) {
-    resetAllStates()
-  }
-})
-
-// Переключение на следующую доставку
-const nextDelivery = () => {
-  if (currentDeliveryIndex.value < deliveries.value.length - 1) {
-    currentDeliveryIndex.value++
-    resetCopiedCells()
-    generateBarcode()
-  }
-}
-
-// Переключение на предыдущую доставку
-const prevDelivery = () => {
-  if (currentDeliveryIndex.value > 0) {
-    currentDeliveryIndex.value--
-    resetCopiedCells()
-    generateBarcode()
-  }
-}
-
-// Функция для генерации штрих-кода
-const generateBarcode = () => {
-  nextTick(() => {
-    if (barcodeCanvas.value && barcodeValue.value) {
-      try {
-        JsBarcode(barcodeCanvas.value, barcodeValue.value, {
-          format: 'CODE128',
-          width: 2,
-          height: 60,
-          displayValue: true,
-          margin: 10,
-          fontSize: 16,
-          textMargin: 5,
-        })
-      } catch (error) {
-        console.error('Ошибка генерации штрих-кода:', error)
-      }
-    }
-  })
-}
-
-// Сброс всех состояний
-const resetAllStates = () => {
-  currentRowIndex.value = -1
-  currentCellIndex.value = -1
-  copyStatus.value = ''
-  copiedCells.value.clear()
-  currentDeliveryIndex.value = 0
-}
-
-// Найти первую не скопированную ячейку в строке
-const findFirstUncopiedCell = (rowIndex) => {
-  for (let cellIndex = 0; cellIndex < 3; cellIndex++) {
-    const cellId = `${rowIndex}-${cellIndex}`
-    if (!copiedCells.value.has(cellId)) {
-      return cellIndex
-    }
-  }
-  return -1 // Все ячейки уже скопированы
-}
-
-// Обработчик клика по строке таблицы
-const handleRowClick = (rowIndex) => {
+// Обработчик клика по таблице
+const handleTableClick = () => {
   if (isDeliveryBlocked.value) return
 
-  // Если кликнули на другую строку, сбрасываем текущую ячейку
-  if (rowIndex !== currentRowIndex.value) {
-    currentRowIndex.value = rowIndex
-    currentCellIndex.value = findFirstUncopiedCell(rowIndex)
-  } else {
-    // Если кликнули на ту же строку, ищем следующую не скопированную ячейку
-    currentCellIndex.value = findFirstUncopiedCell(rowIndex)
-  }
-
-  // Если нашли не скопированную ячейку
-  if (currentCellIndex.value !== -1) {
-    const cellValue = getCellValue(rowIndex, currentCellIndex.value)
-    copyToClipboard(cellValue)
-
-    const cellId = `${rowIndex}-${currentCellIndex.value}`
-    copiedCells.value.add(cellId)
-  } else {
-    // Все ячейки в строке уже скопированы
-    currentCellIndex.value = -1
+  const nextCell = findNextCellToCopy()
+  if (!nextCell) {
+    // Все ячейки уже скопированы
     showNotify({
       type: 'info',
-      message: 'Все ячейки в этой строке уже скопированы',
+      message: 'Все ячейки уже скопированы',
       timeout: 2000,
     })
+    return
   }
-}
 
-// Сброс выделения скопированных ячеек
-const resetCopiedCells = () => {
-  if (isDeliveryBlocked.value) return
-  copiedCells.value.clear()
-  currentCellIndex.value = -1
-  currentRowIndex.value = -1
+  // Устанавливаем текущую ячейку
+  currentRowIndex.value = nextCell.rowIndex
+  currentCellIndex.value = nextCell.cellIndex
+
+  // Копируем ячейку
+  const cellValue = getCellValue(nextCell.rowIndex, nextCell.cellIndex)
+  copyToClipboard(cellValue)
+
+  // Помечаем как скопированную
+  const cellId = `${nextCell.rowIndex}-${nextCell.cellIndex}`
+  copiedCells.value.add(cellId)
+
+  // Показываем статус
+  copyStatus.value = `Скопировано: ${cellValue}`
+  setTimeout(() => { copyStatus.value = '' }, 2000)
+
+  // Находим следующую ячейку для подсветки
+  const newNextCell = findNextCellToCopy()
+  if (newNextCell) {
+    currentRowIndex.value = newNextCell.rowIndex
+    currentCellIndex.value = newNextCell.cellIndex
+  } else {
+    // Все ячейки скопированы
+    currentRowIndex.value = -1
+    currentCellIndex.value = -1
+  }
 }
 
 // Получение значения ячейки
@@ -401,6 +340,20 @@ const fallbackCopy = () => {
   }
 }
 
+// Сброс выделения скопированных ячеек
+const resetCopiedCells = () => {
+  if (isDeliveryBlocked.value) return
+  copiedCells.value.clear()
+  const nextCell = findNextCellToCopy()
+  if (nextCell) {
+    currentRowIndex.value = nextCell.rowIndex
+    currentCellIndex.value = nextCell.cellIndex
+  } else {
+    currentRowIndex.value = -1
+    currentCellIndex.value = -1
+  }
+}
+
 // Отметка доставки как внесенной
 const markAsEntered = () => {
   if (isDeliveryBlocked.value) return
@@ -425,12 +378,82 @@ const closeModal = () => {
   emit('close')
 }
 
+// Синхронизируем значение модального окна
+watch(
+  () => props.modelValue,
+  (value) => {
+    showModal.value = value
+    if (value) {
+      generateBarcode()
+      // При открытии находим первую ячейку для копирования
+      nextTick(() => {
+        const nextCell = findNextCellToCopy()
+        if (nextCell) {
+          currentRowIndex.value = nextCell.rowIndex
+          currentCellIndex.value = nextCell.cellIndex
+        }
+      })
+    } else {
+      resetAllStates()
+    }
+  },
+)
+
+// Функция для генерации штрих-кода
+const generateBarcode = () => {
+  nextTick(() => {
+    if (barcodeCanvas.value && barcodeValue.value) {
+      try {
+        JsBarcode(barcodeCanvas.value, barcodeValue.value, {
+          format: 'CODE128',
+          width: 2,
+          height: 60,
+          displayValue: true,
+          margin: 10,
+          fontSize: 16,
+          textMargin: 5,
+        })
+      } catch (error) {
+        console.error('Ошибка генерации штрих-кода:', error)
+      }
+    }
+  })
+}
+
+// Сброс всех состояний
+const resetAllStates = () => {
+  currentRowIndex.value = -1
+  currentCellIndex.value = -1
+  copyStatus.value = ''
+  copiedCells.value.clear()
+  currentDeliveryIndex.value = 0
+}
+
+// Переключение на следующую доставку
+const nextDelivery = () => {
+  if (currentDeliveryIndex.value < deliveries.value.length - 1) {
+    currentDeliveryIndex.value++
+    resetCopiedCells()
+    generateBarcode()
+  }
+}
+
+// Переключение на предыдущую доставку
+const prevDelivery = () => {
+  if (currentDeliveryIndex.value > 0) {
+    currentDeliveryIndex.value--
+    resetCopiedCells()
+    generateBarcode()
+  }
+}
+
 // Следим за изменениями в данных доставки
 watch(
   () => props.deliveryData,
   () => {
     currentDeliveryIndex.value = 0
     enteredDeliveries.value.clear()
+    resetCopiedCells()
     generateBarcode()
   },
   { deep: true },
@@ -572,6 +595,30 @@ onMounted(() => {
   max-height: 50vh;
   overflow-y: auto;
   padding: 0;
+  position: relative;
+  cursor: pointer;
+}
+
+.delivery-content:hover {
+  background-color: #fafafa;
+}
+
+.click-instruction {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(255, 255, 255, 0.95);
+  padding: 15px 20px;
+  border-radius: 8px;
+  border: 2px solid #2196f3;
+  color: #1976d2;
+  font-weight: 500;
+  z-index: 10;
+  pointer-events: none;
 }
 
 /* Стили для таблицы */
@@ -612,14 +659,14 @@ onMounted(() => {
   border: 1px solid #bdbdbd;
 }
 
-.bordered-table tr:not(.blocked-row):hover {
-  background-color: #f5f5f5;
+.bordered-table td:not(.blocked-cell) {
   cursor: pointer;
 }
 
-.bordered-table tr.blocked-row:hover {
-  background-color: inherit;
-  cursor: not-allowed;
+.bordered-table td.blocked-cell {
+  background-color: #f5f5f5 !important;
+  color: #9e9e9e !important;
+  cursor: not-allowed !important;
 }
 
 .bordered-table th:nth-child(3),
@@ -637,14 +684,11 @@ onMounted(() => {
   background-color: #f0f0f0;
 }
 
-/* Стили для активной строки и ячейки */
-.active-row {
-  background-color: #e3f2fd !important;
-}
-
+/* Стили для активной ячейки */
 .active-cell {
   background-color: #bbdefb !important;
   font-weight: bold;
+  border: 2px solid #2196f3 !important;
 }
 
 /* Стили для скопированных ячеек */
