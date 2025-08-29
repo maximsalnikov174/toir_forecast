@@ -8,6 +8,7 @@
 
 # from core.config import settings
 
+from typing import Optional
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -21,7 +22,9 @@ class DocBOMDAO(DAOBase[MaintenanceBillOfMaterials]):
 
     model = MaintenanceBillOfMaterials
 
-    async def get_full(self, obj_id, session):
+    async def get_full(
+            self, obj_id, session
+    ) -> Optional[MaintenanceBillOfMaterials]:
         stmt = (
             select(self.model)
             .where(self.model.id == obj_id)
@@ -30,6 +33,26 @@ class DocBOMDAO(DAOBase[MaintenanceBillOfMaterials]):
         )
         result = await session.scalar(stmt)
         return result
+
+    async def check_constrained_docs(
+            self, service_work_id: int, session: AsyncSession
+    ) -> bool:
+        """Проверяет, что в базе не осталось необработанных накладных.
+
+        RETURNS:
+        --------
+        - `True` если еще остались накладные;
+        - `False` если больше необработанных накладных нет.
+        """
+        stmt = (
+            select(self.model)
+            .where(
+                self.model.service_work_id == service_work_id,
+                self.model.to_insert.is_not(True)
+            )
+        )
+        result = (await session.scalars(stmt)).all()
+        return False if not result else True
 
     async def get_multi_by_attribute(
             self,

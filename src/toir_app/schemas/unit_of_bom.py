@@ -48,6 +48,7 @@ class BOMDocsCreate(BOMDocsDelivery):
     service_work_id: int
     user_id: int
     bar_code: str = Field(..., pattern=BAR_CODE_PATTERN)
+    to_insert: bool = False
 
 
 class RawUnitOfBOM(BaseModel):

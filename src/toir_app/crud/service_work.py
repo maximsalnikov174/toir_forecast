@@ -56,39 +56,40 @@ class DAOServiceWork(DAOBase[ServiceWork]):
     #         .where(self.model.id == obj_id)
     #     )
     #     return await session.scalar(stmt)
+    async def get_service_work(
+            self,
+            obj_id: int,
+            session: AsyncSession,
+            check_active: bool = True
+    ):
+        stmt = (
+            select(self.model)
+            .options(
+                selectinload(self.model.car).joinedload(Car.organization),
+                selectinload(self.model.station),
+                selectinload(self.model.next_service),
+            )
+            .where(self.model.id == obj_id)
+            .limit(1)
+        )
+
+        result = await session.scalar(stmt)
+
+        if not result:
+            raise HTTPException(
+                status_code=HTTPStatus.NOT_FOUND,
+                detail=f'Карточка работы #{obj_id} не найдена',
+            )
+
+        if check_active and result.in_archive:
+            raise HTTPException(
+                status_code=HTTPStatus.BAD_REQUEST,
+                detail='Указанная работа находится в архиве.'
+            )
+        return result
 
 
 dao_service_work = DAOServiceWork(ServiceWork)
-
-
-async def get_service_work(
-        service_work_id: int,
-        session: AsyncSession,
-        check_active: bool = True
-) -> Optional[ServiceWork]:
-    """Получение объекта модели ServiceWork по ID."""
-    stmt = (
-        select(ServiceWork)
-        .options(
-            selectinload(ServiceWork.car).joinedload(Car.organization),
-            selectinload(ServiceWork.station),
-            selectinload(ServiceWork.next_service),
-        )
-        .where(ServiceWork.id == service_work_id)
-    )
-
-    result = await session.scalar(stmt)
-    if not result:
-        raise HTTPException(
-            status_code=HTTPStatus.NOT_FOUND,
-            detail='Указанная работа не найдена.'
-        )
-    if check_active and result.in_archive:
-        raise HTTPException(
-            status_code=HTTPStatus.BAD_REQUEST,
-            detail='Указанная работа находится в архиве.'
-        )
-    return result
 
 
 async def get_last_service_with_current_service_id(
@@ -517,14 +518,17 @@ def check_users_can_edit_service_work(
         service_work: ServiceWork,
         *,
         for_station: bool = False,
+        operator_leniency: bool = False
 ):
     """Проверка полномочий юзера для редактирования карточки `ServiceWork`.
 
-    ## Args:
+    Args:
+    -----
     - `for_station` если у пользователя нужно проверить связь с мастерской при
     наступлении события, когда ранее выбранная механиком в карточке
     `servise_work` `station_id` сверяется с `station_id` связанной
-    с `organization_id` пользователя.
+    с `organization_id` пользователя;
+    - `operator_leniency` понижение уровня проверки для оператора.
 
     ## Важно:
     - ЛЮБОЙ `user` должен быть валидирован админом (`is_verified=True`).
@@ -555,7 +559,10 @@ def check_users_can_edit_service_work(
 
         if for_station:
             # Ограничиваем доступ к редактированию операторам:
-            if user.users_role.name == UserRole.OPERATOR.value:
+            if (
+                user.users_role.name == UserRole.OPERATOR.value
+                and not operator_leniency  # ПРОВЕРИТЬ РАБОТУ!!!
+            ):
                 raise HTTPException(
                     status_code=HTTPStatus.FORBIDDEN,
                     detail='Недостаточно прав! Оператор только получает данные'
@@ -623,7 +630,9 @@ async def zvr_delete(
     - station_id;
     - service_work_completed.
     """
-    service_work = await get_service_work(service_work_id, session)
+    service_work = (
+        await dao_service_work.get_service_work(service_work_id, session)
+    )
 
     if service_work:
         check_users_can_edit_service_work(
@@ -670,7 +679,9 @@ async def update_completed_real_service_work(
     ----
     - `add_date=True` чтобы зафиксировать текущее (на момент запроса) время.
     """
-    service_work = await get_service_work(service_work_id, session)
+    service_work = (
+        await dao_service_work.get_service_work(service_work_id, session)
+    )
 
     if service_work:
         check_users_can_edit_service_work(

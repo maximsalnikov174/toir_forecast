@@ -22,6 +22,11 @@ class TgSchedular:
 
         if event == EventForBot.DONE:
             msg = ('Выполнено', f'\n📍 {obj.station.name}')
+        elif event == EventForBot.DOC_INSERT:
+            msg = (
+                f'📎 Материалы внесены!\nПора закрывать ЗВР\n{obj.zvr_number}',
+                f'\n📍 {obj.station.name}',
+            )
         elif event == EventForBot.CLOSE:
             msg = ('Карточка успешно закрыта', '')
         elif event == EventForBot.END_FOR_STATUS:
