@@ -25,6 +25,7 @@
           />
           <div class="navigation-info">
             Доставка {{ currentDeliveryIndex + 1 }} из {{ deliveries.length }}
+            <span v-if="isDeliveryBlocked" class="blocked-label">(только просмотр)</span>
           </div>
           <q-btn
             icon="chevron_right"
@@ -45,6 +46,7 @@
               <span v-if="hasMultipleDeliveries" class="delivery-counter">
                 ({{ currentDeliveryIndex + 1 }} из {{ deliveries.length }})
               </span>
+              <span v-if="isDeliveryBlocked" class="blocked-badge">ТОЛЬКО ПРОСМОТР</span>
             </div>
             <div class="zvr-number" v-if="zvr_number">
               <span class="zvr-label">ЗВР:</span> {{ zvr_number }}
@@ -74,14 +76,18 @@
             <tr
               v-for="(item, index) in currentDelivery.components"
               :key="index"
-              :class="{ 'active-row': currentRowIndex === index && currentCellIndex >= 0 }"
-              @click="handleRowClick(index, $event)"
+              :class="{
+                'active-row': currentRowIndex === index && currentCellIndex >= 0 && !isDeliveryBlocked,
+                'blocked-row': isDeliveryBlocked
+              }"
+              @click="!isDeliveryBlocked && handleRowClick(index, $event)"
             >
               <td
                 class="cell-border"
                 :class="{
-                  'active-cell': currentRowIndex === index && currentCellIndex === 0,
-                  'copied-cell': copiedCells.has(`${index}-0`),
+                  'active-cell': currentRowIndex === index && currentCellIndex === 0 && !isDeliveryBlocked,
+                  'copied-cell': copiedCells.has(`${index}-0`) && !isDeliveryBlocked,
+                  'blocked-cell': isDeliveryBlocked
                 }"
               >
                 {{ item.snb }}
@@ -89,8 +95,9 @@
               <td
                 class="cell-border"
                 :class="{
-                  'active-cell': currentRowIndex === index && currentCellIndex === 1,
-                  'copied-cell': copiedCells.has(`${index}-1`),
+                  'active-cell': currentRowIndex === index && currentCellIndex === 1 && !isDeliveryBlocked,
+                  'copied-cell': copiedCells.has(`${index}-1`) && !isDeliveryBlocked,
+                  'blocked-cell': isDeliveryBlocked
                 }"
               >
                 {{ item.material_name }}
@@ -98,8 +105,9 @@
               <td
                 class="cell-border text-center"
                 :class="{
-                  'active-cell': currentRowIndex === index && currentCellIndex === 2,
-                  'copied-cell': copiedCells.has(`${index}-2`),
+                  'active-cell': currentRowIndex === index && currentCellIndex === 2 && !isDeliveryBlocked,
+                  'copied-cell': copiedCells.has(`${index}-2`) && !isDeliveryBlocked,
+                  'blocked-cell': isDeliveryBlocked
                 }"
               >
                 {{ item.material_count }}
@@ -114,7 +122,7 @@
         </table>
       </q-card-section>
 
-      <q-card-section class="copy-status" v-if="copyStatus">
+      <q-card-section class="copy-status" v-if="copyStatus && !isDeliveryBlocked">
         {{ copyStatus }}
       </q-card-section>
 
@@ -123,14 +131,16 @@
           label="Сбросить выделение"
           color="secondary"
           @click="resetCopiedCells"
-          v-if="copiedCells.size > 0"
+          v-if="copiedCells.size > 0 && !isDeliveryBlocked"
+          :disable="isDeliveryBlocked"
         />
         <!-- Кнопка Внесено справа -->
         <q-btn
           label="Внесено"
           color="positive"
           @click="markAsEntered"
-          v-if="allCellsCopied"
+          v-if="allCellsCopied && !isDeliveryBlocked"
+          :disable="isDeliveryBlocked"
         />
       </q-card-actions>
     </q-card>
@@ -173,6 +183,11 @@ const props = defineProps({
   },
 })
 
+// Проверка, заблокирована ли текущая доставка
+const isDeliveryBlocked = computed(() => {
+  return currentDelivery.value.to_insert === true
+})
+
 // Вычисляемое свойство для массива доставок
 const deliveries = computed(() => {
   if (Array.isArray(props.deliveryData)) {
@@ -200,7 +215,7 @@ const barcodeValue = computed(() => {
 
 // Проверяем, все ли ячейки текущей доставки скопированы
 const allCellsCopied = computed(() => {
-  if (!currentDelivery.value.components || currentDelivery.value.components.length === 0) {
+  if (!currentDelivery.value.components || currentDelivery.value.components.length === 0 || isDeliveryBlocked.value) {
     return false
   }
 
@@ -291,6 +306,8 @@ const findFirstUncopiedCell = (rowIndex) => {
 
 // Обработчик клика по строке таблицы
 const handleRowClick = (rowIndex) => {
+  if (isDeliveryBlocked.value) return
+
   // Если кликнули на другую строку, сбрасываем текущую ячейку
   if (rowIndex !== currentRowIndex.value) {
     currentRowIndex.value = rowIndex
@@ -320,6 +337,7 @@ const handleRowClick = (rowIndex) => {
 
 // Сброс выделения скопированных ячеек
 const resetCopiedCells = () => {
+  if (isDeliveryBlocked.value) return
   copiedCells.value.clear()
   currentCellIndex.value = -1
   currentRowIndex.value = -1
@@ -344,7 +362,7 @@ const getCellValue = (rowIndex, cellIndex) => {
 
 // Копирование текста в буфер обмена
 const copyToClipboard = (text) => {
-  if (!text) return
+  if (!text || isDeliveryBlocked.value) return
 
   const textArea = document.createElement('textarea')
   textArea.value = text
@@ -385,6 +403,8 @@ const fallbackCopy = () => {
 
 // Отметка доставки как внесенной
 const markAsEntered = () => {
+  if (isDeliveryBlocked.value) return
+
   if (currentDelivery.value.delivery) {
     enteredDeliveries.value.add(currentDelivery.value.delivery)
     emit('entered', currentDelivery.value)
@@ -461,12 +481,31 @@ onMounted(() => {
   font-weight: bold;
   color: #333;
   margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
 }
 
 .delivery-counter {
   font-size: 16px;
   color: #666;
   font-weight: normal;
+}
+
+.blocked-badge {
+  background-color: #ffeb3b;
+  color: #333;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: bold;
+}
+
+.blocked-label {
+  color: #f44336;
+  font-weight: bold;
+  margin-left: 8px;
 }
 
 .zvr-number {
@@ -550,7 +589,6 @@ onMounted(() => {
   font-size: 14px;
   vertical-align: middle;
   min-height: 50px;
-  cursor: pointer;
   transition: background-color 0.2s ease;
 }
 
@@ -574,8 +612,14 @@ onMounted(() => {
   border: 1px solid #bdbdbd;
 }
 
-.bordered-table tr:hover {
+.bordered-table tr:not(.blocked-row):hover {
   background-color: #f5f5f5;
+  cursor: pointer;
+}
+
+.bordered-table tr.blocked-row:hover {
+  background-color: inherit;
+  cursor: not-allowed;
 }
 
 .bordered-table th:nth-child(3),
@@ -585,11 +629,11 @@ onMounted(() => {
 }
 
 /* Чередование цветов строк */
-.bordered-table tr:nth-child(even) {
+.bordered-table tr:nth-child(even):not(.blocked-row) {
   background-color: #fafafa;
 }
 
-.bordered-table tr:nth-child(even):hover {
+.bordered-table tr:nth-child(even):not(.blocked-row):hover {
   background-color: #f0f0f0;
 }
 
@@ -619,6 +663,18 @@ onMounted(() => {
   color: #4caf50;
   font-weight: bold;
   font-size: 12px;
+}
+
+/* Стили для заблокированных ячеек */
+.blocked-cell {
+  background-color: #f5f5f5 !important;
+  color: #9e9e9e !important;
+  cursor: not-allowed !important;
+}
+
+.blocked-row {
+  background-color: #fafafa !important;
+  cursor: not-allowed !important;
 }
 
 .text-center {
