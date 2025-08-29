@@ -85,12 +85,13 @@
 
     <!-- Модальное окно для отображения таблицы доставки -->
     <DeliveryModal
-    v-model="showDeliveryModal"
-    :delivery-data="deliveryData"
-    @close="closeDeliveryModal"
-    :bar-code="barCodeValue"
-    :zvr_number="zvr_number"
-  />
+  v-model="showDeliveryModal"
+  :delivery-data="deliveryData"
+  @close="closeDeliveryModal"
+  @refresh-data="handleRefreshData"
+  :bar-code="barCodeValue"
+  :zvr_number="zvr_number"
+/>
   </div>
 </template>
 
@@ -118,6 +119,12 @@ const { uploadFile } = useFileUploadService(); // Используем серв�
 // Данные для таблицы доставки
 const deliveryData = ref({});
 const loading = ref(false);
+
+
+const handleRefreshData = () => {
+  // Перезагрузите данные о доставках
+  loadDeliveryData();
+};
 
 const isRole4 = computed(() => {
   return authStore.user?.role_id === 4;
@@ -179,7 +186,7 @@ const props = defineProps({
   }
 });
 
-const emit = defineEmits(['file-dropped', 'submitted', 'document-click']);
+const emit = defineEmits(['file-dropped', 'submitted', 'document-click', 'refresh-delivery-data'])
 
 const topBarClass = computed(() => {
   if (!props.station?.id) return '';

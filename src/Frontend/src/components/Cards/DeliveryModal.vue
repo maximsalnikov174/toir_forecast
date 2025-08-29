@@ -161,7 +161,7 @@ const currentDeliveryIndex = ref(0)
 const enteredDeliveries = ref(new Set())
 const isMarkingAsEntered = ref(false)
 
-const emit = defineEmits(['close', 'update:modelValue', 'entered'])
+const emit = defineEmits(['close', 'update:modelValue', 'entered', 'refreshData'])
 
 const props = defineProps({
   modelValue: {
@@ -374,6 +374,7 @@ const markAsEntered = async () => {
           message: `Доставка №${currentDelivery.value.delivery} отмечена как внесенная`,
           timeout: 3000,
         })
+        emit('refreshData')
       } else {
         throw new Error('Ошибка при отправке данных')
       }
@@ -388,6 +389,7 @@ const markAsEntered = async () => {
       isMarkingAsEntered.value = false
     }
   }
+
 }
 
 const showNotify = (options) => {
