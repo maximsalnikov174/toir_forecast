@@ -64,7 +64,7 @@ async def get_payload_data_in_pdf_file(
             if table is None or bar_code is None:
                 return None
 
-            table_payload = parse_data_in_table_from_delivery(table)
+            table_payload = parse_data_in_table_from_delivery(objs=table)
 
             result = RawUnitOfBOMWithBarcode(
                 unit_of_bom_list=table_payload.unit_of_bom_list,
@@ -103,9 +103,7 @@ def clear_head_data(head: list[str], result: list = []):
 
 
 def parse_data_in_table_from_delivery(
-        objs: list[list],
-        doc_result: set[BOMDocsSchema] = set(),
-        unit_of_bom_result: list[UnitOfBOMSchema] = [],
+        objs: list[list]
 ) -> Optional[RawUnitOfBOM]:
     """Валидация полезных данных и их извлечение из таблицы pdf."""
 
@@ -131,6 +129,9 @@ def parse_data_in_table_from_delivery(
         # Проверка, что кроме шапки в таблице есть полезные строки:
         if not len(objs):
             raise InsufficientDataError
+
+        doc_result: set[BOMDocsSchema] = set()
+        unit_of_bom_result: list[UnitOfBOMSchema] = list()
 
         # Извлечь данные из строк с полезными данными:
         for row in range(len(objs)):
