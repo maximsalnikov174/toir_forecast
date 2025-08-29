@@ -2,15 +2,7 @@
   <q-dialog v-model="showModal" persistent>
     <q-card class="delivery-modal">
       <!-- Крестик закрытия в правом верхнем углу -->
-      <q-btn
-        class="close-button"
-        icon="close"
-        flat
-        round
-        dense
-        @click="closeModal"
-        v-close-popup
-      />
+      <q-btn class="close-button" icon="close" flat round dense @click="closeModal" v-close-popup />
 
       <!-- Навигация между доставками -->
       <q-card-section v-if="hasMultipleDeliveries" class="navigation-section">
@@ -64,7 +56,10 @@
         </div>
       </q-card-section>
 
-      <q-card-section class="q-pt-none delivery-content" @click="!isDeliveryBlocked && handleTableClick()">
+      <q-card-section
+        class="q-pt-none delivery-content"
+        @click="!isDeliveryBlocked && handleTableClick()"
+      >
         <table class="delivery-table bordered-table">
           <thead>
             <tr>
@@ -79,15 +74,16 @@
               :key="index"
               :class="{
                 'active-row': currentRowIndex === index && !isDeliveryBlocked,
-                'blocked-row': isDeliveryBlocked
+                'blocked-row': isDeliveryBlocked,
               }"
             >
               <td
                 class="cell-border"
                 :class="{
-                  'active-cell': currentRowIndex === index && currentCellIndex === 0 && !isDeliveryBlocked,
+                  'active-cell':
+                    currentRowIndex === index && currentCellIndex === 0 && !isDeliveryBlocked,
                   'copied-cell': copiedCells.has(`${index}-0`) && !isDeliveryBlocked,
-                  'blocked-cell': isDeliveryBlocked
+                  'blocked-cell': isDeliveryBlocked,
                 }"
               >
                 {{ item.snb }}
@@ -95,9 +91,10 @@
               <td
                 class="cell-border"
                 :class="{
-                  'active-cell': currentRowIndex === index && currentCellIndex === 1 && !isDeliveryBlocked,
+                  'active-cell':
+                    currentRowIndex === index && currentCellIndex === 1 && !isDeliveryBlocked,
                   'copied-cell': copiedCells.has(`${index}-1`) && !isDeliveryBlocked,
-                  'blocked-cell': isDeliveryBlocked
+                  'blocked-cell': isDeliveryBlocked,
                 }"
               >
                 {{ item.material_name }}
@@ -105,9 +102,10 @@
               <td
                 class="cell-border text-center"
                 :class="{
-                  'active-cell': currentRowIndex === index && currentCellIndex === 2 && !isDeliveryBlocked,
+                  'active-cell':
+                    currentRowIndex === index && currentCellIndex === 2 && !isDeliveryBlocked,
                   'copied-cell': copiedCells.has(`${index}-2`) && !isDeliveryBlocked,
-                  'blocked-cell': isDeliveryBlocked
+                  'blocked-cell': isDeliveryBlocked,
                 }"
               >
                 {{ item.material_count }}
@@ -134,7 +132,7 @@
         <q-btn
           label="Внесено"
           color="positive"
-          @click="markAsEntered"
+          @click="handleMarkAsEntered"
           v-if="allCellsCopied && !isDeliveryBlocked"
           :disable="isDeliveryBlocked || isMarkingAsEntered"
           :loading="isMarkingAsEntered"
@@ -148,7 +146,7 @@
 import { ref, watch, nextTick, onMounted, computed } from 'vue'
 import { useQuasar } from 'quasar'
 import JsBarcode from 'jsbarcode'
-import { api } from 'boot/axios'
+import { useDeliveryActions } from 'src/components/Functions/useDeliveryActions'
 
 const $q = useQuasar()
 const showModal = ref(false)
@@ -158,8 +156,6 @@ const copyStatus = ref('')
 const barcodeCanvas = ref(null)
 const copiedCells = ref(new Set())
 const currentDeliveryIndex = ref(0)
-const enteredDeliveries = ref(new Set())
-const isMarkingAsEntered = ref(false)
 
 const emit = defineEmits(['close', 'update:modelValue', 'entered', 'refreshData'])
 
@@ -181,6 +177,13 @@ const props = defineProps({
     default: '',
   },
 })
+
+const {
+  isMarkingAsEntered,
+  markAsEntered: markDeliveryAsEntered,
+  resetEnteredDeliveries,
+  enteredDeliveries
+} = useDeliveryActions()
 
 // Проверка, заблокирована ли текущая доставка
 const isDeliveryBlocked = computed(() => {
@@ -266,7 +269,9 @@ const handleTableClick = () => {
 
   // Показываем статус
   copyStatus.value = `Скопировано: ${cellValue}`
-  setTimeout(() => { copyStatus.value = '' }, 2000)
+  setTimeout(() => {
+    copyStatus.value = ''
+  }, 2000)
 
   // Находим следующую ячейку для подсветки
   const newNextCell = findNextCellToCopy()
@@ -352,44 +357,15 @@ const resetCopiedCells = () => {
   }
 }
 
-// Отметка доставки как внесенной
-const markAsEntered = async () => {
+// Обработчик кнопки "Внесено"
+const handleMarkAsEntered = async () => {
   if (isDeliveryBlocked.value) return
 
-  if (currentDelivery.value.id) {
-    isMarkingAsEntered.value = true
-    try {
-      // Отправляем POST запрос к API
-      const response = await api.post(`/service_work/unit_of_bom/${currentDelivery.value.id}`, {}, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token') || ''}`
-        }
-      })
-
-      if (response.status === 201) {
-        enteredDeliveries.value.add(currentDelivery.value.delivery)
-        emit('entered', currentDelivery.value)
-        showNotify({
-          type: 'positive',
-          message: `Доставка №${currentDelivery.value.delivery} отмечена как внесенная`,
-          timeout: 3000,
-        })
-        emit('refreshData')
-      } else {
-        throw new Error('Ошибка при отправке данных')
-      }
-    } catch (error) {
-      console.error('Ошибка при отметке доставки как внесенной:', error)
-      showNotify({
-        type: 'negative',
-        message: 'Не удалось отметить доставку как внесенную',
-        timeout: 3000,
-      })
-    } finally {
-      isMarkingAsEntered.value = false
-    }
+  const success = await markDeliveryAsEntered(currentDelivery.value)
+  if (success) {
+    emit('entered', currentDelivery.value)
+    emit('refreshData')
   }
-
 }
 
 const showNotify = (options) => {
@@ -450,7 +426,7 @@ const resetAllStates = () => {
   copyStatus.value = ''
   copiedCells.value.clear()
   currentDeliveryIndex.value = 0
-  isMarkingAsEntered.value = false
+  resetEnteredDeliveries() // Сбрасываем отмеченные доставки
 }
 
 // Переключение на следующую доставку
@@ -476,7 +452,7 @@ watch(
   () => props.deliveryData,
   () => {
     currentDeliveryIndex.value = 0
-    enteredDeliveries.value.clear()
+    resetEnteredDeliveries() // Сбрасываем при новых данных
     resetCopiedCells()
     generateBarcode()
   },
@@ -565,7 +541,7 @@ onMounted(() => {
 }
 
 .zvr-label {
-  color: black
+  color: black;
 }
 
 .delivery-details {
