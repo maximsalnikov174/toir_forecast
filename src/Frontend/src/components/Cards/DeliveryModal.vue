@@ -54,6 +54,7 @@
             <div class="delivery-details">
               <div>ID организации: {{ currentDelivery.from_organization }}</div>
               <div>ID работы: {{ currentDelivery.service_work_id }}</div>
+              <div>ID карточки: {{ currentDelivery.id }}</div>
             </div>
           </div>
           <div class="barcode-section">
@@ -119,8 +120,6 @@
             </tr>
           </tbody>
         </table>
-
-
       </q-card-section>
 
       <q-card-actions align="right">
@@ -137,7 +136,8 @@
           color="positive"
           @click="markAsEntered"
           v-if="allCellsCopied && !isDeliveryBlocked"
-          :disable="isDeliveryBlocked"
+          :disable="isDeliveryBlocked || isMarkingAsEntered"
+          :loading="isMarkingAsEntered"
         />
       </q-card-actions>
     </q-card>
@@ -148,6 +148,7 @@
 import { ref, watch, nextTick, onMounted, computed } from 'vue'
 import { useQuasar } from 'quasar'
 import JsBarcode from 'jsbarcode'
+import { api } from 'boot/axios'
 
 const $q = useQuasar()
 const showModal = ref(false)
@@ -158,6 +159,7 @@ const barcodeCanvas = ref(null)
 const copiedCells = ref(new Set())
 const currentDeliveryIndex = ref(0)
 const enteredDeliveries = ref(new Set())
+const isMarkingAsEntered = ref(false)
 
 const emit = defineEmits(['close', 'update:modelValue', 'entered'])
 
@@ -351,17 +353,40 @@ const resetCopiedCells = () => {
 }
 
 // Отметка доставки как внесенной
-const markAsEntered = () => {
+const markAsEntered = async () => {
   if (isDeliveryBlocked.value) return
 
-  if (currentDelivery.value.delivery) {
-    enteredDeliveries.value.add(currentDelivery.value.delivery)
-    emit('entered', currentDelivery.value)
-    showNotify({
-      type: 'positive',
-      message: `Доставка №${currentDelivery.value.delivery} отмечена как внесенная`,
-      timeout: 3000,
-    })
+  if (currentDelivery.value.id) {
+    isMarkingAsEntered.value = true
+    try {
+      // Отправляем POST запрос к API
+      const response = await api.post(`/service_work/unit_of_bom/${currentDelivery.value.id}`, {}, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token') || ''}`
+        }
+      })
+
+      if (response.status === 201) {
+        enteredDeliveries.value.add(currentDelivery.value.delivery)
+        emit('entered', currentDelivery.value)
+        showNotify({
+          type: 'positive',
+          message: `Доставка №${currentDelivery.value.delivery} отмечена как внесенная`,
+          timeout: 3000,
+        })
+      } else {
+        throw new Error('Ошибка при отправке данных')
+      }
+    } catch (error) {
+      console.error('Ошибка при отметке доставки как внесенной:', error)
+      showNotify({
+        type: 'negative',
+        message: 'Не удалось отметить доставку как внесенную',
+        timeout: 3000,
+      })
+    } finally {
+      isMarkingAsEntered.value = false
+    }
   }
 }
 
@@ -423,6 +448,7 @@ const resetAllStates = () => {
   copyStatus.value = ''
   copiedCells.value.clear()
   currentDeliveryIndex.value = 0
+  isMarkingAsEntered.value = false
 }
 
 // Переключение на следующую доставку
