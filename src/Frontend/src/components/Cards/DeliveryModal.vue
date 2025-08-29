@@ -120,11 +120,7 @@
           </tbody>
         </table>
 
-      
-      </q-card-section>
 
-      <q-card-section class="copy-status" v-if="copyStatus && !isDeliveryBlocked">
-        {{ copyStatus }}
       </q-card-section>
 
       <q-card-actions align="right">
