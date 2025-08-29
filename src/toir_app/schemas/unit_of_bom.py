@@ -67,6 +67,7 @@ class RawUnitOfBOMWithBarcode(RawUnitOfBOM):
 class UnitOfBOMRead(BOMDocsCreate):
     """Список используемых материалов, расширенный id юзера и карточкой sw."""
 
+    id: int
     components: list[UnitOfBOM]
 
     model_config = ConfigDict(from_attributes=True)
