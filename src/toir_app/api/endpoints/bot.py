@@ -108,7 +108,6 @@ class TgSchedular:
             # TODO: направить уведомление на почту
             print(f'Ошибка в отправке уведомления админу ботом: {e}')
 
-
     # async def mass_sending_notification(self, chat_ids: list[int], text: str):
     #     """Функция рассылки уведомлений в Telegram группе контактов."""
     #     for chat_id in chat_ids:

@@ -3,11 +3,15 @@ from typing import Optional
 from sqlalchemy import and_, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from models import Car, ServiceName, ServiceWork, SpecialStatusForCar
+from models import (
+    Car, MaintenanceBillOfMaterials, ServiceName, ServiceWork,
+    SpecialStatusForCar, User, UserRole
+)
 
 
 async def get_service_name_for_master(
     station_id: int,
+    user: User,
     session: AsyncSession,
 ) -> Optional[ServiceName]:
     """Возврат УНИКАЛЬНЫХ видов сервисного обслуживания для мастерских.
@@ -23,6 +27,7 @@ async def get_service_name_for_master(
     ## Order by:
         - asc IDs ServiceName.
     """
+
     stmt = (
         select(ServiceName)
         .join(
@@ -32,12 +37,32 @@ async def get_service_name_for_master(
         .where(
             ServiceWork.in_archive.is_(False),
             ServiceWork.zvr_number.is_not(None),
-            ServiceWork.service_work_completed.is_(None),
             ServiceWork.station_id == station_id,
         )
         .distinct()  # distinct - дедупликация
         .order_by(ServiceName.id)  # сортировка по ID вида работ
     )
+    # если оператор:
+    if user.users_role.name == UserRole.OPERATOR.value:
+        # - у работы есть материалы
+        # - поле «работа завершена фактически» не пустое
+        # - работа не обработана оператором
+        # - документ с материалами не обработан оператором
+        stmt = (
+            stmt.join(
+                MaintenanceBillOfMaterials,
+                MaintenanceBillOfMaterials.service_work_id == ServiceWork.id
+            ).where(
+                ServiceWork.service_work_completed.is_not(None),
+                ServiceWork.to_insert.is_not(True),
+                MaintenanceBillOfMaterials.to_insert.is_(False)
+            )
+        )
+    # если мастер:
+    elif user.users_role.name == UserRole.MASTER.value:
+        # - поле «работа завершена фактически» не пустое
+        stmt = stmt.where(ServiceWork.service_work_completed.is_(None))
+
     result = await session.scalars(stmt)
     return result.all()
 
