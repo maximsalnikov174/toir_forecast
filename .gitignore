@@ -33,6 +33,7 @@ logs/
 *db.bak
 .DS_Store
 *.pdf
+*.sql
 
 # PyInstaller
 #  Usually these files are written by a python script from a template
