@@ -11,6 +11,7 @@ services:
 #      - "5432:5432"
     volumes:
       - toir_app_data:/var/lib/postgresql/data/pgdata
+      # - ./backup.sql:/docker-entrypoint-initdb.d/backup.sql
     command: >
       postgres -c max_connections=1000
                -c shared_buffers=256MB

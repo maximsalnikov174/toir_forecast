@@ -24,6 +24,7 @@ class UsersServiceName(str, Enum):
     TO_1 = 'ТО-1'
     TO_2000 = 'ТО-2000'
     TO_1000 = 'ТО-1000'
+    TO_500 = 'ТО-500'
     TO_250 = 'ТО-250'
     TO_GAZ = 'ТО ГБО'
     ENGINE = 'Замена масла ДВС'
@@ -78,6 +79,9 @@ convert_service_name: ServiceNameMapping = {
     ],
     UsersServiceName.TO_2000.value: [
         'ТО-2000'
+    ],
+    UsersServiceName.TO_500.value: [
+        'ТО-500'
     ],
     UsersServiceName.TO_250.value: [
         'ТО-250'
