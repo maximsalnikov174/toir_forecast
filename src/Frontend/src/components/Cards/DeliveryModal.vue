@@ -44,7 +44,7 @@
               <span class="zvr-label">ЗВР:</span> {{ zvr_number }}
             </div>
             <div class="delivery-details">
-              <div>ID организации: {{ currentDelivery.from_organization }}</div>
+              <div>ID организации: {{ currentDelivery.organization.name }}</div>
               <div>ID работы: {{ currentDelivery.service_work_id }}</div>
               <div>ID карточки: {{ currentDelivery.id }}</div>
             </div>
@@ -109,7 +109,7 @@
                   'blocked-cell': isDeliveryBlocked,
                 }"
               >
-                {{ currentDelivery.from_organization }}
+                {{ currentDelivery.organization.name }}
               </td>
               <td
                 class="cell-border text-right"
@@ -306,7 +306,7 @@ const getCellValue = (rowIndex, cellIndex) => {
     case 1:
       return component.material_count?.toString() || ''
     case 2:
-      return currentDelivery.value.from_organization?.toString() || ''
+      return currentDelivery.value.organization.name?.toString() || ''
     default:
       return ''
   }
