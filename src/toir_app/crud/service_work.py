@@ -56,11 +56,13 @@ class DAOServiceWork(DAOBase[ServiceWork]):
     #         .where(self.model.id == obj_id)
     #     )
     #     return await session.scalar(stmt)
+
     async def get_service_work(
             self,
             obj_id: int,
             session: AsyncSession,
-            check_active: bool = True
+            check_active: bool = True,
+            add_docs: bool = False,
     ):
         stmt = (
             select(self.model)
@@ -72,6 +74,9 @@ class DAOServiceWork(DAOBase[ServiceWork]):
             .where(self.model.id == obj_id)
             .limit(1)
         )
+
+        if add_docs:
+            stmt = stmt.options(selectinload(self.model.docs_in_service_work))
 
         result = await session.scalar(stmt)
 
@@ -689,7 +694,11 @@ async def update_completed_real_service_work(
     - `add_date=True` чтобы зафиксировать текущее (на момент запроса) время.
     """
     service_work = (
-        await dao_service_work.get_service_work(service_work_id, session)
+        await dao_service_work.get_service_work(
+            obj_id=service_work_id,
+            session=session,
+            add_docs=True,
+        )
     )
 
     if service_work:
@@ -702,6 +711,21 @@ async def update_completed_real_service_work(
             raise HTTPException(
                 status_code=HTTPStatus.UNPROCESSABLE_ENTITY,
                 detail='Сначала необходимо добавить ЗВР.'
+            )
+
+        # Проверяем вложение мастером доков с ТМЦ:
+        # перед переводом в закрытие:
+        if not len(service_work.docs_in_service_work) and add_date:
+            raise HTTPException(
+                status_code=HTTPStatus.UNPROCESSABLE_ENTITY,
+                detail='Перед завершением необходимо добавить материалы.'
+            )
+
+        # перед откатом закрытия:
+        if len(service_work.docs_in_service_work) and not add_date:
+            raise HTTPException(
+                status_code=HTTPStatus.UNPROCESSABLE_ENTITY,
+                detail='У работы есть материалы - отменить нельзя.'
             )
 
     try:
