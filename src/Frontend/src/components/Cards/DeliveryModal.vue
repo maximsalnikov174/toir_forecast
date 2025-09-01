@@ -64,8 +64,8 @@
           <thead>
             <tr>
               <th class="cell-border">СНБ</th>
-              <th class="cell-border">Наименование материала</th>
               <th class="cell-border">Количество</th>
+              <th class="cell-border text-right">Наименование материала</th> <!-- Перенесено вправо -->
             </tr>
           </thead>
           <tbody>
@@ -89,7 +89,7 @@
                 {{ item.snb }}
               </td>
               <td
-                class="cell-border"
+                class="cell-border text-center"
                 :class="{
                   'active-cell':
                     currentRowIndex === index && currentCellIndex === 1 && !isDeliveryBlocked,
@@ -97,18 +97,15 @@
                   'blocked-cell': isDeliveryBlocked,
                 }"
               >
-                {{ item.material_name }}
+                {{ item.material_count }}
               </td>
               <td
-                class="cell-border text-center"
+                class="cell-border text-right"
                 :class="{
-                  'active-cell':
-                    currentRowIndex === index && currentCellIndex === 2 && !isDeliveryBlocked,
-                  'copied-cell': copiedCells.has(`${index}-2`) && !isDeliveryBlocked,
                   'blocked-cell': isDeliveryBlocked,
                 }"
               >
-                {{ item.material_count }}
+                {{ item.material_name }}
               </td>
             </tr>
             <tr v-if="!currentDelivery.components || currentDelivery.components.length === 0">
@@ -182,7 +179,7 @@ const {
   isMarkingAsEntered,
   markAsEntered: markDeliveryAsEntered,
   resetEnteredDeliveries,
-  enteredDeliveries
+  enteredDeliveries,
 } = useDeliveryActions()
 
 // Проверка, заблокирована ли текущая доставка
@@ -220,7 +217,8 @@ const findNextCellToCopy = () => {
   if (!currentDelivery.value.components) return null
 
   for (let rowIndex = 0; rowIndex < currentDelivery.value.components.length; rowIndex++) {
-    for (let cellIndex = 0; cellIndex < 3; cellIndex++) {
+    // Только первые 2 ячейки (0: СНБ, 1: Количество)
+    for (let cellIndex = 0; cellIndex < 2; cellIndex++) {
       const cellId = `${rowIndex}-${cellIndex}`
       if (!copiedCells.value.has(cellId)) {
         return { rowIndex, cellIndex }
@@ -236,7 +234,7 @@ const allCellsCopied = computed(() => {
     return false
   }
 
-  const totalCells = currentDelivery.value.components.length * 3
+  const totalCells = currentDelivery.value.components.length * 2
   return copiedCells.value.size >= totalCells && !enteredDeliveries.value.has(currentDelivery.value.delivery)
 })
 
@@ -294,8 +292,6 @@ const getCellValue = (rowIndex, cellIndex) => {
     case 0:
       return component.snb || ''
     case 1:
-      return component.material_name || ''
-    case 2:
       return component.material_count?.toString() || ''
     default:
       return ''
@@ -534,7 +530,7 @@ onMounted(() => {
 .zvr-number {
   font-size: 16px;
   font-weight: 600;
-  color: #35f51c;
+  color: #1434c2;
   margin-bottom: 8px;
   border-radius: 4px;
   display: inline-block;
