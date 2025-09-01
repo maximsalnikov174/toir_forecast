@@ -83,7 +83,10 @@ class DocBOMDAO(DAOBase[MaintenanceBillOfMaterials]):
         stmt = (
             select(self.model)
             .where(attr == attr_value)
-            .options(selectinload(self.model.components))
+            .options(
+                selectinload(self.model.components),
+                selectinload(self.model.organization),
+            )
         )
         result = await session.scalars(stmt)
         return result.all()

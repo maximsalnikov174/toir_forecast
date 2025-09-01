@@ -67,5 +67,6 @@ async def get_all_service_names_for_master(
 ):
     return await get_service_name_for_master(
         station_id=user.users_organization.station_id,
+        user=user,
         session=session
     )
