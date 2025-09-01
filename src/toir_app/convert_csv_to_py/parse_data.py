@@ -70,7 +70,7 @@ async def convert_csv_to_list(csv_rows) -> list[CarDataPoint]:
         # Стандартная ситуация:
         elif len(row) == TOTAL_VALUES_IN_RAW_RMT_321:
             try:
-                data_point = create_data_point(row, mapping_name)
+                data_point = await create_data_point(row, mapping_name)
                 if data_point:
                     total_list.append(data_point)
                 # else:
@@ -102,7 +102,7 @@ async def convert_csv_to_list(csv_rows) -> list[CarDataPoint]:
 
                 # Валидация и преобразование данных
                 try:
-                    data_point = create_data_point(rows, mapping_name)
+                    data_point = await create_data_point(rows, mapping_name)
 
                     if data_point:
                         total_list.append(data_point)
@@ -118,6 +118,15 @@ async def convert_csv_to_list(csv_rows) -> list[CarDataPoint]:
 
     logger.info(f'Общее количество полезных строк в файле - {len(total_list)}')
     return total_list
+
+
+def collect_unique_service_names(service_name_list: list[CarDataPoint]) -> set:
+    """Собираем перечень (уникальных) работ, указанных в csv-файле."""
+    result = set()
+    for service_name in service_name_list:
+        result.add(service_name.last_service_view)
+        result.add(service_name.next_service_view)
+    return result
 
 
 async def upd_light_model_in_db(

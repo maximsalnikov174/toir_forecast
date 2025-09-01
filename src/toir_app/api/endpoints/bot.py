@@ -1,8 +1,8 @@
 import logging
 from typing import Optional
 
-from aiohttp import ClientSession
-from fastapi import HTTPException
+from aiohttp import ClientSession, ClientConnectorDNSError
+from fastapi import HTTPException, status
 
 from core.config import settings
 from models import EventForBot, ServiceWork, SpecialStatusForCar
@@ -68,10 +68,23 @@ class TgSchedular:
                     'text': message
                 }
                 async with session.post(url, json=payload) as resp:
-                    if resp.status != 200:
+                    if resp.status != status.HTTP_200_OK:
                         raise HTTPException(
-                            status_code=500,
-                            detail='Ошибка отправки сообщения')
+                            status_code=status.HTTP_418_IM_A_TEAPOT,
+                            detail='Ошибка отправки сообщения',
+                        )
+
+        except ClientConnectorDNSError:  # если на хосте нет интернета
+            thread_name = thread if thread is not None else '«Админа»'
+            msg = (
+                f'Бот не отправил уведомление ({message}) '
+                f'в трэд {thread_name}'
+            )
+            logging.error(msg)
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail=msg
+            )
 
         except Exception as e:
             logging.error(f'Ошибка: {str(e)}')
@@ -79,14 +92,23 @@ class TgSchedular:
 
     async def send_notification(self, obj, event: str):
         """Функция отправки уведомления в Telegram в группу цеха."""
-        return await self._send_notification(
-            thread=self._get_thread_by_organization(obj=obj),
-            message=self.convert_model_to_text(obj=obj, event=event),
-        )
+        try:
+            return await self._send_notification(
+                thread=self._get_thread_by_organization(obj=obj),
+                message=self.convert_model_to_text(obj=obj, event=event),
+            )
+        except Exception as e:
+            # TODO: направить уведомление на почту
+            print(f'Ошибка в отправке уведомления ботом: {e}')
 
     async def send_notification_for_admin(self, msg: str):
         """Функция отправки уведомления в группу Админа."""
-        return await self._send_notification(message=msg)
+        try:
+            result = await self._send_notification(message=msg)
+            return result
+        except Exception as e:
+            # TODO: направить уведомление на почту
+            print(f'Ошибка в отправке уведомления админу ботом: {e}')
 
     # async def mass_sending_notification(self, chat_ids: list[int], text: str):
     #     """Функция рассылки уведомлений в Telegram группе контактов."""

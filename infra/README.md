@@ -59,6 +59,17 @@ docker-compose exec backend alembic upgrade head
 uvicorn main:toir_app --host 0.0.0.0 --port 8001 --reload
 ```
 
+### Вариация: Запуск бэкенда без дебага на macos
+1. находиться в корне проекта `pet_fastapi_toir`
+2. добавить путь для бэкенда
+```
+export PYTHONPATH="src/toir_app/"
+```
+3. запустить проект
+```
+uvicorn src.toir_app.main:toir_app
+```
+
 6. Если нужно запустить базу на `SQLite`:
 * разместить файл `fast_toir.db` на одном уровне с `main.py` в `src/toir_app/`
 * в `.env` для переменной `DB_IN_PG` установить значение `False`

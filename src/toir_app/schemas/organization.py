@@ -23,6 +23,10 @@ class OrganizationID(BaseModel):
     id: int = Field(..., title='ID подразделения')
 
 
+class OrganizationWithIDAndName(OrganizationBase, OrganizationID):
+    """Схема в полями name и id."""
+
+
 class OrganizationResponse(OrganizationID, OrganizationBase):
     """Схема Подразделения (цеха) для ответа API."""
     normal_name: Optional[str] = Field(

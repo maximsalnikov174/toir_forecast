@@ -51,6 +51,10 @@ class Organization(Base):
         back_populates='organization',
         cascade='delete'
     )
+    docs_by_organization = relationship(
+        'MaintenanceBillOfMaterials',
+        back_populates='organization',
+    )
 
     def __repr__(self):
         return f'<Цех {self.name}>'

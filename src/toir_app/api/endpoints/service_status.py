@@ -23,7 +23,7 @@ router = APIRouter()
 async def get_all_service_status(
     session: AsyncSession = Depends(get_async_session)
 ):
-    """Возвращает список всех подразделений."""
+    """Возвращает список всех расчётных статусов."""
     return await dao_service_status.get_multi(session, sorted_param='id')
 
 

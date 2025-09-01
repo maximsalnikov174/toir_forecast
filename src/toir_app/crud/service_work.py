@@ -438,6 +438,7 @@ async def create_main_table_for_master(
     # Выстраиваем шапку
     all_service_name = await get_service_name_for_master(
         station_id=users_station,
+        user=user,
         session=session,
     )
 

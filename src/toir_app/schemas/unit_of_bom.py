@@ -6,6 +6,7 @@ from constants import (
     SNB_DESCRIPTION,
     SNB_PATTERN,
 )
+from schemas.organization import OrganizationWithIDAndName
 
 # Для справки: BOM (Bill of material) - спецификация материала
 
@@ -68,6 +69,7 @@ class UnitOfBOMRead(BOMDocsCreate):
     """Список используемых материалов, расширенный id юзера и карточкой sw."""
 
     id: int
+    organization: OrganizationWithIDAndName
     components: list[UnitOfBOM]
 
     model_config = ConfigDict(from_attributes=True)
