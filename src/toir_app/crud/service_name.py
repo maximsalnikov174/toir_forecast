@@ -75,18 +75,20 @@ async def get_service_name_for_master(
     )
     # если оператор:
     if user.users_role.name == UserRole.OPERATOR.value:
-        # - у работы есть материалы
         # - поле «работа завершена фактически» не пустое
-        # - работа не обработана оператором
-        # - документ с материалами не обработан оператором
+        # ? - у работы есть материалы
+        # ? - работа не обработана оператором
+        # ? - документ с материалами не обработан оператором
         stmt = (
-            stmt.join(
-                MaintenanceBillOfMaterials,
-                MaintenanceBillOfMaterials.service_work_id == ServiceWork.id
-            ).where(
+            stmt
+            # .join(
+            #     MaintenanceBillOfMaterials,
+            #     MaintenanceBillOfMaterials.service_work_id == ServiceWork.id
+            # )
+            .where(
                 ServiceWork.service_work_completed.is_not(None),
-                ServiceWork.to_insert.is_not(True),
-                MaintenanceBillOfMaterials.to_insert.is_(False)
+                # ServiceWork.to_insert.is_not(True),
+                # MaintenanceBillOfMaterials.to_insert.is_(False)
             )
         )
     # если мастер:

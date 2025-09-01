@@ -23,6 +23,7 @@ from models import (
     ServiceWork,
     SpecialStatusForCar,
     User,
+    UserRole,
 )
 from schemas.car import CarToDownloadInDB
 from schemas.car_model import CarModelID
@@ -172,6 +173,7 @@ async def get_cars_with_request_and_special_status(
     request_status_id: Optional[int] = None,
     special_status_ids: Optional[list[Optional[int]]] = None,
     organization_id: int,
+    user: User,
 ) -> list[Optional[Car]]:
     """
     Возврат УНИКАЛЬНЫХ машин c учётом выбранных пользователем фильтров.
@@ -205,8 +207,15 @@ async def get_cars_with_request_and_special_status(
         stmt = stmt.where(
             ServiceWork.station_id == organization_id,
             ServiceWork.zvr_number.is_not(None),
-            ServiceWork.service_work_completed.is_(None)
         )
+        if user.users_role.name == UserRole.MASTER.value:
+            # - поле «работа завершена фактически» не заполнено
+            stmt = stmt.where(ServiceWork.service_work_completed.is_(None))
+
+        elif user.users_role.name == UserRole.OPERATOR.value:
+            # - поле «работа завершена фактически» не пустое
+            stmt = stmt.where(ServiceWork.service_work_completed.is_not(None))
+
     else:  # если пользователь - сотрудник цеха эксплуатации:
         stmt = stmt.where(
             Car.organization_id == organization_id,

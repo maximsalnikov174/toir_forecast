@@ -364,6 +364,7 @@ async def _get_service_work_for_car_and_service_name(
         car_id: Annotated[int, Car.id],
         service_name_id: Annotated[int, ServiceName.id],
         session: AsyncSession,
+        user: Optional[User] = None,
         station_id: Optional[int] = None,
         hide_service_work_with_zvr: bool = False,
         request_status_id: Optional[Annotated[int, ServiceStatus.id]] = None,
@@ -398,11 +399,16 @@ async def _get_service_work_for_car_and_service_name(
     )
 
     # Собираем для мастерской:
-    if station_id:
-        stmt = stmt.where(
-            ServiceWork.station_id == station_id,
-            ServiceWork.service_work_completed.is_(None),
-        )
+    if station_id and user:
+        stmt = stmt.where(ServiceWork.station_id == station_id)
+
+        if user.users_role.name == UserRole.MASTER.value:
+            # - поле «работа завершена фактически» не заполнено
+            stmt = stmt.where(ServiceWork.service_work_completed.is_(None))
+
+        elif user.users_role.name == UserRole.OPERATOR.value:
+            # - поле «работа завершена фактически» не пустое
+            stmt = stmt.where(ServiceWork.service_work_completed.is_not(None))
 
     # Собираем для цеха перевозки:
     else:
@@ -447,6 +453,7 @@ async def create_main_table_for_master(
         for_masters=True,
         organization_id=users_station,
         session=session,
+        user=user,
     )
 
     for car in all_cars:
@@ -459,6 +466,7 @@ async def create_main_table_for_master(
                         service_name_id=service_name.id,
                         station_id=users_station,
                         session=session,
+                        user=user,
                     )
                 )
         total_data.append(one_row)
