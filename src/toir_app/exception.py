@@ -4,6 +4,13 @@ from typing import Any
 from fastapi_users.exceptions import FastAPIUsersException
 
 
+class BaseException(Exception):
+    """Метакласс исключюения с `reason` (причиной)."""
+
+    def __init__(self, reason: Any) -> None:
+        self.reason = reason
+
+
 class InvalidEmailException(FastAPIUsersException):
     """Емэйл, указанный пользователем не прошел валидацию."""
     def __init__(self, reason: Any) -> None:
@@ -21,6 +28,14 @@ class BadNameInUploadFileException(Exception):
     """Если файл для загрузки имеет неправильное имя."""
 
 
+class ServiceNameBadDataException(Exception):
+    """Если в файле для загрузки вид работ пришел некорректным."""
+
+
+class ServiceNameNotFoundException(BaseException):
+    """Если в файле для загрузки есть вид работ с необработанным названием."""
+
+
 class NoPermissionForSuperUser(Exception):
     """У пользователя нет прав суперпользователя."""
 
@@ -33,10 +48,8 @@ class AlreadyAssignedException(Exception):
     """Сигнал о попытке повторного назначения."""
 
 
-class NotFoundError(Exception):
+class NotFoundError(BaseException):
     """Данные не были найдены."""
-    def __init__(self, reason: Any) -> None:
-        self.reason = reason
 
 
 class CarNotFoundException(NotFoundError):

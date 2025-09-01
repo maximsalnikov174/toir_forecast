@@ -3,8 +3,10 @@ from typing import Optional
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from api.endpoints.bot import bot_schedular
 from constants import LIST_ORGANIZATIONS
 from convert_csv_to_py.convertation import normalize_service_name
+from exception import ServiceNameBadDataException, ServiceNameNotFoundException
 from function import convert_date
 from logger.logger import logger
 from schemas.convertation import CarDataPoint
@@ -51,7 +53,7 @@ def find_element_position(
 # }
 
 
-def create_data_point(
+async def create_data_point(
     row: list[str], mapping_name
 ) -> Optional[CarDataPoint]:
     """
@@ -103,7 +105,7 @@ def create_data_point(
                     row, 'LAST_SERVICE_END_DATE', mapping_name, 'complex'
                 ) else None
             ),
-            last_service_view=normalize_service_name(
+            last_service_view=await normalize_service_name(
                 find_element_position(row, 'LAST_OPER', mapping_name)
             ),
             last_service_reading=find_element_position(
@@ -111,12 +113,23 @@ def create_data_point(
             ),
 
             # Прогноз:
-            next_service_view=normalize_service_name(
+            next_service_view=await normalize_service_name(
                 find_element_position(row, 'NEXT_OPER', mapping_name)
             )
         )
     except (ValueError, IndexError) as e:
         logger.error(f'Ошибка создания точки данных: {e}')
+        raise
+    except ServiceNameBadDataException:
+        await bot_schedular.send_notification_for_admin(
+            msg='🆘 В графе «вид обслуживания» пусто.'
+        )
+        raise
+    except ServiceNameNotFoundException as e:
+        logger.error(f'Не удалось обработать строку вида ТО: {e.reason}')
+        await bot_schedular.send_notification_for_admin(
+            msg=f'🆘 Работа не найдена: {e.reason}'
+        )
         raise
 
 

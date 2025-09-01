@@ -5,7 +5,7 @@ from collections import defaultdict
 from enum import Enum
 from typing import DefaultDict, Dict, List, Optional, Pattern
 
-from logger.logger import logger
+from exception import ServiceNameNotFoundException, ServiceNameBadDataException
 
 # Объявляем типы:
 ServiceNameMapping = Dict[str, List[str]]  # {нормализованное: [варианты]}
@@ -125,13 +125,13 @@ for normalized, variants in convert_service_name.items():
 pattern_exception_one = r'^(ЗамМасла ДВС)'
 pattern_exception_two = r'^(РП) \(смазка\)'
 pattern_exception_three = r'^(ТО ГБО)'
-pattern_exception_four = r'^(ТО-1)'
+pattern_exception_four = r'^(ТО-\d{1,4})'
 
 # Группа для работ с «:» (самое популярное):
 pattern_with_spec_symbol = r'^(\S+?)[\s|:]'
 
 # Группа для работ с первым словом:
-pattern_one_word = r'^(\S+?)'
+pattern_one_word = r'^(\S+?)[\s]'
 
 patterns = [
     pattern_exception_one,
@@ -150,39 +150,34 @@ all_patterns: List[Pattern[str]] = (
 
 # -------------------------ПРОВЕРКА СООТВЕТСТВИЯ-------------------------
 
-def normalize_service_name(service_name: str) -> Optional[str]:
+async def normalize_service_name(service_name: str) -> Optional[str]:
     """
     Нормализует название услуги по словарю замен.
 
-    Args:
-        service_name: Входное название услуги
+    ARGS
+    ----
+    service_name: Входное название услуги
 
-    Returns:
-        Нормализованное название или None, если:
-        - не найдено соответствие паттернам
-        - нет соответствия в словаре замен
+    RETURNS:
+    --------
+    - Нормализованное название
+    - None, если:
+    не найдено соответствие паттернам;
+    нет соответствия в словаре замен.
     """
-
     # Если подали не строку:
     if not isinstance(service_name, str):
-        return None
+        raise ServiceNameBadDataException
 
     # Если строка пустая:
     if not (cleaned_name := service_name.strip()):
-        return None
+        return ServiceNameBadDataException
 
     for pattern in all_patterns:
-        match = pattern.match(cleaned_name)
-        if match:
+        if (match := pattern.match(cleaned_name)):
             matched_text = match.group(1)
             final_text = reverse_mapping.get(matched_text)
-            return final_text
+            if final_text:
+                return final_text
 
-    # ничего не буду возвращать,
-    # а в логи надо будет добавить обработку:
-    # logger.warning(
-    #     'Не удалось обработать паттернами строку '
-    #     f'«{service_name}»'
-    # )
-    logger.warning('Не удалось обработать строку вида ТО: {service_name}')
-    return None  # Явный возврат None если ни один паттерн не подошёл
+    raise ServiceNameNotFoundException(reason=cleaned_name)

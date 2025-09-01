@@ -21,6 +21,7 @@ from convert_csv_to_py.upload_data import (
     upload_all_users_data_in_db,
 )
 from convert_csv_to_py.parse_data import (
+    collect_unique_service_names,
     convert_csv_to_list,
     upload_filedata_in_db,
 )
@@ -30,6 +31,7 @@ from core.user import current_user
 from crud.car import push_cars_in_archive
 from crud.organization import get_organization_by_name
 from crud.role import get_superuser_role
+from crud.service_name import dao_service_name
 from crud.service_work import (
     add_service_works_in_archive,
     get_active_service_work_list_by_car,
@@ -44,6 +46,7 @@ from crud.stats import (
 from exception import (
     BadNameInUploadFileException,
     NoPermissionForSuperUser,
+    ServiceNameNotFoundException,
     StaticDataInDBNotFoundException,
 )
 from logger.logger import logger
@@ -65,14 +68,17 @@ async def upload_file(
     try:
         # 1. проверим корректность имени файла CSV и заберём `datetime`:
         update_date = re.match(PATTERN_FOR_DATE_IN_CSV, file.filename)
-        update_date = update_date.groups()[0] if update_date else None
         if update_date is None:
             raise BadNameInUploadFileException
+        update_date = update_date.group(1)
 
         # 2. Разбираем файл на строки, загоняем каждую из них в нужный словарь:
         content = (await file.read()).decode(ENCODING_DEFAULT)
         csv_data = csv.reader(content.splitlines())
         stmt = await convert_csv_to_list(csv_data)
+
+        # Собираем коллекцию видов работ, чтобы проверить их наличие в БД:
+        service_name_set = collect_unique_service_names(stmt)
 
         # 3. Выполняем загрузку и обновление строк в БД:
         async with AsyncSessionLocal() as download_session:
@@ -85,6 +91,13 @@ async def upload_file(
 
             if not user.is_superuser:
                 raise NoPermissionForSuperUser
+
+            # Проверяем существование видов работ в БД:
+            await dao_service_name.notificate_unknown_objects(
+                obj_list=service_name_set,
+                bot=bot_schedular,
+                session=download_session
+            )
 
             # Создаём пустое множество ТС:
             car_list = array('H')
@@ -170,7 +183,11 @@ async def upload_file(
             status_code=400,
             detail='Проверьте имя файла'
         )
-
+    except ServiceNameNotFoundException as e:
+        raise HTTPException(
+            status_code=400,
+            detail=f'Найдены неизвестные виды работ {e.reason}'
+        )
     except NoPermissionForSuperUser:
         raise HTTPException(
             status_code=400,

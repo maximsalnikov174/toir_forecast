@@ -3,10 +3,41 @@ from typing import Optional
 from sqlalchemy import and_, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from api.endpoints.bot import TgSchedular
+from crud.base import DAOBase
 from models import (
     Car, MaintenanceBillOfMaterials, ServiceName, ServiceWork,
     SpecialStatusForCar, User, UserRole
 )
+from exception import ServiceNameNotFoundException
+
+
+class DAOServiceName(DAOBase):
+    """CRUD-класс для ServiceName."""
+
+    async def notificate_unknown_objects(
+            self, obj_list: set[str], bot: TgSchedular, session: AsyncSession
+    ) -> None:
+        """Уведомление (при парсинге csv) о неопознанных видах работ."""
+        unknown_objects = set()
+
+        for obj in obj_list:
+            # Проверяем НЕ существует ли объект:
+            result = await self.get_by_attribute('name', obj, session)
+            if result is None:
+                unknown_objects.add(obj)
+
+        if unknown_objects:
+            msg = ', '.join(unknown_objects)
+            await bot.send_notification_for_admin(
+                msg=f'🆘 Работы не найдены: {msg}'
+            )
+            raise ServiceNameNotFoundException(reason=msg)
+
+        return None
+
+
+dao_service_name = DAOServiceName(ServiceName)
 
 
 async def get_service_name_for_master(
