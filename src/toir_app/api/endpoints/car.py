@@ -83,7 +83,8 @@ async def get_all_cars_with_open_zvr(
     cars = await get_cars_with_request_and_special_status(
         session=session,
         for_masters=True,
-        organization_id=user.users_organization.station_id
+        organization_id=user.users_organization.station_id,
+        user=user,
     )
     for car in cars:
         car.indicators = await get_last_request_reading_by_car(car.id, session)
