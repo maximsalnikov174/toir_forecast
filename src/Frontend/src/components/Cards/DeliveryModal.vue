@@ -65,6 +65,7 @@
             <tr>
               <th class="cell-border">СНБ</th>
               <th class="cell-border">Количество</th>
+              <th class="cell-border">Организация</th>
               <th class="cell-border text-right">Наименование материала</th>
             </tr>
           </thead>
@@ -100,6 +101,17 @@
                 {{ item.material_count }}
               </td>
               <td
+                class="cell-border text-center"
+                :class="{
+                  'active-cell':
+                    currentRowIndex === index && currentCellIndex === 2 && !isDeliveryBlocked,
+                  'copied-cell': copiedCells.has(`${index}-2`) && !isDeliveryBlocked,
+                  'blocked-cell': isDeliveryBlocked,
+                }"
+              >
+                {{ currentDelivery.from_organization }}
+              </td>
+              <td
                 class="cell-border text-right"
                 :class="{
                   'blocked-cell': isDeliveryBlocked,
@@ -109,7 +121,7 @@
               </td>
             </tr>
             <tr v-if="!currentDelivery.components || currentDelivery.components.length === 0">
-              <td colspan="3" class="cell-border text-center text-grey">
+              <td colspan="4" class="cell-border text-center text-grey">
                 Нет данных о компонентах
               </td>
             </tr>
@@ -217,8 +229,8 @@ const findNextCellToCopy = () => {
   if (!currentDelivery.value.components) return null
 
   for (let rowIndex = 0; rowIndex < currentDelivery.value.components.length; rowIndex++) {
-    // Только первые 2 ячейки (0: СНБ, 1: Количество)
-    for (let cellIndex = 0; cellIndex < 2; cellIndex++) {
+    // Теперь 3 ячейки для копирования (0: СНБ, 1: Количество, 2: ID организации)
+    for (let cellIndex = 0; cellIndex < 3; cellIndex++) {
       const cellId = `${rowIndex}-${cellIndex}`
       if (!copiedCells.value.has(cellId)) {
         return { rowIndex, cellIndex }
@@ -234,7 +246,7 @@ const allCellsCopied = computed(() => {
     return false
   }
 
-  const totalCells = currentDelivery.value.components.length * 2
+  const totalCells = currentDelivery.value.components.length * 3 // Теперь 3 ячейки на строку
   return copiedCells.value.size >= totalCells && !enteredDeliveries.value.has(currentDelivery.value.delivery)
 })
 
@@ -293,6 +305,8 @@ const getCellValue = (rowIndex, cellIndex) => {
       return component.snb || ''
     case 1:
       return component.material_count?.toString() || ''
+    case 2:
+      return currentDelivery.value.from_organization?.toString() || ''
     default:
       return ''
   }
@@ -665,10 +679,15 @@ onMounted(() => {
   cursor: not-allowed !important;
 }
 
+.bordered-table th:nth-child(2),
+.bordered-table td:nth-child(2) {
+  text-align: center;
+  width: 100px;
+}
+
 .bordered-table th:nth-child(3),
 .bordered-table td:nth-child(3) {
   text-align: center;
-  width: 100px;
 }
 
 /* Чередование цветов строк */
