@@ -125,7 +125,7 @@
           v-if="copiedCells.size > 0 && !isDeliveryBlocked"
           :disable="isDeliveryBlocked"
         />
-        <!-- Кнопка Внесено справа -->
+        
         <q-btn
           label="Внесено"
           color="positive"
