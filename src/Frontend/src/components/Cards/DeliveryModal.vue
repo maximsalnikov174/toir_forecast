@@ -65,7 +65,7 @@
             <tr>
               <th class="cell-border">СНБ</th>
               <th class="cell-border">Количество</th>
-              <th class="cell-border text-right">Наименование материала</th> <!-- Перенесено вправо -->
+              <th class="cell-border text-right">Наименование материала</th>
             </tr>
           </thead>
           <tbody>
@@ -125,7 +125,7 @@
           v-if="copiedCells.size > 0 && !isDeliveryBlocked"
           :disable="isDeliveryBlocked"
         />
-        
+
         <q-btn
           label="Внесено"
           color="positive"

@@ -27,6 +27,7 @@ class Settings(BaseSettings):
     admin_tg_id: int = 1
     chat_id: int = 1
     tg_bot_token: str = 'some_token'
+    tg_bot_alive: bool = False
 
     # # настройка minIO (пока не нужно)
     # minio_endpoint: str = 'minio:9000'
