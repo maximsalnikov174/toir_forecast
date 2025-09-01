@@ -54,6 +54,8 @@ class TgSchedular:
 
     async def _send_notification(self, message, thread: Optional[int] = None):
         """Функция отправки уведомления в Telegram."""
+        if not settings.tg_bot_alive:
+            return
         try:
             async with ClientSession() as session:
                 url = (
