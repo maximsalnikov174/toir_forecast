@@ -66,6 +66,10 @@ class MaintenanceBillOfMaterials(Base):
         'User',
         back_populates='docs_by_user',
     )
+    organization: Mapped['Organization'] = relationship(
+        'Organization',
+        back_populates='docs_by_organization',
+    )
     components: Mapped[list['MaintenanceComponent']] = relationship(
         'MaintenanceComponent',
         back_populates='bom',

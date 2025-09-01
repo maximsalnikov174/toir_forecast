@@ -28,7 +28,10 @@ class DocBOMDAO(DAOBase[MaintenanceBillOfMaterials]):
         stmt = (
             select(self.model)
             .where(self.model.id == obj_id)
-            .options(selectinload(self.model.components))
+            .options(
+                selectinload(self.model.components),
+                selectinload(self.model.organization),
+            )
             .limit(1)
         )
         result = await session.scalar(stmt)
