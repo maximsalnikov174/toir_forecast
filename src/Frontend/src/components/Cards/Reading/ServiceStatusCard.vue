@@ -306,37 +306,49 @@ const handleDrop = async (event) => {
   dragCounter.value = 0;
   const files = event.dataTransfer.files;
   if (files.length === 0) return;
+
   try {
     const result = await uploadFile(files[0], props.id);
+
     if (result.success) {
       emit('file-dropped', {
         file: files[0],
         cardId: props.id,
         response: result.data
       });
+
       showNotify({
         type: 'positive',
         message: result.message,
         timeout: 2000
       });
+
+      // Вызываем onSubmitSuccessMaster при успешной загрузке
+      if (props.onSubmitSuccessMaster) {
+        props.onSubmitSuccessMaster();
+      }
+
     } else {
       emit('file-dropped-error', {
         file: files[0],
         cardId: props.id,
         error: result.originalError
       });
+
       showNotify({
         type: 'negative',
         message: result.error,
         timeout: 3000
       });
     }
+
   } catch (error) {
     emit('file-dropped-error', {
       file: files[0],
       cardId: props.id,
       error: error
     });
+
     showNotify({
       type: 'negative',
       message: 'Неожиданная ошибка при загрузке файла',
