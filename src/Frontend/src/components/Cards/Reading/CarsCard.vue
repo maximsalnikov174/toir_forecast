@@ -93,7 +93,7 @@ export default defineComponent({
       required: false,
     },
     requestReading: {
-      type: Number,
+      type: [String, Number],
       required: false,
     },
     specialStatusId: {
