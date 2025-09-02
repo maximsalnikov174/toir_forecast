@@ -54,26 +54,46 @@ const close = () => {
 
 const complete = async () => {
   try {
-    await api.patch(
+    console.log('Отправка запроса для serviceWorkId:', props.serviceWorkId);
+
+    const response = await api.patch(
       `/service_work/de_facto_completed?service_work_id=${props.serviceWorkId}`,
       null,
       {
         headers: {
           Authorization: `Bearer ${authStore.token}`,
           'accept': 'application/json'
+        },
+        validateStatus: function (status) {
+          // Явно указываем, что только статус 200 считается успешным
+          return status === 200;
         }
       }
     );
 
+    console.log('Запрос успешно выполнен:', response.status);
     emit('submitted');
     props.onSubmitSuccessMaster();
     props.onSubmitSuccess();
     close();
+
   } catch (error) {
-    console.error('Ошибка:', error);
+    console.error('Ошибка перехвачена:', error);
+    console.error('Статус ошибки:', error.response?.status);
+    console.error('Данные ошибки:', error.response?.data);
 
     if (error.response?.status === 400) {
-      // Показываем уведомление об ошибке
+      console.log('Показываем уведомление о необходимости материалов');
+
+      $q.notify({
+        type: 'negative',
+        message: 'Перед завершением необходимо добавить материалы',
+        position: 'top',
+        timeout: 5000,
+        actions: [{ icon: 'close', color: 'white' }]
+      });
+
+    } else {
       $q.notify({
         type: 'negative',
         message: 'Перед завершением необходимо добавить материалы',
@@ -81,19 +101,7 @@ const complete = async () => {
         timeout: 3000,
         actions: [{ icon: 'close', color: 'white' }]
       });
-    } else {
-      // Общее уведомление об ошибке
-      $q.notify({
-        type: 'negative',
-        message: 'Произошла ошибка при выполнении операции',
-        position: 'top',
-        timeout: 3000,
-        actions: [{ icon: 'close', color: 'white' }]
-      });
     }
-
-    // Закрываем окно после показа уведомления
-    close();
   }
 };
 </script>
