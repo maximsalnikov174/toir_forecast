@@ -30,6 +30,16 @@
     <div v-if="zvr_create_date" class="zvr-create-date">{{ zvr_create_date }}</div>
     <div v-if="DBSWCAN" class="additional-text">{{ DBSWCAN }} </div>
 
+    <!-- Иконка документа для role_id = 4 -->
+    <div
+      v-if="shouldShowDocumentIcon"
+      class="document-icon-corner"
+      @click.stop="handleDocumentIconClick"
+    >
+      📄
+      <span v-if="total_docs_count > 0" class="doc-count-badge">{{ total_docs_count }}</span>
+    </div>
+
     <!-- Оверлей для основной карточки -->
     <div
       v-if="shouldShowHover"
@@ -57,14 +67,14 @@
     </div>
 
     <div
-  v-if="dragOver && isRole4"
-  class="drag-overlay"
->
-  <div class="drag-content">
-    <div class="drag-icon">📁</div>
-    <div class="drag-text">Перетащите файл сюда</div>
-  </div>
-</div>
+      v-if="dragOver && isRole4"
+      class="drag-overlay"
+    >
+      <div class="drag-content">
+        <div class="drag-icon">📁</div>
+        <div class="drag-text">Перетащите файл сюда</div>
+      </div>
+    </div>
 
     <ModalWindow
       v-model:show="showModal"
@@ -85,26 +95,26 @@
 
     <!-- Модальное окно для отображения таблицы доставки -->
     <DeliveryModal
-  v-model="showDeliveryModal"
-  :delivery-data="deliveryData"
-  @close="closeDeliveryModal"
-  @refresh-data="handleRefreshData"
-  :bar-code="barCodeValue"
-  :zvr_number="zvr_number"
-/>
+      v-model="showDeliveryModal"
+      :delivery-data="deliveryData"
+      @close="closeDeliveryModal"
+      @refresh-data="handleRefreshData"
+      :bar-code="barCodeValue"
+      :zvr_number="zvr_number"
+    />
   </div>
 </template>
 
 <script setup>
-import { computed, ref,} from 'vue';
+import { computed, ref } from 'vue';
 import { useQuasar } from 'quasar';
 import { useFilterStore } from 'src/components/Functions/FilterStoreAcceptButton';
 import { useAuthStore } from 'src/stores/useAuthStore';
-import { useFileUploadService } from '../../Functions/fileUploadService'; // Импортируем сервис
+import { useFileUploadService } from '../../Functions/fileUploadService';
 import ModalWindow from '../ModalWindow.vue';
 import WindowCompletion from '../WindowCompletion.vue';
 import DeliveryModal from '../DeliveryModal.vue';
-import { deliveryService } from '../../Functions/deliveryService'; // Импортируем сервис
+import { deliveryService } from '../../Functions/deliveryService';
 
 const hover = ref(false);
 const dragOver = ref(false);
@@ -115,14 +125,11 @@ const showDeliveryModal = ref(false);
 const { selectedDivId } = useFilterStore();
 const authStore = useAuthStore();
 const $q = useQuasar();
-const { uploadFile } = useFileUploadService(); // Используем сервис
-// Данные для таблицы доставки
+const { uploadFile } = useFileUploadService();
 const deliveryData = ref({});
 const loading = ref(false);
 
-
 const handleRefreshData = () => {
-  // Перезагрузите данные о доставках
   loadDeliveryData();
 };
 
@@ -184,38 +191,43 @@ const props = defineProps({
     type: String,
     default: null
   },
-  total_docs_count:{
-    type: [String,Number],
-    default:null
+  total_docs_count: {
+    type: [String, Number],
+    default: null
   },
 });
 
-const emit = defineEmits(['file-dropped', 'submitted', 'document-click', 'refresh-delivery-data'])
+const emit = defineEmits(['file-dropped', 'submitted', 'document-click', 'refresh-delivery-data']);
+
+// Добавляем вычисляемое свойство для отображения иконки документа
+const shouldShowDocumentIcon = computed(() => {
+  return isRole4.value &&
+         props.total_docs_count !== null &&
+         props.total_docs_count !== undefined &&
+         props.total_docs_count !== '' &&
+         props.total_docs_count > 0;
+});
 
 const topBarClass = computed(() => {
   if (!props.station?.id) return '';
-
   const stationClassMap = {
     1: 'station-purple',
     2: 'station-orange',
     3: 'station-turquoise',
   };
-
   return stationClassMap[props.station.id] || '';
 });
 
 const serviceWorkId = ref(props.id);
 
-// Показывать иконку документа для пользователей
 const shouldShowDocumentHover = computed(() => {
-  return hover.value &&
-         authStore.user?.role_id === 5;
+  return hover.value && authStore.user?.role_id === 5;
 });
 
 const shouldShowPlusIcon = computed(() => {
   return hover.value &&
-  (authStore.user?.is_superuser || authStore.user?.users_organization.id === selectedDivId.value)&&
-  props.zvr_number === null || props.zvr_number === '';
+         (authStore.user?.is_superuser || authStore.user?.users_organization.id === selectedDivId.value) &&
+         (props.zvr_number === null || props.zvr_number === '');
 });
 
 const shouldShowHover = computed(() => {
@@ -224,7 +236,6 @@ const shouldShowHover = computed(() => {
          !props.service_work_completed;
 });
 
-// Загрузка данных о доставке
 const loadDeliveryData = async () => {
   loading.value = true;
   try {
@@ -247,11 +258,16 @@ const handleCardClick = () => {
   }
 };
 
+// Обработчик клика по иконке документа
+const handleDocumentIconClick = async () => {
+  await loadDeliveryData();
+  showDeliveryModal.value = true;
+};
+
 const handleOverlayClick = () => {
   if (props.service_work_completed) {
     return;
   }
-
   if (props.zvr_number) {
     openCompletionModal();
   } else {
@@ -259,7 +275,6 @@ const handleOverlayClick = () => {
   }
 };
 
-// Обработчик клика по документу
 const handleDocumentClick = async () => {
   await loadDeliveryData();
   showDeliveryModal.value = true;
@@ -271,7 +286,6 @@ const closeDeliveryModal = () => {
 
 const handleDragEnter = (e) => {
   if (!isRole4.value) return;
-
   e.preventDefault();
   dragCounter.value++;
   dragOver.value = true;
@@ -279,10 +293,8 @@ const handleDragEnter = (e) => {
 
 const handleDragLeave = (e) => {
   if (!isRole4.value) return;
-
   e.preventDefault();
   dragCounter.value--;
-
   if (dragCounter.value === 0) {
     dragOver.value = false;
   }
@@ -290,23 +302,18 @@ const handleDragLeave = (e) => {
 
 const handleDrop = async (event) => {
   if (!isRole4.value) return;
-
   dragOver.value = false;
   dragCounter.value = 0;
-
   const files = event.dataTransfer.files;
   if (files.length === 0) return;
-
   try {
     const result = await uploadFile(files[0], props.id);
-
     if (result.success) {
       emit('file-dropped', {
         file: files[0],
         cardId: props.id,
         response: result.data
       });
-
       showNotify({
         type: 'positive',
         message: result.message,
@@ -318,21 +325,18 @@ const handleDrop = async (event) => {
         cardId: props.id,
         error: result.originalError
       });
-
       showNotify({
         type: 'negative',
         message: result.error,
         timeout: 3000
       });
     }
-
   } catch (error) {
     emit('file-dropped-error', {
       file: files[0],
       cardId: props.id,
       error: error
     });
-
     showNotify({
       type: 'negative',
       message: 'Неожиданная ошибка при загрузке файла',
@@ -417,7 +421,6 @@ const showBottomBar = computed(() => {
   transition: all 0.2s ease;
 }
 
-
 .station-purple {
   background: purple;
 }
@@ -485,7 +488,38 @@ const showBottomBar = computed(() => {
   font-weight: 400;
   font-size: 10px;
   line-height: 100%;
-  color: #000000; /* ИСПРАВЛЕНО: убраны кавычки и добавлен цвет */
+  color: #000000;
+}
+
+/* Стили для иконки документа в правом нижнем углу */
+.document-icon-corner {
+  position: absolute;
+  bottom: 5px;
+  right: 5px;
+  font-size: 16px;
+  cursor: pointer;
+  z-index: 10;
+  transition: transform 0.2s ease;
+}
+
+.document-icon-corner:hover {
+  transform: scale(1.2);
+}
+
+.doc-count-badge {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  background-color: #ff4757;
+  color: white;
+  border-radius: 50%;
+  width: 16px;
+  height: 16px;
+  font-size: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
 }
 
 .status-indicator {
@@ -509,14 +543,14 @@ const showBottomBar = computed(() => {
 }
 
 .status-indicator.upcoming {
-  border-color: transparent #00FF00  transparent transparent;
+  border-color: transparent #00FF00 transparent transparent;
 }
 
 .status-indicator.normal {
   border-color: transparent #0000FF transparent transparent;
 }
 
-/* Обычный оверлей для карточек с ZVR номером */
+/* Остальные стили остаются без изменений */
 .hover-overlay {
   position: absolute;
   top: 0;
@@ -529,7 +563,6 @@ const showBottomBar = computed(() => {
   z-index: 5;
 }
 
-/* Отдельный оверлей для плюсика */
 .plus-hover-overlay {
   position: absolute;
   top: 0;
@@ -552,7 +585,6 @@ const showBottomBar = computed(() => {
   text-shadow: 0 0 3px rgba(0, 0, 0, 0.5);
 }
 
-/* Оверлей для документа (для station_id === 99) */
 .document-hover-overlay {
   position: absolute;
   top: 0;
@@ -589,7 +621,6 @@ const showBottomBar = computed(() => {
   max-width: 90%;
 }
 
-/* Оверлей для drag-and-drop */
 .drag-overlay {
   position: absolute;
   top: 0;

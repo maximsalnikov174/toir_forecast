@@ -92,7 +92,7 @@
               :station="item.station"
               @submitted="handleApply"
               :onSubmitSuccessMaster="loadMasterData"
-              :total_docs_count="item.total_count"
+              :total_docs_count="item.total_docs_count"
             />
               <div v-else class="empty-status-card"></div>
             </template>
