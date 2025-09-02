@@ -506,8 +506,8 @@ const showBottomBar = computed(() => {
 /* Стили для иконки документа в правом нижнем углу */
 .document-icon-corner {
   position: absolute;
-  bottom: 5px;
-  right: 5px;
+  bottom: 2px;
+  right: 11px;
   font-size: 16px;
   cursor: pointer;
   z-index: 10;
@@ -515,7 +515,7 @@ const showBottomBar = computed(() => {
 }
 
 .document-icon-corner:hover {
-  transform: scale(1.2);
+  transform: scale(1.1);
 }
 
 .doc-count-badge {

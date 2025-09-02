@@ -44,7 +44,7 @@
               <span class="zvr-label">ЗВР:</span> {{ zvr_number }}
             </div>
             <div class="delivery-details">
-              <div>организация: {{ currentDelivery.organization.name }}</div>
+              <div>организация получатель: {{ currentDelivery.organization.name }}</div>
               <div>ID работы: {{ currentDelivery.service_work_id }}</div>
               <div>ID карточки: {{ currentDelivery.id }}</div>
             </div>
@@ -65,7 +65,7 @@
             <tr>
               <th class="cell-border">СНБ</th>
               <th class="cell-border">Количество</th>
-              <th class="cell-border">Организация</th>
+              <th class="cell-border">Организация получатель</th>
               <th class="cell-border text-right">Наименование материала</th>
             </tr>
           </thead>
