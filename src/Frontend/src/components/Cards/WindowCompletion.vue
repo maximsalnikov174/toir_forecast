@@ -66,7 +66,7 @@ const complete = async () => {
         },
         validateStatus: function (status) {
           // Явно указываем, что только статус 200 считается успешным
-          return status === 200;
+          return status === 201;
         }
       }
     );
