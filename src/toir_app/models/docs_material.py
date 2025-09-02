@@ -1,6 +1,6 @@
 # from typing import TYPE_CHECKING
 
-from sqlalchemy import Boolean, Integer, ForeignKey, String
+from sqlalchemy import Boolean, Integer, Float, ForeignKey, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from constants import SNB_DESCRIPTION, SNB_LEN  # IMG_LOCATION_LEN
@@ -97,7 +97,7 @@ class MaintenanceComponent(Base):
         comment='Наименование материала',
     )
     material_count: Mapped[int] = mapped_column(
-        Integer,
+        Float,
         nullable=False,
         comment='Количество использованного материала',
     )

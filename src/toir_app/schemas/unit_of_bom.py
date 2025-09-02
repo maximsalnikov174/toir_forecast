@@ -33,7 +33,7 @@ class UnitOfBOM(BaseModel):
 
     snb: str = Field(..., pattern=SNB_PATTERN)
     material_name: str = Field(..., max_length=SNB_DESCRIPTION)
-    material_count: int = Field(..., gt=0)
+    material_count: float = Field(..., gt=0)
 
 
 class UnitOfBOMWithDocsCreate(UnitOfBOM):
