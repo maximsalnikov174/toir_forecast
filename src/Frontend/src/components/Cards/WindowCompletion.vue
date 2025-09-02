@@ -65,7 +65,7 @@ const complete = async () => {
           'accept': 'application/json'
         },
         validateStatus: function (status) {
-          // Явно указываем, что только статус 200 считается успешным
+          // Явно указываем, что только статус 201 считается успешным
           return status === 201;
         }
       }
