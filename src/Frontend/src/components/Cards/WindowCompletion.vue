@@ -21,8 +21,10 @@
 import { defineProps, defineEmits } from 'vue';
 import { useAuthStore } from 'src/stores/useAuthStore';
 import { api } from '../../boot/axios.js';
+import { useQuasar } from 'quasar';
 
 const authStore = useAuthStore();
+const $q = useQuasar();
 
 const props = defineProps({
   show: {
@@ -64,12 +66,34 @@ const complete = async () => {
     );
 
     emit('submitted');
-    props.onSubmitSuccessMaster(); // Вызываем функцию обновления данных мастера
-    props.onSubmitSuccess();  // Вызываем переданную функцию
+    props.onSubmitSuccessMaster();
+    props.onSubmitSuccess();
     close();
   } catch (error) {
     console.error('Ошибка:', error);
-    // Можно добавить уведомление об ошибке
+
+    if (error.response?.status === 400) {
+      // Показываем уведомление об ошибке
+      $q.notify({
+        type: 'negative',
+        message: 'Перед завершением необходимо добавить материалы',
+        position: 'top',
+        timeout: 3000,
+        actions: [{ icon: 'close', color: 'white' }]
+      });
+    } else {
+      // Общее уведомление об ошибке
+      $q.notify({
+        type: 'negative',
+        message: 'Произошла ошибка при выполнении операции',
+        position: 'top',
+        timeout: 3000,
+        actions: [{ icon: 'close', color: 'white' }]
+      });
+    }
+
+    // Закрываем окно после показа уведомления
+    close();
   }
 };
 </script>
