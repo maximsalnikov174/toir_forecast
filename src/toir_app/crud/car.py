@@ -173,7 +173,7 @@ async def get_cars_with_request_and_special_status(
     request_status_id: Optional[int] = None,
     special_status_ids: Optional[list[Optional[int]]] = None,
     organization_id: int,
-    user: User,
+    user: Optional[User] = None,
 ) -> list[Optional[Car]]:
     """
     Возврат УНИКАЛЬНЫХ машин c учётом выбранных пользователем фильтров.
@@ -203,7 +203,7 @@ async def get_cars_with_request_and_special_status(
         .order_by(Car.grz)
     )
 
-    if for_masters:  # если пользователь - сотрудник цеха ремонта:
+    if for_masters and user:  # если пользователь - сотрудник цеха ремонта:
         stmt = stmt.where(
             ServiceWork.station_id == organization_id,
             ServiceWork.zvr_number.is_not(None),

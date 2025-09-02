@@ -183,7 +183,11 @@ const props = defineProps({
   documentUrl: {
     type: String,
     default: null
-  }
+  },
+  total_docs_count:{
+    type: [String,Number],
+    default:null
+  },
 });
 
 const emit = defineEmits(['file-dropped', 'submitted', 'document-click', 'refresh-delivery-data'])
