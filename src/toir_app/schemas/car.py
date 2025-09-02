@@ -9,7 +9,7 @@ from logger.logger import logger
 # from schemas.organization import OrganizationID
 from schemas.car_model import CarModelWithID
 from schemas.organization import OrganizationResponse
-from schemas.service_work import CarAtributesInServiceWork
+from schemas.service_work import CarAtributesInServiceWorkSplitDischarge
 from schemas.special_status import (
     SpecialStatusForCarSchema,
     SpecialStatusWithTimestamp,
@@ -141,5 +141,6 @@ class CarExpandWithIndicators(CarWithCarModelFields):
     - (new) Общий пробег
     - (new) Среднесуточный пробег
     """
-    indicators: Optional[CarAtributesInServiceWork]
+
+    indicators: Optional[CarAtributesInServiceWorkSplitDischarge]
     id: Optional[int]

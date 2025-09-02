@@ -13,6 +13,7 @@ from constants import (
 from function import add_declension_to_date
 from logger.logger import logger
 from models import ServiceWork, Station
+from schemas.common_func import convert_value_with_discharge
 from schemas.station import StationBase
 from schemas.unit_of_bom import UnitOfBOMRead
 
@@ -48,8 +49,9 @@ class CarAtributesInServiceWork(BaseModel):
 
     Дополнительно - округление поля daily_distance до .1 знака.
     """
+
     # используется в индикаторах (нужны только 2 этих поля)
-    request_reading: float
+    request_reading: Union[float, str]
     daily_distance: float
 
     class Config:
@@ -59,6 +61,17 @@ class CarAtributesInServiceWork(BaseModel):
     def split_value(cls, value):
         """Округление суточного пробега до 1 знака после запятой."""
         return round(value, 1)
+
+
+class CarAtributesInServiceWorkSplitDischarge(CarAtributesInServiceWork):
+    """Схема ServiceWork с полями, необходимыми для представления Car."""
+
+    request_reading: str
+
+    @field_validator('request_reading', mode='before')
+    def split_request_reading_value(cls, value):
+        """Разделение общего пробега по разрядам."""
+        return convert_value_with_discharge(value)
 
 
 class ServiceWorkBase(CarAtributesInServiceWork):
