@@ -66,7 +66,7 @@
               <th class="cell-border">СНБ</th>
               <th class="cell-border">Количество</th>
               <th class="cell-border">Организация получатель</th>
-              <th class="cell-border text-right">Наименование материала</th>
+              <th class="cell-border ">Наименование материала</th>
             </tr>
           </thead>
           <tbody>
@@ -112,7 +112,7 @@
                 {{ currentDelivery.organization.name }}
               </td>
               <td
-                class="cell-border text-right"
+                class="cell-border"
                 :class="{
                   'blocked-cell': isDeliveryBlocked || isViewOnly,
                 }"
