@@ -26,6 +26,7 @@ from logger.logger import logger
 from models import (
     Car,
     EventForBot,
+    MaintenanceBillOfMaterials,
     Organization,
     ServiceName,
     ServiceStatus,
@@ -435,6 +436,15 @@ async def _get_service_work_for_car_and_service_name(
         if hide_service_work_with_zvr:
             stmt = stmt.where(ServiceWork.zvr_number.is_(None))
 
+    # Догружаем документы и материалы, связанные с карточкой service_work:
+    stmt = stmt.options(
+        selectinload(ServiceWork.docs_in_service_work)
+        .selectinload(MaintenanceBillOfMaterials.organization),
+
+        selectinload(ServiceWork.docs_in_service_work)
+        .selectinload(MaintenanceBillOfMaterials.components),
+    )
+
     return result if (result := await session.scalar(stmt)) else None
 
 
@@ -709,7 +719,7 @@ async def update_completed_real_service_work(
         )
         if not service_work.zvr_number:
             raise HTTPException(
-                status_code=HTTPStatus.UNPROCESSABLE_ENTITY,
+                status_code=HTTPStatus.BAD_REQUEST,
                 detail='Сначала необходимо добавить ЗВР.'
             )
 
@@ -717,14 +727,14 @@ async def update_completed_real_service_work(
         # перед переводом в закрытие:
         if not len(service_work.docs_in_service_work) and add_date:
             raise HTTPException(
-                status_code=HTTPStatus.UNPROCESSABLE_ENTITY,
+                status_code=HTTPStatus.BAD_REQUEST,
                 detail='Перед завершением необходимо добавить материалы.'
             )
 
-        # перед откатом закрытия:
+        # TODO перед откатом закрытия (НЕ ТЕСТИРОВАЛ!!!!!!!!!!!!!!!!!!!!!!!!!!):
         if len(service_work.docs_in_service_work) and not add_date:
             raise HTTPException(
-                status_code=HTTPStatus.UNPROCESSABLE_ENTITY,
+                status_code=HTTPStatus.BAD_REQUEST,
                 detail='У работы есть материалы - отменить нельзя.'
             )
 

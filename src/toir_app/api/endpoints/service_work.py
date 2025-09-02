@@ -33,6 +33,7 @@ from models import EventForBot, Organization, SpecialStatus, User
 # from schemas.docs_material import BOMRead
 from schemas.service_work import (
     AddZvrSchema,
+    ServiceWorkWithBOMList,
     ServiceWorkWithZVRNumber,
 )
 from schemas.unit_of_bom import (
@@ -294,7 +295,7 @@ async def get_count_all_active_service_work_with_open_zvr(
         ' (скрыть все записи с указанным ЗВР), он указывает'
         ' hide_service_work_with_zvr=True.'
     ),
-    response_model=list[list[Optional[ServiceWorkWithZVRNumber]]],
+    response_model=list[list[Optional[ServiceWorkWithBOMList]]],
     response_model_exclude_none=True
 )
 async def get_table(
@@ -327,7 +328,7 @@ async def get_table(
     description=(
         'Получение в виде списка списков.'
     ),
-    response_model=list[list[Optional[ServiceWorkWithZVRNumber]]],
+    response_model=list[list[Optional[ServiceWorkWithBOMList]]],
     response_model_exclude_none=True
 )
 async def get_table_for_master(
