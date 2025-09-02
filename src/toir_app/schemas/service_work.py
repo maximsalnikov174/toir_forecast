@@ -14,6 +14,7 @@ from function import add_declension_to_date
 from logger.logger import logger
 from models import ServiceWork, Station
 from schemas.station import StationBase
+from schemas.unit_of_bom import UnitOfBOMRead
 
 
 def convert_date_into_convenient_format(
@@ -218,6 +219,19 @@ class ServiceWorkWithZVRNumber(ServiceWorkWithDivergence):
             pattern_for_date=PATTERN_DATE_USER_FRENDLY,
             context=info.context
         )
+
+
+class ServiceWorkWithBOMList(ServiceWorkWithZVRNumber):
+    """Добавлен список документов и использованные материалы."""
+
+    # Поле есть (нужно для подсчёта кол-ва документов), но оно не отображается
+    docs_in_service_work: list[UnitOfBOMRead] = Field(..., exclude=True)
+
+    @computed_field
+    def total_docs_count(self) -> Optional[int]:
+        """Подсчёт количества вложенных документов с материалами."""
+        result = len(self.docs_in_service_work)
+        return result if result else None
 
 
 class ServiceWorkWithInArchive(ServiceWorkWithZVRNumber):
