@@ -387,7 +387,7 @@ async def get_docs(
 ):
     """Получение списка документов к карточке операции."""
     try:
-        service_work = await dao_service_work.get(
+        service_work = await dao_service_work.get_service_work(
             obj_id=service_work_id,
             session=session,
         )
