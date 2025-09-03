@@ -39,6 +39,7 @@
                 ({{ currentDeliveryIndex + 1 }} из {{ deliveries.length }})
               </span>
               <span v-if="isDeliveryBlocked || isViewOnly" class="blocked-badge">ТОЛЬКО ПРОСМОТР</span>
+              <span v-if="showTransferWarning" class="transfer-warning">ТРЕБУЕТСЯ ПЕРЕМЕЩЕНИЕ</span>
             </div>
             <div class="zvr-number" v-if="zvr_number">
               <span class="zvr-label">ЗВР:</span> {{ zvr_number }}
@@ -196,6 +197,11 @@ const {
 // Проверка, заблокирована ли текущая доставка
 const isDeliveryBlocked = computed(() => {
   return currentDelivery.value.to_insert === true
+})
+
+// Проверка, требуется ли перемещение (для role_id = 4)
+const showTransferWarning = computed(() => {
+  return user.value?.role_id === 5 && currentDelivery.value.transfer === true
 })
 
 // Вычисляемое свойство для массива доставок (обновлено для нового формата)
@@ -543,6 +549,15 @@ onMounted(() => {
   font-weight: bold;
 }
 
+.transfer-warning {
+  background-color: #ff9800;
+  color: white;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: bold;
+}
+
 .blocked-label {
   color: #f44336;
   font-weight: bold;
@@ -740,8 +755,8 @@ onMounted(() => {
 }
 
 .copy-status {
-  background-color: #e8f5e9;
-  color: #2e7d32;
+  background-color: 'e8f5e9';
+  color: '#2e7d32';
   padding: 8px 16px;
   border-radius: 4px;
   margin: 10px 16px;
