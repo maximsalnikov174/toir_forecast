@@ -13,6 +13,8 @@ from constants import (
 from function import add_declension_to_date
 from logger.logger import logger
 from models import ServiceWork, Station
+
+from schemas.car import CarsOrganization
 from schemas.common_func import convert_value_with_discharge
 from schemas.station import StationBase
 from schemas.unit_of_bom import UnitOfBOMRead
@@ -245,6 +247,23 @@ class ServiceWorkWithBOMList(ServiceWorkWithZVRNumber):
         """Подсчёт количества вложенных документов с материалами."""
         result = len(self.docs_in_service_work)
         return result if result else None
+
+
+class ServiceWorksBOMListAndCarOrganization(BaseModel):
+    """Список документов с использованными материалами и подразделение ТС."""
+
+    docs_in_service_work: list[UnitOfBOMRead]
+    car: CarsOrganization = Field(..., exclude=True)
+
+    @field_serializer('docs_in_service_work')
+    def expand_docs_in_service_work(
+        self, docs_in_service_work: list[UnitOfBOMRead], info
+    ) -> list[UnitOfBOMRead]:
+        """Проверка совпадения цеха ТС и подразделения списания ТМЦ."""
+        for unit in docs_in_service_work:
+            if unit.organization.id != self.car.organization.id:
+                unit.transfer = True
+        return docs_in_service_work
 
 
 class ServiceWorkWithInArchive(ServiceWorkWithZVRNumber):

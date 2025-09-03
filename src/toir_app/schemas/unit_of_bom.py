@@ -1,3 +1,4 @@
+from typing import Optional
 from pydantic import BaseModel, ConfigDict, Field
 
 from constants import (
@@ -70,5 +71,6 @@ class UnitOfBOMRead(BOMDocsCreate):
     id: int
     organization: OrganizationWithIDAndName
     components: list[UnitOfBOM]
+    transfer: Optional[bool] = None
 
     model_config = ConfigDict(from_attributes=True)

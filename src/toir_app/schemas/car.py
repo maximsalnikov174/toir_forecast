@@ -1,5 +1,5 @@
 import re
-from typing import Optional
+from typing import Optional, TYPE_CHECKING
 
 from pydantic import BaseModel, Field, field_validator
 
@@ -8,12 +8,14 @@ from logger.logger import logger
 # from schemas.car_model import CarModelBase
 # from schemas.organization import OrganizationID
 from schemas.car_model import CarModelWithID
-from schemas.organization import OrganizationResponse
-from schemas.service_work import CarAtributesInServiceWorkSplitDischarge
+from schemas.organization import OrganizationResponse, OrganizationID
 from schemas.special_status import (
     SpecialStatusForCarSchema,
     SpecialStatusWithTimestamp,
 )
+
+if TYPE_CHECKING:
+    from schemas.service_work import CarAtributesInServiceWorkSplitDischarge
 
 
 class CarOnlyIDs(BaseModel):
@@ -128,6 +130,12 @@ class CarWithCarModelAndOrganizationFields(CarWithCarModelFields):
     organization: OrganizationResponse
 
 
+class CarsOrganization(BaseModel):
+    """Только подразделение машины."""
+
+    organization: OrganizationID
+
+
 class CarExpandWithIndicators(CarWithCarModelFields):
     """
     Расширенная схема модели Автомобиля.
@@ -142,5 +150,5 @@ class CarExpandWithIndicators(CarWithCarModelFields):
     - (new) Среднесуточный пробег
     """
 
-    indicators: Optional[CarAtributesInServiceWorkSplitDischarge]
+    indicators: Optional['CarAtributesInServiceWorkSplitDischarge']
     id: Optional[int]
