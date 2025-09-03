@@ -1,25 +1,23 @@
+from __future__ import annotations
+
 import re
-from typing import Optional, TYPE_CHECKING
+from typing import Optional
 
 from pydantic import BaseModel, Field, field_validator
 
 from constants import pattern_grz
 from logger.logger import logger
-# from schemas.car_model import CarModelBase
-# from schemas.organization import OrganizationID
 from schemas.car_model import CarModelWithID
-from schemas.organization import OrganizationResponse, OrganizationID
+from schemas.organization import OrganizationResponse
 from schemas.special_status import (
     SpecialStatusForCarSchema,
     SpecialStatusWithTimestamp,
 )
 
-if TYPE_CHECKING:
-    from schemas.service_work import CarAtributesInServiceWorkSplitDischarge
-
 
 class CarOnlyIDs(BaseModel):
     """Перечень pk ТС (используется при построении строк главной таблицы)."""
+
     id: int = Field(..., serialization_alias='car_id', description='PK aka ID')
 
 
@@ -32,6 +30,7 @@ class CarStartParse(BaseModel):
     - (new) ID из OeBS *
     - (new) ГРЗ *
     """
+
     personal_id: int = Field(
         ..., title='Уникальный ID из OeBS (не путать с PK)'
     )
@@ -62,6 +61,7 @@ class CarStartParse(BaseModel):
 
 class CarToDownloadInDB(CarStartParse):
     """Схема для загрузки данных из CSV-файла (не трогать!)."""
+
     car_model_id: int = Field(..., title='ID модели ТС')
     organization_id: int = Field(..., title='ID подразделения')
 
@@ -76,6 +76,7 @@ class CarBase(CarStartParse):
     - ГРЗ
     - (new) ID специального статуса
     """
+
     status_associations: Optional[list[SpecialStatusForCarSchema]]
 
 
@@ -97,6 +98,7 @@ class CarWithCarModelAndOrganizationIDs(CarBase):
     - (new) ID марки ТС
     - (new) ID подразделения
     """
+
     car_model_id: int = Field(..., title='ID модели ТС')
     organization_id: int = Field(..., title='ID подразделения')
 
@@ -112,6 +114,7 @@ class CarWithCarModelFields(CarBase):
     - ID специального статуса
     - (new) Поля марки ТС
     """
+
     car_model: CarModelWithID
 
 
@@ -127,28 +130,5 @@ class CarWithCarModelAndOrganizationFields(CarWithCarModelFields):
     - Поля марки ТС
     - (new) Поля подразделения
     """
+
     organization: OrganizationResponse
-
-
-class CarsOrganization(BaseModel):
-    """Только подразделение машины."""
-
-    organization: OrganizationID
-
-
-class CarExpandWithIndicators(CarWithCarModelFields):
-    """
-    Расширенная схема модели Автомобиля.
-
-    Используемые поля:
-    - PK aka ID
-    - ID из OeBS
-    - ГРЗ
-    - ID специального статуса
-    - Поля марки ТС
-    - (new) Общий пробег
-    - (new) Среднесуточный пробег
-    """
-
-    indicators: Optional['CarAtributesInServiceWorkSplitDischarge']
-    id: Optional[int]

@@ -404,7 +404,6 @@ async def get_docs(
             attr_value=service_work_id,
             session=session,
         )
-
         return service_work
 
     except Exception as e:

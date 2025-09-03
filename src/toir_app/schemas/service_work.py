@@ -13,9 +13,7 @@ from constants import (
 from function import add_declension_to_date
 from logger.logger import logger
 from models import ServiceWork, Station
-
-from schemas.car import CarsOrganization
-from schemas.common_func import convert_value_with_discharge
+from schemas.common import CarsOrganization
 from schemas.station import StationBase
 from schemas.unit_of_bom import UnitOfBOMRead
 
@@ -35,7 +33,6 @@ def convert_date_into_convenient_format(
     msg = f' → {phrase_with_days}' if days_left > borderline_value else ''
 
     return f'{element.date().strftime(pattern_for_date)}{msg}'
-    # return f'{element.strftime(pattern_for_date)} {msg}'
 
 
 class ServiceWorksRequestStatus(BaseModel):
@@ -63,17 +60,6 @@ class CarAtributesInServiceWork(BaseModel):
     def split_value(cls, value):
         """Округление суточного пробега до 1 знака после запятой."""
         return round(value, 1)
-
-
-class CarAtributesInServiceWorkSplitDischarge(CarAtributesInServiceWork):
-    """Схема ServiceWork с полями, необходимыми для представления Car."""
-
-    request_reading: str
-
-    @field_validator('request_reading', mode='before')
-    def split_request_reading_value(cls, value):
-        """Разделение общего пробега по разрядам."""
-        return convert_value_with_discharge(value)
 
 
 class ServiceWorkBase(CarAtributesInServiceWork):
@@ -173,14 +159,12 @@ class ServiceWorkWithZVRNumber(ServiceWorkWithDivergence):
 
     @computed_field
     def days_between_service_work_completed_and_now(self) -> Optional[str]:
-    # def days_between_service_work_completed_and_now(self) -> Optional[int]:
         """Разница между `сегодня` и `датой фактического завершения работ`.
 
         Returns:
         - some days
         """
         if self.service_work_completed:
-            # return (dt.now()-self.service_work_completed).days
             date_value = (dt.now()-self.service_work_completed).days
             return add_declension_to_date(date_value)
         return None
