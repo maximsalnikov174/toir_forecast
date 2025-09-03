@@ -1,6 +1,6 @@
 <template>
   <q-dialog v-model="showModal" persistent>
-    <q-card class="delivery-modal">
+    <q-card class="delivery-modal" :class="{ 'transfer-warning-border': showTransferWarning }">
       <!-- Крестик закрытия в правом верхнем углу -->
       <q-btn class="close-button" icon="close" flat round dense @click="closeModal" v-close-popup />
 
@@ -497,6 +497,10 @@ onMounted(() => {
   max-width: 2000px;
   max-height: 80vh;
   position: relative;
+}
+
+.transfer-warning-border {
+  border: 5px solid #f44336 !important; /* красная рамка для предупреждения о перемещении */
 }
 
 .close-button {
