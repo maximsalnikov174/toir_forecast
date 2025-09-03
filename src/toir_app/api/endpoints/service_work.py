@@ -33,6 +33,7 @@ from models import EventForBot, Organization, SpecialStatus, User
 # from schemas.docs_material import BOMRead
 from schemas.service_work import (
     AddZvrSchema,
+    ServiceWorksBOMListAndCarOrganization,
     ServiceWorkWithBOMList,
     ServiceWorkWithZVRNumber,
 )
@@ -375,9 +376,10 @@ async def get_table_for_master(
 
 @router.get(
         '/{service_work_id}/unit_of_bom',
-        response_model=list[UnitOfBOMRead],
+        response_model=ServiceWorksBOMListAndCarOrganization,
         status_code=status.HTTP_200_OK,
         name='Получение списка документов с материалами (доступно всем).',
+        response_model_exclude_none=True,
 )
 async def get_docs(
     service_work_id: int,
@@ -396,12 +398,14 @@ async def get_docs(
                 detail=f'Карточка работы #{service_work_id} не найдена',
             )
 
-        bom = await dao_doc_bom.get_multi_by_attribute(
+        # Подгружаем документы к `service_work` для вывода результата:
+        await dao_doc_bom.get_multi_by_attribute(
             attr_name='service_work_id',
             attr_value=service_work_id,
             session=session,
         )
-        return bom
+
+        return service_work
 
     except Exception as e:
         raise HTTPException(
@@ -504,7 +508,7 @@ async def parse_docs(
         # Проверка нескольких прав пользователя:
         # 1. Только работы, связанные с мастерской сотрудника:
         check_users_can_edit_service_work(user, service_work, for_station=True)
-        # 2. Только для пользователя с ролью Мастер и суперюзера:
+        # 2. Только для пользователя с ролью Мастер/Оператор/суперюзер:
         check_user_can_add_docs_in_service_work(user)
 
         # Получаем данные из файла pdf и загоняем их в модель:
