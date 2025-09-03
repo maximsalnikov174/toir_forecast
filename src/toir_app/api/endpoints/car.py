@@ -15,10 +15,8 @@ from crud.car import (
 from crud.service_status import dao_service_status
 from crud.service_work import get_last_request_reading_by_car
 from models import Car, User
-from schemas.car import (
-    CarExpandWithIndicators,
-    CarWithCarModelAndOrganizationIDs,
-)
+from schemas.car import CarWithCarModelAndOrganizationIDs
+from schemas.common import CarExpandWithIndicators
 from schemas.service_work import ServiceWorkWithInArchive
 
 router = APIRouter()
