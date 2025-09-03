@@ -65,7 +65,6 @@
             <tr>
               <th class="cell-border">СНБ</th>
               <th class="cell-border">Количество</th>
-              <th class="cell-border">Организация получатель</th>
               <th class="cell-border ">Наименование материала</th>
             </tr>
           </thead>
@@ -100,17 +99,7 @@
               >
                 {{ item.material_count }}
               </td>
-              <td
-                class="cell-border text-center"
-                :class="{
-                  'active-cell':
-                    currentRowIndex === index && currentCellIndex === 2 && !isDeliveryBlocked && !isViewOnly,
-                  'copied-cell': copiedCells.has(`${index}-2`) && !isDeliveryBlocked && !isViewOnly,
-                  'blocked-cell': isDeliveryBlocked || isViewOnly,
-                }"
-              >
-                {{ currentDelivery.organization.name }}
-              </td>
+
               <td
                 class="cell-border"
                 :class="{
@@ -194,7 +183,7 @@ const { user } = storeToRefs(authStore)
 
 // Проверка роли пользователя (только просмотр для role_id = 4)
 const isViewOnly = computed(() => {
-  return user.value?.role_id === 4
+  return user.value?.role_id === 4 || user.value?.role_id === 2
 })
 
 const {
@@ -239,8 +228,7 @@ const findNextCellToCopy = () => {
   if (!currentDelivery.value.components || isViewOnly.value) return null
 
   for (let rowIndex = 0; rowIndex < currentDelivery.value.components.length; rowIndex++) {
-    // Теперь 3 ячейки для копирования (0: СНБ, 1: Количество, 2: ID организации)
-    for (let cellIndex = 0; cellIndex < 3; cellIndex++) {
+    for (let cellIndex = 0; cellIndex < 2; cellIndex++) {
       const cellId = `${rowIndex}-${cellIndex}`
       if (!copiedCells.value.has(cellId)) {
         return { rowIndex, cellIndex }
@@ -256,7 +244,7 @@ const allCellsCopied = computed(() => {
     return false
   }
 
-  const totalCells = currentDelivery.value.components.length * 3 // Теперь 3 ячейки на строку
+  const totalCells = currentDelivery.value.components.length * 2 // Теперь 3 ячейки на строку
   return copiedCells.value.size >= totalCells && !enteredDeliveries.value.has(currentDelivery.value.delivery)
 })
 

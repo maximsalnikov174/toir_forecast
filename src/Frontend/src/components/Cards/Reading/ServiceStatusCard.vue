@@ -134,7 +134,7 @@ const handleRefreshData = () => {
 };
 
 const isRole4 = computed(() => {
-  return authStore.user?.role_id === 4;
+  return authStore.user?.role_id === 4 || authStore.user?.role_id === 2 ;
 });
 
 const showNotify = (options) => {
