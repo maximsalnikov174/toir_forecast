@@ -44,7 +44,7 @@
               <span class="zvr-label">ЗВР:</span> {{ zvr_number }}
             </div>
             <div class="delivery-details">
-              <div>организация получатель: {{ currentDelivery.organization.name }}</div>
+              <div>организация получатель: {{ currentDelivery.organization?.name }}</div>
               <div>ID работы: {{ currentDelivery.service_work_id }}</div>
               <div>ID карточки: {{ currentDelivery.id }}</div>
             </div>
@@ -65,7 +65,7 @@
             <tr>
               <th class="cell-border">СНБ</th>
               <th class="cell-border">Количество</th>
-              <th class="cell-border ">Наименование материала</th>
+              <th class="cell-border">Наименование материала</th>
             </tr>
           </thead>
           <tbody>
@@ -198,13 +198,25 @@ const isDeliveryBlocked = computed(() => {
   return currentDelivery.value.to_insert === true
 })
 
-// Вычисляемое свойство для массива доставок
+// Вычисляемое свойство для массива доставок (обновлено для нового формата)
 const deliveries = computed(() => {
+  // Если пришел массив - возвращаем его (старый формат)
   if (Array.isArray(props.deliveryData)) {
     return props.deliveryData
-  } else if (props.deliveryData && Object.keys(props.deliveryData).length > 0) {
+  }
+
+  // Если пришел объект с docs_in_service_work (новый формат)
+  if (props.deliveryData && props.deliveryData.docs_in_service_work) {
+    return Array.isArray(props.deliveryData.docs_in_service_work)
+      ? props.deliveryData.docs_in_service_work
+      : [props.deliveryData.docs_in_service_work]
+  }
+
+  // Если пришел пустой объект или другой формат
+  if (props.deliveryData && Object.keys(props.deliveryData).length > 0) {
     return [props.deliveryData]
   }
+
   return []
 })
 
@@ -244,7 +256,7 @@ const allCellsCopied = computed(() => {
     return false
   }
 
-  const totalCells = currentDelivery.value.components.length * 2 // Теперь 3 ячейки на строку
+  const totalCells = currentDelivery.value.components.length * 2
   return copiedCells.value.size >= totalCells && !enteredDeliveries.value.has(currentDelivery.value.delivery)
 })
 
@@ -303,8 +315,6 @@ const getCellValue = (rowIndex, cellIndex) => {
       return component.snb || ''
     case 1:
       return component.material_count?.toString() || ''
-    case 2:
-      return currentDelivery.value.organization.name?.toString() || ''
     default:
       return ''
   }
@@ -475,6 +485,7 @@ onMounted(() => {
 </script>
 
 <style scoped>
+/* Стили остаются без изменений */
 .delivery-modal {
   width: 1000px;
   max-width: 2000px;
@@ -482,7 +493,6 @@ onMounted(() => {
   position: relative;
 }
 
-/* Крестик закрытия в правом верхнем углу */
 .close-button {
   position: absolute;
   top: 8px;
@@ -609,24 +619,6 @@ onMounted(() => {
 
 .delivery-content:hover {
   background-color: #fafafa;
-}
-
-.click-instruction {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  background: rgba(255, 255, 255, 0.95);
-  padding: 15px 20px;
-  border-radius: 8px;
-  border: 2px solid #2196f3;
-  color: #1976d2;
-  font-weight: 500;
-  z-index: 10;
-  pointer-events: none;
 }
 
 /* Стили для таблицы */
