@@ -32,16 +32,27 @@
           <span v-if="emailError" class="error-message">{{ emailError }}</span>
         </div>
 
-        <div class="form-group">
+        <div class="form-group password-group">
           <label for="password">Пароль</label>
-          <input
-            id="password"
-            type="password"
-            v-model="form.password"
-            @input="handlePasswordInput"
-            :class="{ invalid: !isLoginMode && (passwordError || russianCharWarning) }"
-            required
-          />
+          <div class="password-input-container">
+            <input
+              id="password"
+              :type="showPassword ? 'text' : 'password'"
+              v-model="form.password"
+              @input="handlePasswordInput"
+              :class="{ invalid: !isLoginMode && (passwordError || russianCharWarning) }"
+              required
+            />
+            <button
+              type="button"
+              class="password-toggle"
+              @click="togglePasswordVisibility"
+              tabindex="-1"
+            >
+              <span v-if="showPassword">👁️</span>
+              <span v-else>👁️‍🗨️</span>
+            </button>
+          </div>
           <span v-if="!isLoginMode && passwordError" class="error-message">{{
             passwordError
           }}</span>
@@ -114,6 +125,7 @@ const emit = defineEmits(['login', 'register', 'close'])
 
 const isOpen = ref(false)
 const isLoginMode = ref(true)
+const showPassword = ref(false) // Новое состояние для отображения пароля
 const toasts = ref([])
 let toastId = 0
 
@@ -150,6 +162,11 @@ const hasNumber = computed(() => passwordRequirements.hasNumber.test(form.passwo
 const hasSpecialChar = computed(() => passwordRequirements.hasSpecial.test(form.password))
 const hasNoRussian = computed(() => passwordRequirements.noRussian.test(form.password))
 
+// Функция для переключения видимости пароля
+const togglePasswordVisibility = () => {
+  showPassword.value = !showPassword.value
+}
+
 const convertEmailToLowercase = () => {
   form.email = form.email.toLowerCase()
   validateEmail()
@@ -174,6 +191,7 @@ const open = () => {
 
 const close = () => {
   isOpen.value = false
+  showPassword.value = false // Сбрасываем видимость пароля при закрытии
   emit('close')
 }
 
@@ -181,6 +199,7 @@ const toggleMode = () => {
   isLoginMode.value = !isLoginMode.value
   emailError.value = ''
   passwordError.value = ''
+  showPassword.value = false // Сбрасываем видимость пароля при переключении режима
 }
 
 const validateEmail = () => {
@@ -255,6 +274,7 @@ const resetForm = () => {
   form.name = ''
   form.surname = ''
   form.organization = ''
+  showPassword.value = false // Сбрасываем видимость пароля
 }
 
 const handleSubmit = async () => {
@@ -362,6 +382,37 @@ select {
   border: 1px solid #000000;
   border-radius: 4px;
   box-sizing: border-box;
+}
+
+.password-group {
+  position: relative;
+}
+
+.password-input-container {
+  position: relative;
+}
+
+.password-input-container input {
+  padding-right: 40px; /* Место для кнопки */
+}
+
+.password-toggle {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  font-size: 16px;
+  color: #666;
+  border-radius: 4px;
+}
+
+.password-toggle:hover {
+  background-color: #f0f0f0;
+  color: #333;
 }
 
 .invalid {
