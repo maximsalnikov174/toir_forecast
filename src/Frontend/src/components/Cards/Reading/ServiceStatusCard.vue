@@ -231,6 +231,7 @@ const shouldShowPlusIcon = computed(() => {
 });
 
 const shouldShowHover = computed(() => {
+  if (!authStore.isAuthenticated) return false;
   return hover.value &&
          (authStore.user?.is_superuser || authStore.user?.users_organization.station_id !== null || authStore.user?.role_id === 6) &&
          !props.service_work_completed;
