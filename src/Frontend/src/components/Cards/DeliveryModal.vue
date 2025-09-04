@@ -500,7 +500,7 @@ onMounted(() => {
 }
 
 .transfer-warning-border {
-  border: 5px solid #f44336 !important; /* красная рамка для предупреждения о перемещении */
+  border: 10px solid #ff0000 !important; /* красная рамка для предупреждения о перемещении */
 }
 
 .close-button {
