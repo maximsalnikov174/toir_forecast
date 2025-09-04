@@ -142,7 +142,8 @@ async def link_special_status_and_car(
     response_model=List[ServiceWorkWithInArchive],
     name='Отображение истории по выполнению сервисных обслуживаний для ТС.',
     description='Позже допишу',
-    status_code=HTTPStatus.OK
+    status_code=HTTPStatus.OK,
+    response_model_exclude_none=True,
 )
 async def get_history_for_current_car(
     car_id: int = Query(None, ge=0, description='ID ТС'),
