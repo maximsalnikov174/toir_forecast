@@ -198,7 +198,7 @@ class ServiceWorkWithZVRNumber(ServiceWorkWithDivergence):
         self,
         zvr_create_date: dt,
         info,
-    ) -> Union[str, dt]:
+    ) -> Optional[Union[str, dt]]:
         """Обработка (отображение) поля `zvr_create_date`.
 
         ## Variants:
@@ -212,12 +212,14 @@ class ServiceWorkWithZVRNumber(ServiceWorkWithDivergence):
         предыдущего выполнения сервиса и, с учётом сравнения с полем
         `ZVR_CREATED_DAYS_AGO`, может быть расширено надписью `прошло дней: Х`.
         """
-        return convert_date_into_convenient_format(
-            element=zvr_create_date,
-            borderline_value=ZVR_CREATED_DAYS_AGO,
-            pattern_for_date=PATTERN_DATE_USER_FRENDLY,
-            context=info.context
-        )
+        if zvr_create_date:
+            return convert_date_into_convenient_format(
+                element=zvr_create_date,
+                borderline_value=ZVR_CREATED_DAYS_AGO,
+                pattern_for_date=PATTERN_DATE_USER_FRENDLY,
+                context=info.context
+            )
+        return None
 
 
 class ServiceWorkWithBOMList(ServiceWorkWithZVRNumber):
