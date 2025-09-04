@@ -4,7 +4,7 @@ from http import HTTPStatus
 from typing import Annotated, Any, Optional
 
 from fastapi import HTTPException
-from sqlalchemy import or_, select
+from sqlalchemy import and_, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload, selectinload
 
@@ -196,6 +196,7 @@ async def get_cars_with_request_and_special_status(
         )
         .join(Car.service_works)  # Явное соед. с service_works
         .outerjoin(Car.status_associations)  # статусы могут отс.
+        .outerjoin(SpecialStatusForCar.special_status)  # присоединяем статусы
         .where(
             ServiceWork.in_archive.is_(False),
             Car.in_archive.is_(False),
@@ -216,13 +217,25 @@ async def get_cars_with_request_and_special_status(
             # - поле «работа завершена фактически» не пустое
             stmt = stmt.where(ServiceWork.service_work_completed.is_not(None))
 
-    else:  # если пользователь - сотрудник цеха эксплуатации:
+    # если пользователь - сотрудник цеха эксплуатации:
+    # - нужны только ТС своего цеха и
+    # - расчётные статус "указанный и строже" и
+    # - или у ТС нет специальных статусов
+    # - или у ТС специальный статус истёк
+    # - или у ТС специальный статус "активный" и находится в указанном перечне
+    else:
         stmt = stmt.where(
             Car.organization_id == organization_id,
             ServiceWork.request_status_id <= request_status_id,
             or_(
-                SpecialStatusForCar.id.is_(None),
-                SpecialStatusForCar.special_status_id.in_(special_status_ids)
+                SpecialStatusForCar.car_id.is_(None),
+                SpecialStatusForCar.is_active.is_(False),
+                and_(
+                    SpecialStatusForCar.special_status_id.in_(
+                        special_status_ids
+                    ),
+                    SpecialStatusForCar.is_active.is_(True),
+                )
             )
         )
 
