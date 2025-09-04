@@ -374,19 +374,15 @@ async def _get_service_work_for_car_and_service_name(
         station_id: Optional[int] = None,
         hide_service_work_with_zvr: bool = False,
         request_status_id: Optional[Annotated[int, ServiceStatus.id]] = None,
-        special_status_ids: Optional[
-            list[Optional[Annotated[int, SpecialStatus.id]]]
-        ] = None,
 ) -> Optional[ServiceWork]:
     """Получение ID записи ServiceWork если оно соответствует условиям.
 
-    ## Args:
+    Args
+    ----
     - `station_id`: если нужно собрать `service_work` для конкретного СТО;
     - `hide_service_work_with_zvr = True`: если нужно скрыть запись с ЗВР;
     - `request_status_id`: когда нужно получить `service_work` строже
-        определенного статуса;
-    - `special_status_ids`: когда нужно учесть установленные для ТС
-        специальные статусы.
+        определенного статуса.
     """
 
     # TODO Если ТС в архиве - должен сработать pass
@@ -418,19 +414,7 @@ async def _get_service_work_for_car_and_service_name(
 
     # Собираем для цеха перевозки:
     else:
-        stmt = (
-            stmt
-            # .outerjoin(Car.status_associations)
-            .where(
-                ServiceWork.request_status_id <= request_status_id,
-                # or_(
-                #     Car.status_associations == None,  # может .is_(None)?
-                #     SpecialStatusForCar.special_status_id.in_(
-                #         special_status_ids
-                #     )
-                # )
-            )
-        )
+        stmt = stmt.where(ServiceWork.request_status_id <= request_status_id)
 
         # Скрыть записи о сервисном обслуживании, если для них уже создан ЗВР:
         if hide_service_work_with_zvr:
@@ -527,7 +511,6 @@ async def create_main_table(
                         car_id=car.id,
                         service_name_id=service_name.id,
                         request_status_id=request_status_id,
-                        special_status_ids=special_status_ids,
                         session=session,
                         hide_service_work_with_zvr=hide_service_work_with_zvr
                     )
