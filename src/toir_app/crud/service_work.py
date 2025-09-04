@@ -420,15 +420,15 @@ async def _get_service_work_for_car_and_service_name(
     else:
         stmt = (
             stmt
-            .outerjoin(Car.status_associations)
+            # .outerjoin(Car.status_associations)
             .where(
                 ServiceWork.request_status_id <= request_status_id,
-                or_(
-                    Car.status_associations == None,  # может .is_(None)?
-                    SpecialStatusForCar.special_status_id.in_(
-                        special_status_ids
-                    )
-                )
+                # or_(
+                #     Car.status_associations == None,  # может .is_(None)?
+                #     SpecialStatusForCar.special_status_id.in_(
+                #         special_status_ids
+                #     )
+                # )
             )
         )
 
