@@ -6,36 +6,48 @@
     style="cursor: pointer;"
   >
     <q-card-section horizontal>
-      <div class="status-image-container">
-        <q-img
-          v-if="statusImage"
-          :src="statusImage"
-          class="car-image"
-        />
-        <q-tooltip
-         class="bg-red text-body2"
-          v-if="hasStatusInfo"
-          anchor="top middle"
-          self="bottom middle"
-          :offset="[0, 10]"
-        >
-          <div class="tooltip-content">
-            <div v-if="specialStatusComment" class="tooltip-row">
-              <q-icon name="comment" size="sm" />
-              <span>{{ specialStatusComment }}</span>
-            </div>
-            <div v-if="specialStatusDateLeft" class="tooltip-row">
-              <q-icon name="event" size="sm" />
-              <span>До: {{ formattedDateLeft }}</span>
-            </div>
-          </div>
-        </q-tooltip>
+      <div class="status-images-container">
         <div
-          v-else
           class="car-image-placeholder"
+          :class="{
+            'has-status': activeStatuses.length > 0,
+            'multiple-statuses': activeStatuses.length > 1
+          }"
           @click.stop="openAddStatusDialog"
         >
-          <span class="plus-icon" v-if="showPlusIcon">+</span>
+          <!-- Отображаем все активные статусы -->
+          <div
+            v-for="(status, index) in activeStatuses"
+            :key="index"
+            class="status-image-wrapper"
+            :class="{ 'small-image': activeStatuses.length > 1 }"
+          >
+            <q-img
+              :src="getStatusImage(status.special_status_id)"
+              class="status-image"
+              :class="{ 'small': activeStatuses.length > 1 }"
+            />
+            <q-tooltip
+              class="bg-red text-body2"
+              anchor="top middle"
+              self="bottom middle"
+              :offset="[0, 10]"
+            >
+              <div class="tooltip-content">
+                <div v-if="status.comment" class="tooltip-row">
+                  <q-icon name="comment" size="sm" />
+                  <span>{{ status.comment }}</span>
+                </div>
+                <div v-if="status.date_left" class="tooltip-row">
+                  <q-icon name="event" size="sm" />
+                  <span>До: {{ formatDate(status.date_left) }}</span>
+                </div>
+              </div>
+            </q-tooltip>
+          </div>
+
+          <!-- Плюсик для добавления статуса -->
+          <span class="plus-icon" v-if="showPlusIcon && activeStatuses.length === 0">+</span>
         </div>
       </div>
 
@@ -96,20 +108,6 @@ export default defineComponent({
       type: [String, Number],
       required: false,
     },
-    specialStatusId: {
-      type: Number,
-      required: false,
-    },
-    specialStatusComment: {
-      type: String,
-      required: false,
-      default: ''
-    },
-    specialStatusDateLeft: {
-      type: String,
-      required: false,
-      default: ''
-    },
     id: {
       type: Number,
       required: true
@@ -117,6 +115,10 @@ export default defineComponent({
     divId: {
       type: [String, Number],
       default: null
+    },
+    statusAssociations: {
+      type: Array,
+      default: () => []
     }
   },
   emits: ['status-added'],
@@ -125,6 +127,10 @@ export default defineComponent({
     const showAddStatusDialog = ref(false)
     const { selectedDivId } = useFilterStore()
     const authStore = useAuthStore()
+
+    const activeStatuses = computed(() => {
+      return props.statusAssociations.filter(status => status.is_active) || []
+    })
 
     const isLowDistance = computed(() => {
       return props.daliDistanse < 1
@@ -138,8 +144,8 @@ export default defineComponent({
       return authStore.user?.is_superuser || authStore.user?.users_organization.id === selectedDivId.value
     })
 
-    const statusImage = computed(() => {
-      switch(props.specialStatusId) {
+    const getStatusImage = (statusId) => {
+      switch(statusId) {
         case 1: return status1
         case 2: return status2
         case 3: return status3
@@ -147,17 +153,13 @@ export default defineComponent({
         case 5: return status5
         default: return null
       }
-    })
+    }
 
-    const formattedDateLeft = computed(() => {
-      if (!props.specialStatusDateLeft) return ''
-      const date = new Date(props.specialStatusDateLeft)
+    const formatDate = (dateString) => {
+      if (!dateString) return ''
+      const date = new Date(dateString)
       return date.toLocaleDateString('ru-RU')
-    })
-
-    const hasStatusInfo = computed(() => {
-      return props.specialStatusComment || props.specialStatusDateLeft
-    })
+    }
 
     const openAddStatusDialog = () => {
       if (showPlusIcon.value) {
@@ -204,11 +206,11 @@ export default defineComponent({
     }
 
     return {
+      activeStatuses,
       isLowDistance,
       isSelectedDivision,
-      statusImage,
-      formattedDateLeft,
-      hasStatusInfo,
+      getStatusImage,
+      formatDate,
       copyGrzToClipboard,
       showAddStatusDialog,
       openAddStatusDialog,
@@ -240,22 +242,15 @@ export default defineComponent({
   border: 2px solid purple;
 }
 
-.status-image-container {
+.status-images-container {
   position: relative;
   display: flex;
-}
-
-.car-image {
-  width: 38px;
-  height: 38px;
-  margin: 21px 0 0 16px;
-  object-fit: contain;
+  padding: 21px 0 0 16px;
 }
 
 .car-image-placeholder {
   width: 38px;
   height: 38px;
-  margin: 21px 0 0 16px;
   position: relative;
   display: flex;
   align-items: center;
@@ -263,6 +258,40 @@ export default defineComponent({
   background-color: rgba(0, 0, 0, 0.05);
   border-radius: 4px;
   cursor: pointer;
+}
+
+.car-image-placeholder.has-status {
+  background-color: transparent;
+}
+
+.car-image-placeholder.multiple-statuses {
+  flex-wrap: wrap;
+  gap: 2px;
+  padding: 2px;
+  align-content: flex-start;
+}
+
+.status-image-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.status-image-wrapper.small-image {
+  flex: 1;
+  min-width: 16px;
+}
+
+.status-image {
+  width: 38px;
+  height: 38px;
+  object-fit: contain;
+}
+
+.status-image.small {
+  width: 16px;
+  height: 16px;
 }
 
 .plus-icon {
