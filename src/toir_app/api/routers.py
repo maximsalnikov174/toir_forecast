@@ -8,6 +8,7 @@ from api.endpoints import (
     station_router,
     stats_router,
     organization_router,
+    role_router,
     service_status_router,
     user_router,
 )
@@ -55,4 +56,9 @@ main_router.include_router(
     station_router,
     prefix='/station',
     tags=['station']
+)
+main_router.include_router(
+    role_router,
+    prefix='/role',
+    tags=['role']
 )
