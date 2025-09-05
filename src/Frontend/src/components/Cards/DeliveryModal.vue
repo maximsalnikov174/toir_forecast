@@ -46,7 +46,7 @@
             </div>
             <div class="delivery-details">
               <div>организация получатель: {{ currentDelivery.organization?.name }}</div>
-              <div>отправитель: {{ currentDelivery.user_id }}</div>
+              <div>отправитель: {{ currentDelivery.user?.full_name }}</div>
               <!-- <div>ID работы: {{ currentDelivery.service_work_id }}</div>
               <div>ID карточки: {{ currentDelivery.id }}</div> -->
             </div>
