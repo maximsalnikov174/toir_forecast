@@ -46,12 +46,13 @@
             </div>
             <div class="delivery-details">
               <div>организация получатель: {{ currentDelivery.organization?.name }}</div>
-              <div>ID работы: {{ currentDelivery.service_work_id }}</div>
-              <div>ID карточки: {{ currentDelivery.id }}</div>
+              <div>отправитель: {{ currentDelivery.user_id }}</div>
+              <!-- <div>ID работы: {{ currentDelivery.service_work_id }}</div>
+              <div>ID карточки: {{ currentDelivery.id }}</div> -->
             </div>
           </div>
           <div class="barcode-section">
-            <div class="barcode-label">Штрих-код:</div>
+            <div class="barcode-label"></div>
             <canvas ref="barcodeCanvas" class="barcode-canvas"></canvas>
           </div>
         </div>
@@ -505,9 +506,9 @@ onMounted(() => {
 
 .close-button {
   position: absolute;
-  top: 8px;
-  right: 8px;
-  z-index: 1000;
+  top: -4px;
+  right: 0px;
+  z-index: 900;
 }
 
 .header-section {
