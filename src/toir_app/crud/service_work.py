@@ -7,7 +7,7 @@ from fastapi import HTTPException
 from sqlalchemy import and_, or_, select
 from sqlalchemy.sql.expression import func
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import selectinload
+from sqlalchemy.orm import selectinload, joinedload
 
 from api.endpoints.bot import bot_schedular
 from constants import PATTERN_DATE_OEBS
@@ -421,12 +421,23 @@ async def _get_service_work_for_car_and_service_name(
             stmt = stmt.where(ServiceWork.zvr_number.is_(None))
 
     # Догружаем документы и материалы, связанные с карточкой service_work:
-    stmt = stmt.options(
-        selectinload(ServiceWork.docs_in_service_work)
-        .selectinload(MaintenanceBillOfMaterials.organization),
+    # stmt = stmt.options(
+    #     selectinload(ServiceWork.docs_in_service_work)
+    #     .selectinload(MaintenanceBillOfMaterials.organization),
 
-        selectinload(ServiceWork.docs_in_service_work)
-        .selectinload(MaintenanceBillOfMaterials.components),
+    #     selectinload(ServiceWork.docs_in_service_work)
+    #     .selectinload(MaintenanceBillOfMaterials.components),
+
+    #     selectinload(ServiceWork.docs_in_service_work)
+    #     .selectinload(MaintenanceBillOfMaterials.user),
+    # )
+
+    stmt = stmt.options(
+        selectinload(ServiceWork.docs_in_service_work).options(
+            joinedload(MaintenanceBillOfMaterials.organization),
+            joinedload(MaintenanceBillOfMaterials.components),
+            joinedload(MaintenanceBillOfMaterials.user),
+        )
     )
 
     return result if (result := await session.scalar(stmt)) else None

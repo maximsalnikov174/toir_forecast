@@ -226,13 +226,20 @@ class ServiceWorkWithBOMList(ServiceWorkWithZVRNumber):
     """Добавлен список документов и использованные материалы."""
 
     # Поле есть (нужно для подсчёта кол-ва документов), но оно не отображается
-    docs_in_service_work: list[UnitOfBOMRead] = Field(..., exclude=True)
+    # FIXME проверить правильно ли работает Optional!!!
+    docs_in_service_work: list[Optional[UnitOfBOMRead]] = (
+        Field(..., exclude=True)
+    )
 
     @computed_field
-    def total_docs_count(self) -> Optional[int]:
+    def total_docs_count(self) -> int:
         """Подсчёт количества вложенных документов с материалами."""
-        result = len(self.docs_in_service_work)
-        return result if result else None
+
+        # FIXME временное решение (пока есть работы, завершенные механиками)!!!!:
+        if not hasattr(self, 'docs_in_service_work'):
+            return 0
+
+        return len(self.docs_in_service_work)
 
 
 class ServiceWorksBOMListAndCarOrganization(BaseModel):
