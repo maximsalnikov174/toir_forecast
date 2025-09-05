@@ -4,10 +4,30 @@ from typing import Optional
 
 from fastapi import HTTPException
 from fastapi_users import schemas
-from pydantic import Field, field_validator
+from pydantic import BaseModel, Field, computed_field, field_validator
 
 from constants import COMPANY_DOMAIN, PERSON_FULL_NAME_LEN
 from schemas.organization import OrganizationResponse
+
+
+class UserFullnameRead(BaseModel):
+    """Схема с одним полем «полное имя пользователя» (Фамилия И.)."""
+    name: str = Field(
+        title='Имя',
+        max_length=PERSON_FULL_NAME_LEN,
+        exclude=True,
+    )
+    surname: str = Field(
+        title='Фамилия',
+        max_length=PERSON_FULL_NAME_LEN,
+        exclude=True,
+    )
+
+    @computed_field
+    def full_name(self) -> str:
+        """Полное имя пользователя вида «Иванов И.»."""
+        if self.name is not None and self.surname is not None:
+            return f'{self.surname.capitalize()} {self.name.capitalize()[0]}.'
 
 
 class UserRead(schemas.BaseUser[int]):

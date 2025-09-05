@@ -8,6 +8,7 @@ from constants import (
     SNB_PATTERN,
 )
 from schemas.organization import OrganizationWithIDAndName
+from schemas.user import UserFullnameRead
 
 # Для справки: BOM (Bill of material) - спецификация материала
 
@@ -71,7 +72,10 @@ class UnitOfBOMRead(BOMDocsCreate):
 
     id: int
     organization: OrganizationWithIDAndName
+    user: UserFullnameRead
     components: list[UnitOfBOM]
     transfer: Optional[bool] = None
+    user_id: int = Field(..., exclude=True)  # исключаем (лишнее)
+    from_organization: int = Field(..., exclude=True)  # исключаем (лишнее)
 
     model_config = ConfigDict(from_attributes=True)
