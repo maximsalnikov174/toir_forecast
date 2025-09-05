@@ -2,7 +2,16 @@
   <q-dialog v-model="showModal" persistent>
     <q-card class="delivery-modal" :class="{ 'transfer-warning-border': showTransferWarning }">
       <!-- Крестик закрытия в правом верхнем углу -->
-      <q-btn class="close-button" icon="close" flat round dense @click="closeModal" v-close-popup />
+      <q-btn
+        class="close-button"
+        icon="close"
+        flat
+        round
+        dense
+        @click="closeModal"
+        v-close-popup
+        v-if="!allCellsCopied || isDeliveryBlocked || isViewOnly"
+      />
 
       <!-- Навигация между доставками -->
       <q-card-section v-if="hasMultipleDeliveries" class="navigation-section">
@@ -17,7 +26,9 @@
           />
           <div class="navigation-info">
             Доставка {{ currentDeliveryIndex + 1 }} из {{ deliveries.length }}
-            <span v-if="isDeliveryBlocked || isViewOnly" class="blocked-label">(только просмотр)</span>
+            <span v-if="isDeliveryBlocked || isViewOnly" class="blocked-label"
+              >(только просмотр)</span
+            >
           </div>
           <q-btn
             icon="chevron_right"
@@ -38,7 +49,9 @@
               <span v-if="hasMultipleDeliveries" class="delivery-counter">
                 ({{ currentDeliveryIndex + 1 }} из {{ deliveries.length }})
               </span>
-              <span v-if="isDeliveryBlocked || isViewOnly" class="blocked-badge">ТОЛЬКО ПРОСМОТР</span>
+              <span v-if="isDeliveryBlocked || isViewOnly" class="blocked-badge"
+                >ТОЛЬКО ПРОСМОТР</span
+              >
               <span v-if="showTransferWarning" class="transfer-warning">ТРЕБУЕТСЯ ПЕРЕМЕЩЕНИЕ</span>
             </div>
             <div class="zvr-number" v-if="zvr_number">
@@ -83,7 +96,10 @@
                 class="cell-border"
                 :class="{
                   'active-cell':
-                    currentRowIndex === index && currentCellIndex === 0 && !isDeliveryBlocked && !isViewOnly,
+                    currentRowIndex === index &&
+                    currentCellIndex === 0 &&
+                    !isDeliveryBlocked &&
+                    !isViewOnly,
                   'copied-cell': copiedCells.has(`${index}-0`) && !isDeliveryBlocked && !isViewOnly,
                   'blocked-cell': isDeliveryBlocked || isViewOnly,
                 }"
@@ -94,7 +110,10 @@
                 class="cell-border text-center"
                 :class="{
                   'active-cell':
-                    currentRowIndex === index && currentCellIndex === 1 && !isDeliveryBlocked && !isViewOnly,
+                    currentRowIndex === index &&
+                    currentCellIndex === 1 &&
+                    !isDeliveryBlocked &&
+                    !isViewOnly,
                   'copied-cell': copiedCells.has(`${index}-1`) && !isDeliveryBlocked && !isViewOnly,
                   'blocked-cell': isDeliveryBlocked || isViewOnly,
                 }"
@@ -148,7 +167,7 @@ import { useQuasar } from 'quasar'
 import JsBarcode from 'jsbarcode'
 import { useDeliveryActions } from 'src/components/Functions/useDeliveryActions'
 import { storeToRefs } from 'pinia'
-import { useAuthStore } from 'src/stores/useAuthStore';
+import { useAuthStore } from 'src/stores/useAuthStore'
 
 const $q = useQuasar()
 const showModal = ref(false)
@@ -259,12 +278,20 @@ const findNextCellToCopy = () => {
 
 // Проверяем, все ли ячейки текущей доставки скопированы
 const allCellsCopied = computed(() => {
-  if (!currentDelivery.value.components || currentDelivery.value.components.length === 0 || isDeliveryBlocked.value || isViewOnly.value) {
+  if (
+    !currentDelivery.value.components ||
+    currentDelivery.value.components.length === 0 ||
+    isDeliveryBlocked.value ||
+    isViewOnly.value
+  ) {
     return false
   }
 
   const totalCells = currentDelivery.value.components.length * 2
-  return copiedCells.value.size >= totalCells && !enteredDeliveries.value.has(currentDelivery.value.delivery)
+  return (
+    copiedCells.value.size >= totalCells &&
+    !enteredDeliveries.value.has(currentDelivery.value.delivery)
+  )
 })
 
 // Обработчик клика по таблице
