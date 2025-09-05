@@ -86,6 +86,7 @@ class DocBOMDAO(DAOBase[MaintenanceBillOfMaterials]):
             .options(
                 selectinload(self.model.components),
                 selectinload(self.model.organization),
+                selectinload(self.model.user),
             )
         )
         result = await session.scalars(stmt)
