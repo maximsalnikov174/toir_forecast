@@ -10,6 +10,9 @@ COPY package*.json ./
 # Устанавливаем зависимости
 RUN npm install -d
 
+# Добавьте установку недостающего пакета
+RUN npm install jsbarcode
+
 # Копируем все файлы проекта в рабочую директорию
 COPY . .
 
@@ -17,4 +20,3 @@ COPY . .
 RUN npm run build
 
 CMD ["npx", "-y", "http-server", "-p", "8000", "./dist/spa", "-d", "false"]
-
