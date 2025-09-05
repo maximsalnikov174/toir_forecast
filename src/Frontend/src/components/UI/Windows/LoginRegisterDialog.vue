@@ -24,24 +24,38 @@
             id="email"
             type="email"
             v-model="form.email"
-            @input="handleEmailInput"
-            :class="{ 'invalid': emailError }"
+            @blur="convertEmailToLowercase"
+            @input="validateEmail"
+            :class="{ invalid: emailError }"
             required
-          >
+          />
           <span v-if="emailError" class="error-message">{{ emailError }}</span>
         </div>
 
-        <div class="form-group">
+        <div class="form-group password-group">
           <label for="password">Пароль</label>
-          <input
-            id="password"
-            type="password"
-            v-model="form.password"
-            @input="handlePasswordInput"
-            :class="{ 'invalid': !isLoginMode && (passwordError || russianCharWarning) }"
-            required
-          >
-          <span v-if="!isLoginMode && passwordError" class="error-message">{{ passwordError }}</span>
+          <div class="password-input-container">
+            <input
+              id="password"
+              :type="showPassword ? 'text' : 'password'"
+              v-model="form.password"
+              @input="handlePasswordInput"
+              :class="{ invalid: !isLoginMode && (passwordError || russianCharWarning) }"
+              required
+            />
+            <button
+              type="button"
+              class="password-toggle"
+              @click="togglePasswordVisibility"
+              tabindex="-1"
+            >
+              <span v-if="showPassword">👁️</span>
+              <span v-else>👁️‍🗨️</span>
+            </button>
+          </div>
+          <span v-if="!isLoginMode && passwordError" class="error-message">{{
+            passwordError
+          }}</span>
           <span v-if="!isLoginMode && russianCharWarning" class="warning-message">
             Русские символы автоматически удалены из пароля
           </span>
@@ -50,19 +64,19 @@
             <p class="hint-valid">✓ Пароль соответствует требованиям</p>
           </div>
           <div v-else-if="!isLoginMode && form.password" class="password-hints">
-            <p :class="{'hint-invalid': !hasMinLength, 'hint-valid': hasMinLength}">
+            <p :class="{ 'hint-invalid': !hasMinLength, 'hint-valid': hasMinLength }">
               {{ hasMinLength ? '✓' : '•' }} Минимум 8 символов
             </p>
-            <p :class="{'hint-invalid': !hasUpperLower, 'hint-valid': hasUpperLower}">
+            <p :class="{ 'hint-invalid': !hasUpperLower, 'hint-valid': hasUpperLower }">
               {{ hasUpperLower ? '✓' : '•' }} Буквы верхнего и нижнего регистра
             </p>
-            <p :class="{'hint-invalid': !hasNumber, 'hint-valid': hasNumber}">
+            <p :class="{ 'hint-invalid': !hasNumber, 'hint-valid': hasNumber }">
               {{ hasNumber ? '✓' : '•' }} Хотя бы одна цифра
             </p>
-            <p :class="{'hint-invalid': !hasSpecialChar, 'hint-valid': hasSpecialChar}">
+            <p :class="{ 'hint-invalid': !hasSpecialChar, 'hint-valid': hasSpecialChar }">
               {{ hasSpecialChar ? '✓' : '•' }} Хотя бы один спецсимвол (!@%^*-_+=)
             </p>
-            <p :class="{'hint-invalid': !hasNoRussian, 'hint-valid': hasNoRussian}">
+            <p :class="{ 'hint-invalid': !hasNoRussian, 'hint-valid': hasNoRussian }">
               {{ hasNoRussian ? '✓' : '•' }} Без русских символов
             </p>
           </div>
@@ -70,37 +84,19 @@
 
         <div v-if="!isLoginMode" class="form-group">
           <label for="name">Имя</label>
-          <input
-            id="name"
-            type="text"
-            v-model="form.name"
-            required
-          >
+          <input id="name" type="text" v-model="form.name" required />
         </div>
 
         <div v-if="!isLoginMode" class="form-group">
           <label for="surname">Фамилия</label>
-          <input
-            id="surname"
-            type="text"
-            v-model="form.surname"
-            required
-          >
+          <input id="surname" type="text" v-model="form.surname" required />
         </div>
 
         <div v-if="!isLoginMode" class="form-group">
           <label for="organization">Выберите цех</label>
-          <select
-            id="organization"
-            v-model="form.organization"
-            required
-          >
+          <select id="organization" v-model="form.organization" required>
             <option value="" disabled selected>Выберите цех</option>
-            <option
-              v-for="division in divisions"
-              :key="division.id"
-              :value="division.id"
-            >
+            <option v-for="division in divisions" :key="division.id" :value="division.id">
               {{ division.normal_name }}
             </option>
           </select>
@@ -129,10 +125,11 @@ const emit = defineEmits(['login', 'register', 'close'])
 
 const isOpen = ref(false)
 const isLoginMode = ref(true)
+const showPassword = ref(false) // Новое состояние для отображения пароля
 const toasts = ref([])
 let toastId = 0
 
-const { divisions } = DivisionFuctionSelect();
+const { divisions } = DivisionFuctionSelect()
 
 const emailError = ref('')
 const passwordError = ref('')
@@ -154,7 +151,7 @@ const passwordRequirements = {
   hasLower: /[a-z]/,
   hasNumber: /[0-9]/,
   hasSpecial: /[!@%^*\-_+=]/,
-  noRussian: /^[^а-яА-Я]*$/
+  noRussian: /^[^а-яА-Я]*$/,
 }
 
 const hasMinLength = computed(() => form.password.length >= passwordRequirements.minLength)
@@ -165,8 +162,13 @@ const hasNumber = computed(() => passwordRequirements.hasNumber.test(form.passwo
 const hasSpecialChar = computed(() => passwordRequirements.hasSpecial.test(form.password))
 const hasNoRussian = computed(() => passwordRequirements.noRussian.test(form.password))
 
-const handleEmailInput = (e) => {
-  form.email = e.target.value.toLowerCase()
+// Функция для переключения видимости пароля
+const togglePasswordVisibility = () => {
+  showPassword.value = !showPassword.value
+}
+
+const convertEmailToLowercase = () => {
+  form.email = form.email.toLowerCase()
   validateEmail()
 }
 
@@ -180,7 +182,7 @@ const showToast = (message, type = 'success') => {
 }
 
 const removeToast = (id) => {
-  toasts.value = toasts.value.filter(toast => toast.id !== id)
+  toasts.value = toasts.value.filter((toast) => toast.id !== id)
 }
 
 const open = () => {
@@ -189,6 +191,7 @@ const open = () => {
 
 const close = () => {
   isOpen.value = false
+  showPassword.value = false // Сбрасываем видимость пароля при закрытии
   emit('close')
 }
 
@@ -196,6 +199,7 @@ const toggleMode = () => {
   isLoginMode.value = !isLoginMode.value
   emailError.value = ''
   passwordError.value = ''
+  showPassword.value = false // Сбрасываем видимость пароля при переключении режима
 }
 
 const validateEmail = () => {
@@ -230,7 +234,7 @@ const handlePasswordInput = (e) => {
 }
 
 const validatePassword = () => {
-  if (isLoginMode.value) return true;
+  if (isLoginMode.value) return true
 
   if (!form.password) {
     passwordError.value = ''
@@ -270,6 +274,7 @@ const resetForm = () => {
   form.name = ''
   form.surname = ''
   form.organization = ''
+  showPassword.value = false // Сбрасываем видимость пароля
 }
 
 const handleSubmit = async () => {
@@ -287,30 +292,28 @@ const handleSubmit = async () => {
     try {
       const response = await LoginPerson({
         email: form.email,
-        password: form.password
-      });
+        password: form.password,
+      })
 
       showToast('Успешный вход! Перенаправляем...', 'success')
 
       setTimeout(() => {
-        emit('login', response);
-        close();
-      }, 2000);
-
+        emit('login', response)
+        close()
+      }, 2000)
     } catch (error) {
       showToast(error.message || 'Ошибка входа. Проверьте данные', 'error')
     }
   } else {
     try {
-      await registerPerson(form);
+      await registerPerson(form)
 
       showToast('Регистрация прошла успешно! Теперь вы можете войти', 'success')
 
       setTimeout(() => {
-        isLoginMode.value = true;
-        resetForm();
-      }, 3000);
-
+        isLoginMode.value = true
+        resetForm()
+      }, 3000)
     } catch (error) {
       showToast(error.message || 'Ошибка регистрации. Пожалуйста, попробуйте снова', 'error')
     }
@@ -319,7 +322,7 @@ const handleSubmit = async () => {
 
 defineExpose({
   open,
-  close
+  close,
 })
 </script>
 
@@ -372,12 +375,44 @@ label {
   font-weight: 500;
 }
 
-input, select {
+input,
+select {
   width: 100%;
   padding: 8px;
   border: 1px solid #000000;
   border-radius: 4px;
   box-sizing: border-box;
+}
+
+.password-group {
+  position: relative;
+}
+
+.password-input-container {
+  position: relative;
+}
+
+.password-input-container input {
+  padding-right: 40px; /* Место для кнопки */
+}
+
+.password-toggle {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  font-size: 16px;
+  color: #666;
+  border-radius: 4px;
+}
+
+.password-toggle:hover {
+  background-color: #f0f0f0;
+  color: #333;
 }
 
 .invalid {
@@ -405,7 +440,7 @@ input, select {
 }
 
 .hint-valid {
-  color: #4CAF50;
+  color: #4caf50;
   margin: 2px 0;
 }
 
@@ -478,11 +513,11 @@ select:focus {
 }
 
 .toast.success {
-  background-color: #4CAF50;
+  background-color: #4caf50;
 }
 
 .toast.error {
-  background-color: #F44336;
+  background-color: #f44336;
 }
 
 .toast-enter-active,

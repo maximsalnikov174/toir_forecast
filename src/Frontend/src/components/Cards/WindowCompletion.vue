@@ -2,12 +2,12 @@
   <div v-if="show" class="window-overlay" @click.self="close">
     <div class="window-container">
       <div class="window-header">
-        <h3>Перевод в статус 'завершено'</h3>
-        <button class="close-btn" @click="close"></button>
+        <h3>ТС покинуло зону ТО</h3>
+        <button class="close-btn" @click="close">×</button>
       </div>
 
       <div class="window-content">
-        <p>Подтверждаю, что работы выполнены, ТС принято с сервиса</p>
+        <p>Направить уведомление в цех эксплуатации для приемки?</p>
       </div>
 
       <div class="window-footer">
@@ -21,8 +21,10 @@
 import { defineProps, defineEmits } from 'vue';
 import { useAuthStore } from 'src/stores/useAuthStore';
 import { api } from '../../boot/axios.js';
+import { useQuasar } from 'quasar';
 
 const authStore = useAuthStore();
+const $q = useQuasar();
 
 const props = defineProps({
   show: {
@@ -37,6 +39,10 @@ const props = defineProps({
     type: Function,
     default: () => {}
   },
+  onSubmitSuccessMaster: {
+    type: Function,
+    default: () => {}
+  },
 });
 
 const emit = defineEmits(['update:show', 'close', 'submitted']);
@@ -48,23 +54,54 @@ const close = () => {
 
 const complete = async () => {
   try {
-    await api.patch(
+    console.log('Отправка запроса для serviceWorkId:', props.serviceWorkId);
+
+    const response = await api.patch(
       `/service_work/de_facto_completed?service_work_id=${props.serviceWorkId}`,
       null,
       {
         headers: {
           Authorization: `Bearer ${authStore.token}`,
           'accept': 'application/json'
+        },
+        validateStatus: function (status) {
+          // Явно указываем, что только статус 201 считается успешным
+          return status === 201;
         }
       }
     );
 
+    console.log('Запрос успешно выполнен:', response.status);
     emit('submitted');
-    props.onSubmitSuccess()  // Вызываем переданную функцию
+    props.onSubmitSuccessMaster();
+    props.onSubmitSuccess();
     close();
+
   } catch (error) {
-    console.error('Ошибка:', error);
-    // Можно добавить уведомление об ошибке
+    console.error('Ошибка перехвачена:', error);
+    console.error('Статус ошибки:', error.response?.status);
+    console.error('Данные ошибки:', error.response?.data);
+
+    if (error.response?.status === 400) {
+      console.log('Показываем уведомление о необходимости материалов');
+
+      $q.notify({
+        type: 'negative',
+        message: 'Перед завершением необходимо добавить материалы',
+        position: 'top',
+        timeout: 5000,
+        actions: [{ icon: 'close', color: 'white' }]
+      });
+
+    } else {
+      $q.notify({
+        type: 'negative',
+        message: 'Перед завершением необходимо добавить материалы',
+        position: 'top',
+        timeout: 3000,
+        actions: [{ icon: 'close', color: 'white' }]
+      });
+    }
   }
 };
 </script>

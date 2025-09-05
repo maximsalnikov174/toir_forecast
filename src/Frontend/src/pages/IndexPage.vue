@@ -3,7 +3,12 @@
     <div class="header-info">
       <!-- Кнопка возврата вверх -->
       <button v-show="showScrollButton" class="scroll-to-top" @click="scrollToTop">↑</button>
-      <div class="current-date">{{ currentDate }}</div>
+      <div class="date-and-manual">
+        <div class="current-date">{{ currentDate }}</div>
+        <button class="manual-button" @click="colorsDialog.open()">
+          <span class="material-icons">menu_book</span>
+        </button>
+      </div>
       <div class="user-controls">
         <div class="user-name-placeholder">
           {{
@@ -18,6 +23,8 @@
       </div>
     </div>
 
+    <ColorsOfRepairShops ref="colorsDialog" />
+
     <LoginRegisterDialog
       ref="authDialog"
       @login="handleLogin"
@@ -26,16 +33,18 @@
     />
 
     <div class="buttons-container">
-      <division-select />
-      <minimal-status />
-      <GroupTs />
-      <HideServiceWorkWithZvr />
-      <ToAccept
-        ref="toAcceptRef"
-        @tableDataFetched="handleTableDataFetched"
-        @servicesFetched="handleServicesFetched"
-        @carsFetched="handleCarsFetched"
-      />
+      <template v-if="shouldShowDivisionControls">
+        <division-select />
+        <minimal-status />
+        <GroupTs />
+        <HideServiceWorkWithZvr />
+        <ToAccept
+          ref="toAcceptRef"
+          @tableDataFetched="handleTableDataFetched"
+          @servicesFetched="handleServicesFetched"
+          @carsFetched="handleCarsFetched"
+        />
+      </template>
     </div>
 
     <div class="data-container">
@@ -59,14 +68,9 @@
             :model="car.car_model?.name || ''"
             :daliDistanse="car.indicators?.daily_distance"
             :requestReading="car.indicators?.request_reading"
-            :specialStatusId="
-              car.status_associations?.find((status) => status.is_active)?.special_status_id
-            "
             :id="car.id"
+            :status-associations="car.status_associations || []"
             @status-added="handleStatusAdded"
-            :special-status-id="car.status_associations[0]?.special_status_id"
-            :special-status-comment="car.status_associations[0]?.comment || ''"
-            :special-status-date-left="car.status_associations[0]?.date_left || ''"
           />
           <div class="status-cards">
             <template v-for="(item, itemIndex) in tableData[rowIndex]" :key="itemIndex">
@@ -82,6 +86,8 @@
                 :id="item.id"
                 :station="item.station"
                 @submitted="handleApply"
+                :onSubmitSuccessMaster="loadMasterData"
+                :total_docs_count="item.total_docs_count"
               />
               <div v-else class="empty-status-card"></div>
             </template>
@@ -93,7 +99,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, onMounted, onUnmounted, computed, watch } from 'vue'
 import MinimalStatus from '../components/UI/Button/MinimalStatus.vue'
 import DivisionSelect from '../components/UI/Button/DivisionSelect.vue'
 import GroupTs from '../components/UI/Button/GroupTs.vue'
@@ -105,8 +111,33 @@ import CarCard from '../components/Cards/Reading/CarsCard.vue'
 import LoginRegisterDialog from 'src/components/UI/Windows/LoginRegisterDialog.vue'
 import { useAuthStore } from 'src/stores/useAuthStore'
 import { getCurrentDateInDB } from 'src/components/Functions/CurrentDateInDB'
+import ColorsOfRepairShops from '../components/Cards/ColorsOfRepairShops.vue'
+import { masterApi } from 'src/components/Functions/masterApi.js'
 
+const loading = ref(false)
 const showScrollButton = ref(false)
+const colorsDialog = ref(null)
+const tableData = ref([])
+const services = ref([])
+const cars = ref([])
+const authStore = useAuthStore()
+const authDialog = ref(null)
+const currentDate = ref('Загрузка даты...')
+const toAcceptRef = ref(null)
+
+const shouldShowDivisionControls = computed(() => {
+  if (!authStore.isAuth) return true
+  if (!authStore.user?.users_organization) return true
+  return authStore.user.users_organization.station_id === null
+})
+
+const isMasterUser = computed(() => {
+  return (
+    authStore.isAuth &&
+    authStore.user?.users_organization &&
+    authStore.user.users_organization.station_id !== null
+  )
+})
 
 const checkScrollPosition = () => {
   showScrollButton.value = window.scrollY > 300
@@ -118,13 +149,6 @@ const scrollToTop = () => {
     behavior: 'smooth',
   })
 }
-
-const tableData = ref([])
-const services = ref([])
-const cars = ref([])
-const authStore = useAuthStore()
-const authDialog = ref(null)
-const currentDate = ref('Загрузка даты...')
 
 const handleTableDataFetched = (data) => {
   tableData.value = data
@@ -140,27 +164,91 @@ const handleCarsFetched = (carsData) => {
 
 const handleAuth = () => {
   if (authStore.isAuth) {
-    // Выход из системы
     authStore.clearAuthData()
+    // Очищаем данные при выходе
+    tableData.value = []
+    services.value = []
+    cars.value = []
   } else {
-    // Показываем диалог авторизации
     authDialog.value?.open()
   }
 }
 
 const handleDialogClose = () => {
-  // Можно добавить дополнительную логику при закрытии диалога
+  // Дополнительная логика при закрытии диалога
 }
-
-const toAcceptRef = ref(null)
 
 const handleApply = () => {
   toAcceptRef.value?.handleApply()
 }
 
 const handleStatusAdded = () => {
-  toAcceptRef.value?.handleApply() // Или toAcceptRef.value?.refreshData(), в зависимости от вашей реализации
+  toAcceptRef.value?.handleApply()
 }
+
+// Функция для загрузки данных мастера
+const loadMasterData = async () => {
+  if (!isMasterUser.value) return
+
+  try {
+    loading.value = true
+
+    const token = authStore.token
+    if (!token) {
+      console.error('Токен не найден')
+      return
+    }
+
+    console.log('Загрузка данных для мастера...')
+
+    // Используем API функции из отдельного файла
+    const masterData = await masterApi.loadAllMasterData(token)
+
+    handleTableDataFetched(masterData.tableData)
+    handleServicesFetched(masterData.services)
+    handleCarsFetched(masterData.cars)
+  } catch (error) {
+    console.error('Ошибка при загрузке данных мастера:', error)
+  } finally {
+    loading.value = false
+  }
+}
+
+// Следим за изменениями авторизации и station_id
+watch(
+  () => [authStore.isAuth, authStore.user?.users_organization?.station_id],
+  ([isAuth, stationId]) => {
+    if (isAuth && stationId !== null && stationId !== undefined) {
+      console.log('Пользователь авторизован как мастер, station_id:', stationId)
+      loadMasterData()
+    } else if (!isAuth) {
+      // Очищаем данные при выходе
+      tableData.value = []
+      services.value = []
+      cars.value = []
+    }
+  },
+  { immediate: true, deep: true },
+)
+
+// Также следим за изменениями пользователя
+watch(
+  () => authStore.user,
+  (newUser) => {
+    if (
+      newUser?.users_organization?.station_id !== null &&
+      newUser?.users_organization?.station_id !== undefined &&
+      authStore.isAuth
+    ) {
+      console.log(
+        'Данные пользователя изменились, station_id:',
+        newUser.users_organization.station_id,
+      )
+      loadMasterData()
+    }
+  },
+  { deep: true },
+)
 
 onMounted(async () => {
   try {
@@ -170,11 +258,14 @@ onMounted(async () => {
     currentDate.value = 'Ошибка загрузки даты'
     console.error(error)
   }
-})
 
-onMounted(() => {
   window.addEventListener('scroll', checkScrollPosition)
-  // ... остальной код onMounted
+
+  // Автоматически загружаем данные для мастера при монтировании, если пользователь уже авторизован
+  if (isMasterUser.value) {
+    console.log('Автоматическая загрузка данных для мастера при монтировании')
+    loadMasterData()
+  }
 })
 
 onUnmounted(() => {
@@ -183,7 +274,43 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
-/* Добавляем стили для кнопки */
+/* Стили остаются без изменений */
+.date-and-manual {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.current-date {
+  font-weight: 500;
+  color: #3a3939;
+  padding: 8px 8px 8px 12px;
+  border-radius: 4px;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.manual-button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #000000;
+  padding: 4px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: -4px;
+}
+
+.manual-button:hover {
+  background-color: #f0f0f0;
+}
+
+.material-icons {
+  font-size: 25px;
+}
+
 .scroll-to-top {
   position: fixed;
   bottom: 30px;
@@ -213,15 +340,6 @@ onUnmounted(() => {
   justify-content: space-between;
   align-items: center;
   margin-bottom: 20px;
-}
-
-.current-date {
-  font-weight: 500;
-  color: #3a3939;
-  padding: 8px 12px;
-  border-radius: 4px;
-  font-size: 16px;
-  font-weight: 600;
 }
 
 .sticky-header {
