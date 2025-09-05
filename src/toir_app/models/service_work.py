@@ -55,7 +55,7 @@ class ServiceWork(Base):
         comment='Среднесуточный пробег (получение csv)'
     )
     zvr_number = Column(
-        'zrv_number',
+        'zvr_number',
         String(LEN_ZVR_TOTAL),
         nullable=True,
         unique=True,
