@@ -9,6 +9,7 @@ from constants import (
 
 class OrganizationBase(BaseModel):
     """Базовая (только name) схема Подразделения (цеха)."""
+
     name: str = Field(
         ...,
         title='Объект в OeBS',
@@ -20,6 +21,7 @@ class OrganizationBase(BaseModel):
 
 class OrganizationID(BaseModel):
     """Базовая (только ID) схема Подразделения (цеха)."""
+
     id: int = Field(..., title='ID подразделения')
 
 
@@ -29,6 +31,7 @@ class OrganizationWithIDAndName(OrganizationBase, OrganizationID):
 
 class OrganizationResponse(OrganizationID, OrganizationBase):
     """Схема Подразделения (цеха) для ответа API."""
+
     normal_name: Optional[str] = Field(
         None,
         title='Номер цеха',
@@ -40,3 +43,25 @@ class OrganizationResponse(OrganizationID, OrganizationBase):
 
     class Config:
         from_attributes = True
+
+
+class OrganizationCreate(OrganizationBase):
+    """Схема для создания подразделения (без указания ID)."""
+
+    normal_name: str = Field(
+        ...,
+        title='Номер цеха',
+        description='Номер цеха перевозок (привычный)',
+        pattern=ORGANIZATION_NORMAL_NAME_PATTERN,
+        examples=['2-МГ', '4-УСТ', '3-Л', 'УРЛА', 'УРГА']
+    )
+    station_id: Optional[int] = None
+
+    class Config:
+        from_attributes = True
+
+
+class OrganizationUpdate(BaseModel):
+    """Схема обновления подразделения (изменение станции)."""
+
+    station_id: Optional[int]
