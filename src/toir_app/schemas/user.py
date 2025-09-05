@@ -30,8 +30,9 @@ class UserFullnameRead(BaseModel):
             return f'{self.surname.capitalize()} {self.name.capitalize()[0]}.'
 
 
-class UserRead(schemas.BaseUser[int]):
-    """Схема с базовыми полями модели пользователя."""
+class UserReadBase(schemas.BaseUser[int]):
+    """Схема с базовыми полями модели пользователя без подразделения."""
+
     name: str = Field(
         title='Имя',
         max_length=PERSON_FULL_NAME_LEN
@@ -43,6 +44,11 @@ class UserRead(schemas.BaseUser[int]):
     role_id: int = Field(
         ..., title='ID из таблицы ролей в системе.'
     )
+
+
+class UserRead(UserReadBase):
+    """Схема с базовыми полями модели пользователя с подразделением."""
+
     users_organization: OrganizationResponse
 
 

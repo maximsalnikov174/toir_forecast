@@ -5,7 +5,7 @@ from constants import (
     ENDPOINT_URL_FOR_REGISTRATION,
 )
 from core.user import auth_backend, fastapi_users
-from schemas.user import UserCreate, UserRead, UserUpdate
+from schemas.user import UserCreate, UserRead, UserReadBase, UserUpdate
 
 router = APIRouter()
 
@@ -22,7 +22,7 @@ router.include_router(
 # /register (для регистрации нового пользователя)
 router.include_router(
     fastapi_users.get_register_router(
-        user_schema=UserRead,
+        user_schema=UserReadBase,
         user_create_schema=UserCreate
     ),
     prefix=ENDPOINT_URL_FOR_REGISTRATION,
