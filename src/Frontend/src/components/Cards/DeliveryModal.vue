@@ -55,7 +55,7 @@
               <span v-if="showTransferWarning" class="transfer-warning">ТРЕБУЕТСЯ ПЕРЕМЕЩЕНИЕ</span>
             </div>
             <div class="zvr-number" v-if="zvr_number">
-              <span class="zvr-label">ЗВР:</span> {{ zvr_number }}
+              <span class="zvr-label"></span> {{ zvr_number }}
             </div>
             <div class="delivery-details">
               <div>организация получатель: {{ currentDelivery.organization?.name }}</div>
