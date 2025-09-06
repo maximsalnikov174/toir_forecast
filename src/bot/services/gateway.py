@@ -160,8 +160,11 @@ class BackendApiGateway():
         raise NoConnectToBackendException(last_error)
 
     async def get_car_info(self, path: int) -> dict:
-        """Получение данных о выбранном ТС."""
+        """Получение архива `service_work` по `ID` выбранного ТС."""
         return await self._fetch_api_data(
             method='get',
             rel_path=f'{CAR_PATH}/get_history?car_id={path}',  # 145 или 106
         )
+
+
+backend_gateway = BackendApiGateway()

@@ -1,4 +1,4 @@
-from aiogram import Router
+from aiogram import F, Router
 from aiogram.filters import CommandStart
 from aiogram.fsm.context import FSMContext
 from aiogram.types import (
@@ -6,7 +6,27 @@ from aiogram.types import (
     Message,
 )
 
+from bot_command import BotCommand
+from services.gateway import backend_gateway
+
 router = Router()
+
+
+@router.message(F.text.startswith(f'/start {BotCommand.CAR.value}'))
+async def get_service_works_in_archive_by_car(message: Message):
+    """Получение инфы о архивных работах ТС."""
+    async with backend_gateway as connector:
+        if message.text:
+            car_id = message.text.split(BotCommand.CAR.value)[1]
+        if car_id.isdigit():
+            data = await connector.get_car_info(path=int(car_id))
+        if len(data):
+            stmt = []
+            for el in data:
+                stmt.append(el.get('zvr_number', 'нет данных'))
+            await message.answer(', '.join(stmt))
+        else:
+            await message.answer('пока ничего нет')
 
 
 @router.message(CommandStart())

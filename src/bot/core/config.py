@@ -5,7 +5,9 @@ class Settings(BaseSettings):
     """Настройки для подключения к боту переменных окружения."""
 
     tg_bot_token: str = 'bot_config'
-    backend_api_url: str = 'http://backend:8877'  # localhost, если снаружи
+    # backend_api_url: str = 'http://backend:8877'
+    # backend_api_url: str = 'http://localhost:8877'  # localhost, если снаружи
+    backend_api_url: str = 'http://toir.atu.mmk.ru:8877'
 
     model_config = SettingsConfigDict(
         env_file='infra/.env',
