@@ -58,6 +58,16 @@ services:
         condition: service_healthy
     networks: [internal]
 
+  bot:
+    build:
+      context: ../src/bot
+    env_file:
+      - .env
+    depends_on:
+      backend:
+        condition: service_started
+    networks: [internal]
+
   frontend:
     build: ../src/Frontend/
     command: cp -r /app/dist/spa/. /frontend_static/
