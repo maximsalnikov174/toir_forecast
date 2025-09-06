@@ -375,17 +375,23 @@ async def get_car_history(
     """Получение истории по выполненным сервисным обслуживаниям для ТС."""
     await get_car_by_pk(car_id=car_id, session=session)
 
-    return await session.scalars(
+    # FIXME не обрабатывается ситуация, когда указанное ТС находится в архиве!
+
+    stmt = (
         select(ServiceWork)
-        .join(ServiceWork.car)
         .where(
-            Car.id == car_id,
+            ServiceWork.car_id == car_id,
             ServiceWork.in_archive.is_(True)
-        ).order_by(
+        )
+    )
+    stmt = (
+        stmt.options(selectinload(ServiceWork.station))
+        .order_by(
             ServiceWork.request_reading,
             ServiceWork.last_service_id  # чтоб всегда был один порядок
         )
     )
+    return await session.scalars(stmt)
 
 
 async def get_or_create_car_and_return_id(
