@@ -11,7 +11,7 @@ export const registerPerson = async (formData) => {
       name: formData.name,
       surname: formData.surname,
       organization_id: parseInt(formData.organization) || 0,
-      role_id: parseInt(formData.role_id) || 1
+      role_id: parseInt(formData.role_id) || 1,
     }, {
       headers: {
         'accept': 'application/json',
