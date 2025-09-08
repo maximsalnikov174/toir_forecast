@@ -9,15 +9,15 @@
       <q-card-section>
         <div class="color-info">
           <div class="color-box turquoise"></div>
-          <span>Сторона </span>
+          <span>Сторона</span>
         </div>
         <div class="color-info">
           <div class="color-box purple"></div>
-          <span>Урла </span>
+          <span>УРЛА</span>
         </div>
         <div class="color-info">
           <div class="color-box orange"></div>
-          <span>Урга </span>
+          <span>УРГА</span>
         </div>
       </q-card-section>
     </q-card>

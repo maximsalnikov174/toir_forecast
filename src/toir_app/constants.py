@@ -25,6 +25,8 @@ MAX_SPECIAL_STATUS_VALID = 180
 IMG_LOCATION_LEN = 10
 SNB_LEN = 16
 SNB_DESCRIPTION = 300
+MIN_ROLE_LEN = 5
+MAX_ROLE_LEN = 30
 
 pattern_grz = (
     r'^([АВЕКМНОРСТУХ]{1,2})\s'

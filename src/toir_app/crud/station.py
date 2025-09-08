@@ -5,7 +5,17 @@ from fastapi import HTTPException
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from crud.base import DAOBase
 from models import Station
+
+
+class DAOStation(DAOBase[Station]):
+    """DAO для работы с моделью станции."""
+
+    model = Station
+
+
+dao_station = DAOStation(Station)
 
 
 async def get_multi(
