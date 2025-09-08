@@ -141,7 +141,7 @@ const form = reactive({
   name: '',
   surname: '',
   organization: '',
-  role_id: 2,
+  role_id: '',
   is_verified: false,
 })
 
