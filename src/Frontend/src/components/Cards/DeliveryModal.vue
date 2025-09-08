@@ -204,7 +204,7 @@ const { user } = storeToRefs(authStore)
 
 // Проверка роли пользователя (только просмотр для role_id = 4)
 const isViewOnly = computed(() => {
-  return user.value?.role_id === 4 || user.value?.role_id === 2
+  return user.value?.role_id === 4 || user.value?.role_id === 2 || user.value?.role_id === 6
 })
 
 const {
