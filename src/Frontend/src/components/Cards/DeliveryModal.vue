@@ -358,41 +358,77 @@ const getCellValue = (rowIndex, cellIndex) => {
 const copyToClipboard = (text) => {
   if (!text || isDeliveryBlocked.value || isViewOnly.value) return
 
+  // Создаем textarea для копирования
   const textArea = document.createElement('textarea')
   textArea.value = text
   textArea.style.position = 'fixed'
   textArea.style.top = '0'
   textArea.style.left = '0'
   textArea.style.opacity = '0'
+  textArea.style.width = '0'
+  textArea.style.height = '0'
+  textArea.style.pointerEvents = 'none'
 
   document.body.appendChild(textArea)
-  textArea.focus()
-  textArea.select()
 
   try {
+    // Выбираем текст
+    textArea.select()
+    textArea.setSelectionRange(0, 99999) // Для мобильных устройств
+
+    // Пытаемся использовать современный API
     if (navigator.clipboard && window.isSecureContext) {
-      navigator.clipboard.writeText(text).catch(fallbackCopy)
+      navigator.clipboard.writeText(text).then(() => {
+        showSuccessNotify(text)
+      }).catch(() => {
+        // Fallback для HTTP
+        fallbackCopy(textArea)
+      })
     } else {
-      fallbackCopy()
+      // Fallback для HTTP и небезопасных контекстов
+      fallbackCopy(textArea)
     }
-  } catch {
-    fallbackCopy()
-  } finally {
-    document.body.removeChild(textArea)
-  }
-}
-
-// Fallback метод копирования
-const fallbackCopy = () => {
-  try {
-    document.execCommand('copy')
-  } catch {
+  } catch (error) {
+    console.error('Ошибка копирования:', error)
     showNotify({
       type: 'negative',
       message: 'Не удалось скопировать текст',
       timeout: 3000,
     })
+  } finally {
+    // Всегда удаляем textarea
+    setTimeout(() => {
+      document.body.removeChild(textArea)
+    }, 100)
   }
+}
+
+// Улучшенный fallback метод копирования
+const fallbackCopy = (textArea) => {
+  try {
+    const successful = document.execCommand('copy')
+    if (successful) {
+      showSuccessNotify(textArea.value)
+    } else {
+      throw new Error('Copy command failed')
+    }
+  } catch  {
+    showNotify({
+      type: 'negative',
+      message: 'Не удалось скопировать текст. Разрешите доступ к буферу обмена.',
+      timeout: 3000,
+    })
+  }
+}
+
+// Функция для показа уведомления об успешном копировании
+const showSuccessNotify = (text) => {
+  showNotify({
+    type: 'positive',
+    message: `Скопировано: ${text}`,
+    timeout: 2000,
+    position: 'top'
+  })
 }
 
 // Сброс выделения скопированных ячеек
