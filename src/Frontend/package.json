@@ -14,12 +14,12 @@
     "build": "quasar build"
   },
   "dependencies": {
-    "@quasar/extras": "^1.16.4",
-    "axios": "^1.9.0",
-    "pinia": "^3.0.1",
-    "quasar": "^2.16.0",
-    "vue": "^3.4.18",
-    "vue-router": "^4.0.0"
+    "@quasar/extras": "1.16.4",
+    "axios": "1.9.0",
+    "pinia": "3.0.1",
+    "quasar": "2.16.0",
+    "vue": "3.4.18",
+    "vue-router": "4.0.0"
   },
   "devDependencies": {
     "@eslint/js": "9.14.0",
