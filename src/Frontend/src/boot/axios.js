@@ -8,8 +8,8 @@ import axios from "axios";
 // "export default () => {}" function below (which runs individually
 // for each client)
 
-//const api = axios.create({ baseURL: 'http://127.0.0.1:8001' });
-const api = axios.create({ baseURL: 'http://toir.atu.mmk.ru:8877' });
+const api = axios.create({ baseURL: 'http://127.0.0.1:8001' });
+//const api = axios.create({ baseURL: 'http://toir.atu.mmk.ru:8877' });
 
 
 const token = localStorage.getItem("token");
