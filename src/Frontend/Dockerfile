@@ -10,11 +10,10 @@ COPY package*.json ./
 # Устанавливаем зависимости
 RUN npm install -d
 
-# Добавьте установку недостающего пакета
-RUN npm install jsbarcode
-
 # Копируем все файлы проекта в рабочую директорию
 COPY . .
+
+RUN npm install @humanwhocodes/retry@0.3.1 @humanfs/node@0.12.0
 
 # Собираем проект Quasar
 RUN npm run build
