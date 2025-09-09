@@ -86,3 +86,11 @@ class BarcodeNotValidException(Exception):
 
 class NotAllFilesSuccessfullyUpload(BaseException):
     """Не все файлы были успешно обработаны и загружены."""
+
+
+class BiggestFileException(BaseException):
+    """Размер файла слишком большой."""
+
+
+class FilesHashSumNotUniqueException(Exception):
+    """В списке файлов присутствуют дубли."""

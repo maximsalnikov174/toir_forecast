@@ -28,7 +28,13 @@ from crud.service_work import (
     update_completed_real_service_work,
     zvr_delete
 )
-from exception import NotAllFilesSuccessfullyUpload, ObjectIsExistException
+from exception import (
+    BiggestFileException,
+    FilesHashSumNotUniqueException,
+    NotAllFilesSuccessfullyUpload,
+    ObjectIsExistException,
+)
+from function import compare_files
 from models import EventForBot, Organization, SpecialStatus, User
 # from schemas.docs_material import BOMRead
 from schemas.service_work import (
@@ -39,7 +45,7 @@ from schemas.service_work import (
 )
 from schemas.unit_of_bom import (
     BOMDocsCreate,
-    UnitOfBOMRead,
+    # UnitOfBOMRead,
     UnitOfBOMWithDocsCreate,
 )
 
@@ -512,6 +518,7 @@ async def parse_docs(
         check_user_can_add_docs_in_service_work(user)
 
         # Обрабатываем список файлов:
+        await compare_files(files)
 
         # Общий список "имя (размер)" всех поданных файлов:
         total_files = [f'{file.filename} ({file.size})' for file in files]
@@ -520,10 +527,6 @@ async def parse_docs(
         success_files: list[str] = []
 
         for file in files:
-            # FIXME что делать, если кто-то пробует вложить файл несколько раз?
-            # можно игнорировать (если, например, только размер совпадает) или
-            # пробовать и уже проверять внутри данные
-
             # Получаем данные из файла pdf и загоняем их в модель:
             data = await get_payload_data_in_pdf_file(file=file)
 
@@ -582,10 +585,6 @@ async def parse_docs(
 
         # FIXME!!! Как решить проблему отката назад, если что-то пошло не так?
 
-        # # ПОКА УБЕРУ ОТВЕТ!!!
-        # # Получаем обновленную карточку документа с материалами:
-        # return await dao_doc_bom.get_full(obj_id=bom.id, session=session)
-
         # Собираем все кривые файлы:
         bad_filenames = [
             item for item in total_files if item not in success_files
@@ -597,6 +596,16 @@ async def parse_docs(
 
         return {'result': f'Загружено уникальных файлов: {len(success_files)}'}
 
+    except FilesHashSumNotUniqueException:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail='В ваших файлах есть дубли (что недопустимо)',
+        )
+    except BiggestFileException as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=e.reason,
+        )
     except ObjectIsExistException:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
