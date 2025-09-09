@@ -11,6 +11,7 @@ from pydantic import ValidationError
 from core.config import settings
 from constants import BAR_CODE_PATTERN, EXTRUDE_SYMBOLS_IN_HEADER
 from exception import (
+    BadTypeUploadFileException,
     BarcodeInAreaNotFoundException,
     BarcodeNotValidException,
     InsufficientDataError,
@@ -49,6 +50,9 @@ async def get_payload_data_in_pdf_file(
     """Сбор данных (дописать)."""
     try:
         # Читаем файл асинхронно
+        if file.content_type != 'application/pdf':
+            raise BadTypeUploadFileException
+
         contents = await file.read()
 
         # Используем BytesIO для работы с pdfplumber
@@ -74,6 +78,9 @@ async def get_payload_data_in_pdf_file(
 
             return result
 
+    except BadTypeUploadFileException:
+        # print('Тип файла - не pdf')
+        return None
     except ValidationError as e:
         print(f'Ошибка валидации: {e}')
         return None

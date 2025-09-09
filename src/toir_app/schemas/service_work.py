@@ -1,5 +1,5 @@
 from datetime import datetime as dt
-from typing import Annotated, Optional, Union
+from typing import Annotated, Any, Optional, Union
 
 from pydantic import (BaseModel, computed_field, Field, field_serializer,
                       field_validator, ValidationInfo)
@@ -7,13 +7,16 @@ from pydantic import (BaseModel, computed_field, Field, field_serializer,
 from constants import (
     COMPLETED_DAYS_AGO,
     LEN_ZVR_BASE,
+    LEN_ZVR_TOTAL,
     PATTERN_DATE_USER_FRENDLY,
     ZVR_CREATED_DAYS_AGO,
 )
 from function import add_declension_to_date
 from logger.logger import logger
-from models import ServiceWork, Station
+from models import Car, ServiceName, ServiceWork, Station
+from schemas.car import CarStartParse
 from schemas.common import CarsOrganization
+from schemas.service_name import ServiceNameBase
 from schemas.station import StationBase
 from schemas.unit_of_bom import UnitOfBOMRead
 
@@ -233,13 +236,33 @@ class ServiceWorkWithBOMList(ServiceWorkWithZVRNumber):
 
     @computed_field
     def total_docs_count(self) -> int:
-        """Подсчёт количества вложенных документов с материалами."""
+        """Подсчёт общего кол-ва вложенных документов с материалами."""
 
         # FIXME временное решение (пока есть работы, завершенные механиками)!!!!:
         if not hasattr(self, 'docs_in_service_work'):
             return 0
 
         return len(self.docs_in_service_work)
+
+    @computed_field
+    def total_docs_processed_count(self) -> int:
+        """Подсчёт кол-ва обработанных вложенных документов с материалами."""
+
+        # FIXME временное решение (пока есть работы, завершенные механиками)!!!!:
+        if not hasattr(self, 'docs_in_service_work'):
+            return 0
+
+        result = [el for el in self.docs_in_service_work if el.to_insert]
+        return len(result)
+
+    @computed_field
+    def all_docs_processed(self) -> bool:
+        """Определяет, все ли документы с материалами обработаны оператором."""
+        return bool(
+            self.total_docs_count
+            and self.total_docs_processed_count
+            and self.total_docs_count == self.total_docs_processed_count
+        )
 
 
 class ServiceWorksBOMListAndCarOrganization(BaseModel):
@@ -270,6 +293,42 @@ class AddZvrSchema(BaseModel):
 
     service_work_id: Annotated[int, ServiceWork.id]
     zvr_number: str = Field(
-        ..., min_length=LEN_ZVR_BASE, max_length=LEN_ZVR_BASE,
+        ..., min_length=LEN_ZVR_BASE, max_length=LEN_ZVR_TOTAL,
     )
     station_id: Annotated[int, Station.id]
+
+
+class ServiceWorkEntrypointForMasterSchema(BaseModel):
+    """Схема с данными по работе для ... ."""
+
+    id: Annotated[int, ServiceWork.id] = (
+        Field(..., title='ID сервисной работы')
+    )
+    station_id: Optional[Annotated[int, Station.id]]
+    zvr_number: str = Field(
+        ..., min_length=LEN_ZVR_BASE, max_length=LEN_ZVR_TOTAL,
+    )
+    service_name: ServiceNameBase = Field(
+        ...,
+        validation_alias='next_service',
+        title='Вид следующего ТО, преобразованный в поле `ServiceName.name`',
+    )
+    car_grz: CarStartParse = Field(
+        ...,
+        validation_alias='car',
+        title='Информация о ТС'
+    )
+
+    @field_serializer('service_name')
+    def serialize_service_name(
+        self, service_name: ServiceName, _info: Any
+    ) -> str:
+        """Выпрямляет модель `ServiceName` в его поле `name`."""
+        return service_name.name
+
+    @field_serializer('car_grz')
+    def serialize_car_grz(
+        self, car_grz: Car, _info: Any
+    ) -> str:
+        """Выпрямляет модель `Car` в его поле `grz`."""
+        return car_grz.grz

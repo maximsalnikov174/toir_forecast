@@ -1,7 +1,10 @@
-from datetime import datetime as dt
+import hashlib
 from calendar import monthrange
+from datetime import datetime as dt
 
+from fastapi import UploadFile
 from constants import PATTERN_DATE_OEBS
+from exception import BiggestFileException, FilesHashSumNotUniqueException
 
 
 def convert_date(string: str) -> dt:
@@ -43,3 +46,41 @@ def add_declension_to_date(value: int) -> str:
         word = 'дней'
 
     return f'{value} {word}'
+
+
+async def calc_pdf_hashsum(
+        upload_file: UploadFile,
+        size_in_mb: int = 2,
+        algo='sha256',
+) -> str:
+    """Расчитывает хеш-сумму файла pdf размером до 2 Mb."""
+    content = await upload_file.read()
+    if len(content) > size_in_mb * 1024 * 1024:
+        await upload_file.seek(0)  # Возвращаем указатель чтения fastapi-файла
+        raise BiggestFileException(f'Файл слишком большой: {len(content)} Б.')
+
+    hash_func = hashlib.new(algo)
+    hash_func.update(content)
+
+    # Возвращаем указатель на начало fastapi.UploadFile-файла
+    await upload_file.seek(0)
+
+    return hash_func.hexdigest()
+
+
+async def compare_files(elements=list[UploadFile]) -> None:
+    """Сравнивает хеш-суммы поданных файлов.
+
+    RAISES
+    --------
+    - `FilesHashSumNotUniqueException` если нашлись дубли.
+    """
+    hashes = set()
+
+    for element in elements:
+        file_hash = await calc_pdf_hashsum(element)
+
+        if file_hash in hashes:
+            raise FilesHashSumNotUniqueException
+
+        hashes.add(file_hash)

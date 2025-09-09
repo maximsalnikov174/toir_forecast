@@ -28,6 +28,10 @@ class BadNameInUploadFileException(Exception):
     """Если файл для загрузки имеет неправильное имя."""
 
 
+class BadTypeUploadFileException(Exception):
+    """Если файл для загрузки имеет неправильный тип."""
+
+
 class ServiceNameBadDataException(Exception):
     """Если в файле для загрузки вид работ пришел некорректным."""
 
@@ -78,3 +82,15 @@ class BarcodeInAreaNotFoundException(Exception):
 
 class BarcodeNotValidException(Exception):
     """Штрих-код не соответствует шаблону."""
+
+
+class NotAllFilesSuccessfullyUpload(BaseException):
+    """Не все файлы были успешно обработаны и загружены."""
+
+
+class BiggestFileException(BaseException):
+    """Размер файла слишком большой."""
+
+
+class FilesHashSumNotUniqueException(Exception):
+    """В списке файлов присутствуют дубли."""
