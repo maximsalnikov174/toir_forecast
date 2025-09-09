@@ -354,99 +354,40 @@ const getCellValue = (rowIndex, cellIndex) => {
   }
 }
 
-// Улучшенная функция копирования для HTTP
+// Функция копирования - такая же как во втором компоненте
 const copyToClipboard = (text) => {
   if (!text || isDeliveryBlocked.value || isViewOnly.value) return
 
-  // Создаем временный элемент для копирования
   const textArea = document.createElement('textarea')
   textArea.value = text
   textArea.style.position = 'fixed'
-  textArea.style.top = '0'
-  textArea.style.left = '0'
-  textArea.style.opacity = '0'
-  textArea.style.width = '0'
-  textArea.style.height = '0'
-  textArea.style.pointerEvents = 'none'
-
   document.body.appendChild(textArea)
+  textArea.focus()
+  textArea.select()
 
   try {
-    // Выбираем текст
-    textArea.select()
-    textArea.setSelectionRange(0, 99999) // Для мобильных устройств
-
-    // Пытаемся использовать современный API (работает только в HTTPS)
-    if (navigator.clipboard && window.isSecureContext) {
-      navigator.clipboard.writeText(text).then(() => {
-        showSuccessNotify(text)
-      }).catch(() => {
-        // Fallback для HTTP
-        fallbackCopy(textArea)
+    const successful = document.execCommand('copy')
+    if (successful) {
+      $q.notify({
+        message: 'Значение скопировано в буфер обмена',
+        color: 'positive',
+        position: 'top',
+        timeout: 1000
       })
     } else {
-      // Fallback для HTTP и небезопасных контекстов
-      fallbackCopy(textArea)
-    }
-  } catch (error) {
-    console.error('Ошибка копирования:', error)
-    showNotify({
-      type: 'negative',
-      message: 'Не удалось скопировать текст',
-      timeout: 3000,
-    })
-  } finally {
-    // Всегда удаляем textarea
-    setTimeout(() => {
-      document.body.removeChild(textArea)
-    }, 100)
-  }
-}
-
-// Улучшенный fallback метод копирования для HTTP
-const fallbackCopy = (textArea) => {
-  try {
-    // Фокус на textarea
-    textArea.focus();
-    textArea.select();
-
-    // Пытаемся скопировать с помощью устаревшего API
-    const successful = document.execCommand('copy');
-
-    if (successful) {
-      showSuccessNotify(textArea.value);
-
-      // Показываем дополнительное сообщение для HTTP
-      showNotify({
-        type: 'info',
-        message: 'Для HTTP используется устаревший метод копирования',
-        timeout: 2000,
-      });
-    } else {
-      throw new Error('Copy command failed');
+      throw new Error('Copy command unsuccessful')
     }
   } catch (err) {
-    console.error('Ошибка при использовании fallback копирования:', err);
-
-    // Альтернативный метод - показ текста для ручного копирования
-    showNotify({
-      type: 'warning',
-      message: `Скопируйте текст вручную: ${textArea.value}`,
-      timeout: 5000,
-      multiLine: true,
-      actions: [{ label: 'OK', color: 'white' }]
-    });
+    console.error('Не удалось скопировать значение:', err)
+    $q.notify({
+      message: 'Ошибка при копировании',
+      color: 'negative',
+      position: 'top',
+      timeout: 1000
+    })
+  } finally {
+    document.body.removeChild(textArea)
   }
-}
-
-// Функция для показа уведомления об успешном копировании
-const showSuccessNotify = (text) => {
-  showNotify({
-    type: 'positive',
-    message: `Скопировано: ${text}`,
-    timeout: 2000,
-    position: 'top'
-  })
 }
 
 // Сброс выделения скопированных ячеек
