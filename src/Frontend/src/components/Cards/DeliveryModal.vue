@@ -354,11 +354,11 @@ const getCellValue = (rowIndex, cellIndex) => {
   }
 }
 
-// Копирование текста в буфер обмена
+// Улучшенная функция копирования для HTTP
 const copyToClipboard = (text) => {
   if (!text || isDeliveryBlocked.value || isViewOnly.value) return
 
-  // Создаем textarea для копирования
+  // Создаем временный элемент для копирования
   const textArea = document.createElement('textarea')
   textArea.value = text
   textArea.style.position = 'fixed'
@@ -376,7 +376,7 @@ const copyToClipboard = (text) => {
     textArea.select()
     textArea.setSelectionRange(0, 99999) // Для мобильных устройств
 
-    // Пытаемся использовать современный API
+    // Пытаемся использовать современный API (работает только в HTTPS)
     if (navigator.clipboard && window.isSecureContext) {
       navigator.clipboard.writeText(text).then(() => {
         showSuccessNotify(text)
@@ -403,21 +403,39 @@ const copyToClipboard = (text) => {
   }
 }
 
-// Улучшенный fallback метод копирования
+// Улучшенный fallback метод копирования для HTTP
 const fallbackCopy = (textArea) => {
   try {
-    const successful = document.execCommand('copy')
+    // Фокус на textarea
+    textArea.focus();
+    textArea.select();
+
+    // Пытаемся скопировать с помощью устаревшего API
+    const successful = document.execCommand('copy');
+
     if (successful) {
-      showSuccessNotify(textArea.value)
+      showSuccessNotify(textArea.value);
+
+      // Показываем дополнительное сообщение для HTTP
+      showNotify({
+        type: 'info',
+        message: 'Для HTTP используется устаревший метод копирования',
+        timeout: 2000,
+      });
     } else {
-      throw new Error('Copy command failed')
+      throw new Error('Copy command failed');
     }
-  } catch  {
+  } catch (err) {
+    console.error('Ошибка при использовании fallback копирования:', err);
+
+    // Альтернативный метод - показ текста для ручного копирования
     showNotify({
-      type: 'negative',
-      message: 'Не удалось скопировать текст. Разрешите доступ к буферу обмена.',
-      timeout: 3000,
-    })
+      type: 'warning',
+      message: `Скопируйте текст вручную: ${textArea.value}`,
+      timeout: 5000,
+      multiLine: true,
+      actions: [{ label: 'OK', color: 'white' }]
+    });
   }
 }
 
