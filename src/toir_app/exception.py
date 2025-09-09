@@ -88,6 +88,10 @@ class NotAllFilesSuccessfullyUpload(BaseException):
     """Не все файлы были успешно обработаны и загружены."""
 
 
+class AllFilesNotUploadException(Exception):
+    """Ни один файл не был загружен."""
+
+
 class BiggestFileException(BaseException):
     """Размер файла слишком большой."""
 
