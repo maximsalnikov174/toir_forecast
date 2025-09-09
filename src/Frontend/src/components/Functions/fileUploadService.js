@@ -34,21 +34,39 @@ export const useFileUploadService = () => {
         }
       );
 
+      // Обрабатываем ответ от сервера
+      let serverMessage = '';
+     if (response.data.detail) {
+        serverMessage = response.data.detail;
+      }
+
       return {
         success: true,
         data: response.data,
-        message: files.length === 1
+        message: serverMessage || (files.length === 1
           ? 'Файл успешно загружен'
-          : `${files.length} файлов успешно загружено`
+          : `${files.length} файлов успешно загружено`)
       };
 
     } catch (error) {
-      const errorMessage = error.response?.data?.detail || 'Ошибка при загрузке файлов';
+      // Улучшенная обработка ошибок
+      let errorMessage = 'Ошибка при загрузке файлов';
+
+      if (error.response?.data) {
+        // Пытаемся получить сообщение из разных возможных полей ответа
+        errorMessage = error.response.data.result ||
+                      error.response.data.detail ||
+                      error.response.data.message ||
+                      JSON.stringify(error.response.data);
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
 
       return {
         success: false,
         error: errorMessage,
-        originalError: error
+        originalError: error,
+        responseData: error.response?.data
       };
     }
   };
