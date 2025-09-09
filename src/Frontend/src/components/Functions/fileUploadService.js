@@ -4,15 +4,23 @@ import { useAuthStore } from 'src/stores/useAuthStore';
 export const useFileUploadService = () => {
   const authStore = useAuthStore();
 
-  const uploadFile = async (file, serviceWorkId) => {
+  const uploadFiles = async (files, serviceWorkId) => {
     const maxSize = 10 * 1024 * 1024; // 10MB
-    if (file.size > maxSize) {
-      throw new Error('Файл слишком большой (максимум 10MB)');
+
+    // Проверяем размер каждого файла
+    for (const file of files) {
+      if (file.size > maxSize) {
+        throw new Error(`Файл "${file.name}" слишком большой (максимум 10MB)`);
+      }
     }
 
     try {
       const formData = new FormData();
-      formData.append('file', file);
+
+      // Добавляем все файлы в FormData с именем поля 'files'
+      files.forEach(file => {
+        formData.append('files', file);
+      });
 
       const response = await api.post(
         `/service_work/unit_of_bom?service_work_id=${serviceWorkId}`,
@@ -29,11 +37,13 @@ export const useFileUploadService = () => {
       return {
         success: true,
         data: response.data,
-        message: 'Файл успешно загружен'
+        message: files.length === 1
+          ? 'Файл успешно загружен'
+          : `${files.length} файлов успешно загружено`
       };
 
     } catch (error) {
-      const errorMessage = error.response?.data?.detail || 'Ошибка при загрузке файла';
+      const errorMessage = error.response?.data?.detail || 'Ошибка при загрузке файлов';
 
       return {
         success: false,
@@ -43,7 +53,13 @@ export const useFileUploadService = () => {
     }
   };
 
+  // Метод для обратной совместимости с одним файлом
+  const uploadFile = async (file, serviceWorkId) => {
+    return uploadFiles([file], serviceWorkId);
+  };
+
   return {
-    uploadFile
+    uploadFile,
+    uploadFiles
   };
 };

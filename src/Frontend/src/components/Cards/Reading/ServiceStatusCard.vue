@@ -125,7 +125,7 @@ const showDeliveryModal = ref(false);
 const { selectedDivId } = useFilterStore();
 const authStore = useAuthStore();
 const $q = useQuasar();
-const { uploadFile } = useFileUploadService();
+const { uploadFiles } = useFileUploadService();
 const deliveryData = ref({});
 const loading = ref(false);
 
@@ -305,15 +305,16 @@ const handleDrop = async (event) => {
   if (!isRole4.value) return;
   dragOver.value = false;
   dragCounter.value = 0;
-  const files = event.dataTransfer.files;
+  const files = Array.from(event.dataTransfer.files);
   if (files.length === 0) return;
 
   try {
-    const result = await uploadFile(files[0], props.id);
+    // Используем uploadFiles вместо uploadFile для множественной загрузки
+    const result = await uploadFiles(files, props.id);
 
     if (result.success) {
       emit('file-dropped', {
-        file: files[0],
+        files: files,
         cardId: props.id,
         response: result.data
       });
@@ -331,7 +332,7 @@ const handleDrop = async (event) => {
 
     } else {
       emit('file-dropped-error', {
-        file: files[0],
+        files: files,
         cardId: props.id,
         error: result.originalError
       });
@@ -345,14 +346,14 @@ const handleDrop = async (event) => {
 
   } catch (error) {
     emit('file-dropped-error', {
-      file: files[0],
+      files: files,
       cardId: props.id,
       error: error
     });
 
     showNotify({
       type: 'negative',
-      message: 'Неожиданная ошибка при загрузке файла',
+      message: 'Неожиданная ошибка при загрузке файлов',
       timeout: 3000
     });
   }
