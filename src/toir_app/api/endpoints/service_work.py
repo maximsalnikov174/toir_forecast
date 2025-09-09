@@ -29,6 +29,7 @@ from crud.service_work import (
     zvr_delete
 )
 from exception import (
+    AllFilesNotUploadException,
     BiggestFileException,
     FilesHashSumNotUniqueException,
     NotAllFilesSuccessfullyUpload,
@@ -592,10 +593,17 @@ async def parse_docs(
 
         # ... и если они есть - выбрасываем исключение с этим списком:
         if bad_filenames:
-            raise NotAllFilesSuccessfullyUpload(bad_filenames)
+            if len(bad_filenames) < len(files):
+                raise NotAllFilesSuccessfullyUpload(bad_filenames)
+            raise AllFilesNotUploadException
 
         return {'result': f'Загружено уникальных файлов: {len(success_files)}'}
 
+    except AllFilesNotUploadException:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail='Ни один файл не был загружен',
+        )
     except FilesHashSumNotUniqueException:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
