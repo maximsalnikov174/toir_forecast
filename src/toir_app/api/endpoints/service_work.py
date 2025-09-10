@@ -523,6 +523,7 @@ async def parse_docs(
 
         # Общий список "имя (размер)" всех поданных файлов:
         total_files = [f'{file.filename} ({file.size})' for file in files]
+        duplicate_files = []
 
         # Заготовка для списка успешно обработанных файлов:
         success_files: list[str] = []
@@ -541,19 +542,22 @@ async def parse_docs(
                 attr_value=data.unit_of_bom_doc.from_organization,
                 session=session
             )
+            try:
+                # Проверяем, что ID доставки и указанный штрих-код уникальны:
+                await dao_doc_bom.check_exists(
+                    attr_name='delivery',
+                    attr_value=getattr(data.unit_of_bom_doc, 'delivery'),
+                    session=session,
+                )
 
-            # Проверяем, что ID доставки и указанный штрих-код уникальны:
-            await dao_doc_bom.check_exists(
-                attr_name='delivery',
-                attr_value=getattr(data.unit_of_bom_doc, 'delivery'),
-                session=session,
-            )
-
-            await dao_doc_bom.check_exists(
-                attr_name='bar_code',
-                attr_value=getattr(data, 'bar_code'),
-                session=session,
-            )
+                await dao_doc_bom.check_exists(
+                    attr_name='bar_code',
+                    attr_value=getattr(data, 'bar_code'),
+                    session=session,
+                )
+            except ObjectIsExistException as e:
+                duplicate_files.append(e.args)
+                continue
 
             # Создаем объект документа BOM:
             bom_doc = BOMDocsCreate(
