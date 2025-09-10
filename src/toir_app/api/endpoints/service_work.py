@@ -518,17 +518,20 @@ async def parse_docs(
         # 2. Только для пользователя с ролью Мастер/Оператор/суперюзер:
         check_user_can_add_docs_in_service_work(user)
 
-        # Обрабатываем список файлов:
-        await compare_files(files)
+        # Обрабатываем список файлов (и оставляем только уникальные pdf):
+        valid_files = await compare_files(files)
 
         # Общий список "имя (размер)" всех поданных файлов:
         total_files = [f'{file.filename} ({file.size})' for file in files]
+
+        # Заготовка для списка дубликатов:
         duplicate_files = []
 
         # Заготовка для списка успешно обработанных файлов:
         success_files: list[str] = []
 
-        for file in files:
+        # Перебираем уникальные файлы pdf:
+        for file in valid_files:
             # Получаем данные из файла pdf и загоняем их в модель:
             data = await get_payload_data_in_pdf_file(file=file)
 
@@ -542,8 +545,9 @@ async def parse_docs(
                 attr_value=data.unit_of_bom_doc.from_organization,
                 session=session
             )
+
+            # Проверяем, что ID доставки и указанный штрих-код уникальны:
             try:
-                # Проверяем, что ID доставки и указанный штрих-код уникальны:
                 await dao_doc_bom.check_exists(
                     attr_name='delivery',
                     attr_value=getattr(data.unit_of_bom_doc, 'delivery'),
