@@ -57,7 +57,7 @@
       <div class="plus-icon">+</div>
     </div>
 
-    <!-- Оверлей для документа (для station_id === 99) -->
+    <!-- Оверлей для документа (для role_id ===5 ) -->
     <div
       v-if="shouldShowDocumentHover"
       class="document-hover-overlay"
@@ -74,6 +74,23 @@
       <div class="drag-content">
         <div class="drag-icon">📁</div>
         <div class="drag-text">Перетащите файл сюда</div>
+      </div>
+    </div>
+
+    <!-- Индикатор загрузки файлов -->
+    <div
+      v-if="isUploading"
+      class="upload-overlay"
+    >
+      <div class="upload-content">
+        <q-spinner
+          color="primary"
+          size="3em"
+        />
+        <div class="upload-text">Загрузка файлов...</div>
+        <div class="upload-progress" v-if="uploadProgress > 0">
+          {{ uploadProgress }}%
+        </div>
       </div>
     </div>
 
@@ -100,7 +117,7 @@
       :delivery-data="deliveryData"
       @close="closeDeliveryModal"
       @refresh-data="handleRefreshData"
-      @submit-success="onSubmitSuccessMaster" 
+      @submit-success="onSubmitSuccessMaster"
       :bar-code="barCodeValue"
       :zvr_number="zvr_number"
     />
@@ -130,6 +147,10 @@ const $q = useQuasar();
 const { uploadFiles } = useFileUploadService();
 const deliveryData = ref({});
 const loading = ref(false);
+
+// Добавляем состояние для отслеживания загрузки файлов
+const isUploading = ref(false);
+const uploadProgress = ref(0);
 
 const handleRefreshData = () => {
   loadDeliveryData();
@@ -326,9 +347,15 @@ const handleDrop = async (event) => {
   const files = Array.from(event.dataTransfer.files);
   if (files.length === 0) return;
 
+  // Устанавливаем состояние загрузки
+  isUploading.value = true;
+  uploadProgress.value = 0;
+
   try {
     // Используем uploadFiles вместо uploadFile для множественной загрузки
-    const result = await uploadFiles(files, props.id);
+    const result = await uploadFiles(files, props.id, (progress) => {
+      uploadProgress.value = Math.round(progress * 100);
+    });
 
     if (result.success) {
       emit('file-dropped', {
@@ -374,6 +401,10 @@ const handleDrop = async (event) => {
       message: 'Неожиданная ошибка при загрузке файлов',
       timeout: 3000
     });
+  } finally {
+    // Сбрасываем состояние загрузки
+    isUploading.value = false;
+    uploadProgress.value = 0;
   }
 };
 
@@ -684,5 +715,43 @@ const showBottomBar = computed(() => {
   font-size: 12px;
   font-weight: bold;
   color: #ffffff;
+}
+
+/* Стили для индикатора загрузки */
+.upload-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(255, 255, 255, 0.9);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 20;
+}
+
+.upload-content {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.upload-text {
+  font-size: 12px;
+  font-weight: 500;
+  color: #333;
+}
+
+.upload-progress {
+  font-size: 11px;
+  font-weight: bold;
+  color: #1976d2;
+  background-color: rgba(25, 118, 210, 0.1);
+  padding: 2px 6px;
+  border-radius: 10px;
 }
 </style>
