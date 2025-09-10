@@ -1,10 +1,14 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi_users.authentication import AuthenticationBackend
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from constants import (
     ENDPOINT_URL_FOR_AUTH,
     ENDPOINT_URL_FOR_REGISTRATION,
 )
+from core.db import get_async_session
 from core.user import auth_backend, fastapi_users
+from crud.user import user_dao
 from schemas.user import UserCreate, UserRead, UserReadBase, UserUpdate
 
 router = APIRouter()
@@ -17,6 +21,38 @@ router.include_router(
     prefix=ENDPOINT_URL_FOR_AUTH,
     tags=['user_auth'],
 )
+
+
+@router.get(
+    'user/secret/get_token_for_use_in_telegram/{user_tg_account}',
+    tags=['telegram']
+)
+async def get_token_for_use_in_tg(
+    user_tg_account: str,
+    session: AsyncSession = Depends(get_async_session),
+    auth_backend: AuthenticationBackend = Depends(lambda: auth_backend)
+):
+    """Получение токена пользователя для тг-запросов."""
+    user = await user_dao.get_by_attribute('tg_id', user_tg_account, session)
+
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail='Пользователь не найден.',
+        )
+    if not user.is_active:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail='Пользователь не в списке активных пользователей.',
+        )
+    if not user.is_verified:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail='Пользователь не валидирован администратором.',
+        )
+
+    return await auth_backend.login(auth_backend.get_strategy(), user)
+
 
 # Регистрационный роутер предоставляет доступ к эндпоинту:
 # /register (для регистрации нового пользователя)
