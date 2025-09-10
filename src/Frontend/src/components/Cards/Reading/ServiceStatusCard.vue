@@ -232,7 +232,8 @@ const shouldShowDocumentIcon = computed(() => {
   return isAllowedRole &&
          props.total_docs_count !== null &&
          props.total_docs_count !== undefined &&
-         props.total_docs_count !== '';
+         props.total_docs_count !== '' &&
+         props.total_docs_count > 0;;
 });
 
 // Вычисляем количество необработанных документов (разницу)
