@@ -100,6 +100,7 @@
       :delivery-data="deliveryData"
       @close="closeDeliveryModal"
       @refresh-data="handleRefreshData"
+      @submit-success="onSubmitSuccessMaster" 
       :bar-code="barCodeValue"
       :zvr_number="zvr_number"
     />

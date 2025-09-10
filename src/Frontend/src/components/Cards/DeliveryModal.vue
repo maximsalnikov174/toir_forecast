@@ -178,7 +178,7 @@ const barcodeCanvas = ref(null)
 const copiedCells = ref(new Set())
 const currentDeliveryIndex = ref(0)
 
-const emit = defineEmits(['close', 'update:modelValue', 'entered', 'refreshData'])
+const emit = defineEmits(['close', 'update:modelValue', 'entered', 'refreshData', 'submitSuccess'])
 
 const props = defineProps({
   modelValue: {
@@ -412,6 +412,7 @@ const handleMarkAsEntered = async () => {
   if (success) {
     emit('entered', currentDelivery.value)
     emit('refreshData')
+    emit('submitSuccess') // Добавьте это
   }
 }
 
