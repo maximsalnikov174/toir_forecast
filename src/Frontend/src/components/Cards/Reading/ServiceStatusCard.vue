@@ -30,14 +30,15 @@
     <div v-if="zvr_create_date" class="zvr-create-date">{{ zvr_create_date }}</div>
     <div v-if="DBSWCAN" class="additional-text">{{ DBSWCAN }} </div>
 
-    <!-- Иконка документа для role_id = 4 -->
+    <!-- Иконка документа для role_id = 4 и role_id = 5 -->
     <div
       v-if="shouldShowDocumentIcon"
       class="document-icon-corner"
-      @click.stop="handleDocumentIconClick"
+      :class="{ 'no-click': authStore.user?.role_id === 5 }"
+      @click.stop="authStore.user?.role_id !== 5 ? handleDocumentIconClick() : null"
     >
       📄
-      <span v-if="total_docs_count > 0" class="doc-count-badge">{{ total_docs_count }}</span>
+      <span v-if="showDocCountBadge" class="doc-count-badge">{{ unprocessedDocsCount }}</span>
     </div>
 
     <!-- Оверлей для основной карточки -->
@@ -93,7 +94,7 @@
       :onSubmitSuccessMaster="onSubmitSuccessMaster"
     />
 
-    <!-- Модальное окно для отображения таблицы доставки -->
+    <!-- Модальное окно для отображения таблица доставки -->
     <DeliveryModal
       v-model="showDeliveryModal"
       :delivery-data="deliveryData"
@@ -195,17 +196,33 @@ const props = defineProps({
     type: [String, Number],
     default: null
   },
+  total_docs_processed_count: {
+    type: [String, Number],
+    default: 0
+  },
 });
 
 const emit = defineEmits(['file-dropped', 'submitted', 'document-click', 'refresh-delivery-data']);
 
 // Добавляем вычисляемое свойство для отображения иконки документа
 const shouldShowDocumentIcon = computed(() => {
-  return isRole4.value &&
+  const isAllowedRole = authStore.user?.role_id === 4 || authStore.user?.role_id === 5;
+  return isAllowedRole &&
          props.total_docs_count !== null &&
          props.total_docs_count !== undefined &&
-         props.total_docs_count !== '' &&
-         props.total_docs_count > 0;
+         props.total_docs_count !== '';
+});
+
+// Вычисляем количество необработанных документов (разницу)
+const unprocessedDocsCount = computed(() => {
+  const total = Number(props.total_docs_count) || 0;
+  const processed = Number(props.total_docs_processed_count) || 0;
+  return Math.max(0, total - processed); // Гарантируем неотрицательное значение
+});
+
+// Показывать бейдж только если есть необработанные документы
+const showDocCountBadge = computed(() => {
+  return unprocessedDocsCount.value > 0;
 });
 
 const topBarClass = computed(() => {
@@ -518,6 +535,11 @@ const showBottomBar = computed(() => {
 
 .document-icon-corner:hover {
   transform: scale(1.1);
+}
+
+.document-icon-corner.no-click {
+  cursor: default !important;
+  pointer-events: none;
 }
 
 .doc-count-badge {
