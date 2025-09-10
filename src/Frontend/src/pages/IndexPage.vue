@@ -88,6 +88,7 @@
                 @submitted="handleApply"
                 :onSubmitSuccessMaster="loadMasterData"
                 :total_docs_count="item.total_docs_count"
+                :total_docs_processed_count="total_docs_processed_count"
               />
               <div v-else class="empty-status-card"></div>
             </template>
