@@ -98,3 +98,7 @@ class BiggestFileException(BaseException):
 
 class FilesHashSumNotUniqueException(Exception):
     """В списке файлов присутствуют дубли."""
+
+
+class FileTypeValidException(Exception):
+    """Файл не соответствует нужному типу."""
