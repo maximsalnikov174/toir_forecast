@@ -166,7 +166,7 @@ const isAnimating = ref(false);
 const animationCompleted = ref(false);
 const animationProgress = ref(0);
 const animationInterval = ref(null);
-const animationDuration = 750; // 1.5 секунды для анимации
+const animationDuration = 500; // 1.5 секунды для анимации
 
 // Добавляем состояние для отслеживания загрузки файлов
 const isUploading = ref(false);
@@ -697,14 +697,14 @@ const showBottomBar = computed(() => {
   position: absolute;
   bottom: 0;
   left: 0;
-  height: 3px;
-  background: linear-gradient(90deg, #ff0000, #55fc07);
+  height: 5px;
+  background-color: #000000;
   transition: width 0.1s linear;
   border-radius: 0 0 8px 8px;
 }
 
 .file-hover-animation.completed .animation-progress {
-  background: #10ca17;
+  background: #000000;
 }
 
 .animation-text {
@@ -716,7 +716,7 @@ const showBottomBar = computed(() => {
   background: rgba(255, 255, 255, 0.9);
   border-radius: 12px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  max-width: 80%;
+  max-width: 100%;
   z-index: 1;
 }
 
