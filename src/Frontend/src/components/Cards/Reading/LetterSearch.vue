@@ -144,6 +144,7 @@ const clearFilters = () => {
 .buttons-row {
   display: flex;
   gap: 2px;
+  margin-top: 3px;
 }
 
 .filter-btn {
@@ -159,7 +160,7 @@ const clearFilters = () => {
   align-items: center;
   justify-content: center;
   transition: all 0.2s;
-  
+
 }
 
 .filter-btn:hover {
