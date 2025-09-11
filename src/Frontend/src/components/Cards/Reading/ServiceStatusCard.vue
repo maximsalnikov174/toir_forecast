@@ -272,6 +272,7 @@ const handleMouseLeave = () => {
   hover.value = false;
   fileHover.value = false;
   stopAnimation();
+  resetAnimation();
 };
 
 const startAnimation = () => {
@@ -296,7 +297,9 @@ const startAnimation = () => {
       stopAnimation();
 
       // Автоматически сбрасываем анимацию через короткое время
-
+      setTimeout(() => {
+        resetAnimation();
+      }, 1000);
     }
   }, 16); // ~60 FPS
 };
@@ -309,6 +312,14 @@ const stopAnimation = () => {
   isAnimating.value = false;
 };
 
+// Добавляем функцию для полного сброса анимации
+const resetAnimation = () => {
+  stopAnimation();
+  animationProgress.value = 0;
+  animationCompleted.value = false;
+  isAnimating.value = false;
+  fileHover.value = false;
+};
 
 // Добавляем вычисляемое свойство для отображения иконки документа
 const shouldShowDocumentIcon = computed(() => {
@@ -426,6 +437,7 @@ const handleDragLeave = (e) => {
     dragOver.value = false;
     fileHover.value = false;
     stopAnimation();
+    resetAnimation();
   }
 };
 
@@ -438,23 +450,24 @@ const handleDragOver = (e) => {
 const handleDrop = async (event) => {
   if (!isRole4.value) return;
 
+  // Сбрасываем состояние независимо от результата
+  dragOver.value = false;
+  dragCounter.value = 0;
+  fileHover.value = false;
+  resetAnimation();
+
+  const files = Array.from(event.dataTransfer.files);
+  if (files.length === 0) return;
+
   // Если анимация не завершена, прерываем операцию
   if (!animationCompleted.value) {
     showNotify({
       type: 'warning',
       message: 'Завершите процесс загрузки, удерживая файлы над карточкой',
-      timeout: 500
+      timeout: 1000
     });
     return;
   }
-
-  dragOver.value = false;
-  dragCounter.value = 0;
-  fileHover.value = false;
-  stopAnimation();
-
-  const files = Array.from(event.dataTransfer.files);
-  if (files.length === 0) return;
 
   // Устанавливаем состояние загрузки
   isUploading.value = true;
