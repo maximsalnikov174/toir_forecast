@@ -292,6 +292,13 @@ const startAnimation = () => {
     if (progress >= 100) {
       animationCompleted.value = true;
       stopAnimation();
+
+      // Показываем уведомление о готовности к загрузке
+      showNotify({
+        type: 'positive',
+        message: 'Готово к загрузке! Отпустите файлы',
+        timeout: 1000
+      });
     }
   }, 16); // ~60 FPS
 };
@@ -323,7 +330,8 @@ const shouldShowDocumentIcon = computed(() => {
          props.total_docs_count !== null &&
          props.total_docs_count !== undefined &&
          props.total_docs_count !== '' &&
-         props.total_docs_count > 0;;
+         props.total_docs_count > 0 &&
+         !isUploading.value; // Не показывать во время загрузки
 });
 
 // Вычисляем количество необработанных документов (разницу)
@@ -423,7 +431,11 @@ const handleDragEnter = (e) => {
   dragCounter.value++;
   dragOver.value = true;
   fileHover.value = true;
-  startAnimation();
+
+  // Запускаем анимацию только если она еще не запущена
+  if (!isAnimating.value && !animationCompleted.value) {
+    startAnimation();
+  }
 };
 
 const handleDragLeave = (e) => {
@@ -436,7 +448,12 @@ const handleDragLeave = (e) => {
     dragCounter.value = 0;
     dragOver.value = false;
     fileHover.value = false;
-    stopAnimation();
+
+    // Если анимация не завершена, сбрасываем ее
+    if (!animationCompleted.value) {
+      stopAnimation();
+      animationProgress.value = 0;
+    }
   }
 };
 
@@ -460,7 +477,7 @@ const handleDrop = async (event) => {
 
   const files = Array.from(event.dataTransfer.files);
   if (files.length === 0) {
-    resetAllStates(); // Сбрасываем при отсутствии файлов
+    resetAllStates();
     return;
   }
 
@@ -472,6 +489,7 @@ const handleDrop = async (event) => {
       timeout: 1000
     });
     resetAllStates();
+    return; // Прерываем выполнение
   }
 
   // Устанавливаем состояние загрузки
@@ -528,11 +546,11 @@ const handleDrop = async (event) => {
       message: 'Неожиданная ошибка при загрузке файлов',
       timeout: 3000
     });
-    resetAllStates();
   } finally {
+    // Сбрасываем состояние загрузки
     isUploading.value = false;
     uploadProgress.value = 0;
-    resetAllStates(); // Всегда сбрасываем в конце
+    resetAllStates();
   }
 };
 
