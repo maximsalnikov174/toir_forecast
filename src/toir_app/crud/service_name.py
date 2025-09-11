@@ -130,30 +130,34 @@ async def get_service_name_with_request_status(
         select(ServiceName)
         .join(ServiceWork, ServiceName.id == ServiceWork.next_service_id)
         .join(Car)
-        .outerjoin(Car.status_associations)
-        # .options(
-        #     joinedload(ServiceWork.car),
-        # )
         .where(
-            and_(
-                ServiceWork.in_archive.is_(False),
-                (
-                    # выбираем точное == или диапазон до цели и все что строже
-                    ServiceWork.request_status_id <= request_status_id
-                    if need_range
-                    else ServiceWork.request_status_id == request_status_id
+            ServiceWork.in_archive.is_(False),
+            (
+                ServiceWork.request_status_id <= request_status_id
+                if need_range
+                else ServiceWork.request_status_id == request_status_id
+            ),
+            Car.organization_id == organization_id,
+            Car.in_archive.is_(False),
+            or_(
+                # Машины БЕЗ активных статусов
+                # НЕ(существует хоть одна запись `is_active=True` в SSFC))
+                ~Car.status_associations.any(
+                    SpecialStatusForCar.is_active.is_(True)
                 ),
-                Car.organization_id == organization_id,
-                Car.in_archive.is_(False),
-                or_(
-                    Car.status_associations == None,
-                    SpecialStatusForCar.special_status_id.in_(
-                        special_status_ids
+                # И машины С активными статусами ИЗ СПИСКА
+                Car.status_associations.any(
+                    and_(
+                        SpecialStatusForCar.is_active.is_(True),
+                        SpecialStatusForCar.special_status_id.in_(
+                            special_status_ids
+                        )
                     )
                 )
             )
-        ).distinct()  # distinct - дедупликация
-        .order_by(ServiceName.id)  # сортировка по ID вида работ
+        )
+        .distinct()
+        .order_by(ServiceName.id)
     )
 
     if hide_service_work_with_zvr:
