@@ -1,14 +1,14 @@
 <template>
   <div
     class="service-status-card"
-    @mouseover="hover = true"
-    @mouseleave="hover = false"
+    @mouseover="handleMouseOver"
+    @mouseleave="handleMouseLeave"
     @click="handleCardClick"
     @drop.prevent="handleDrop"
-    @dragover.prevent="dragOver = true"
+    @dragover.prevent="handleDragOver"
     @dragenter.prevent="handleDragEnter"
     @dragleave="handleDragLeave"
-    :class="{ 'drag-over': dragOver }"
+    :class="{ 'drag-over': dragOver, 'file-hover': fileHover }"
   >
     <!-- Верхняя полоска -->
     <div
@@ -29,6 +29,18 @@
     <div class="other-text">{{ displayDate }}</div>
     <div v-if="zvr_create_date" class="zvr-create-date">{{ zvr_create_date }}</div>
     <div v-if="DBSWCAN" class="additional-text">{{ DBSWCAN }} </div>
+
+    <!-- Анимация загрузки при наведении с файлами -->
+    <div
+      v-if="fileHover && isRole4"
+      class="file-hover-animation"
+      :class="{ 'animating': isAnimating, 'completed': animationCompleted }"
+    >
+      <div class="animation-progress" :style="{ width: animationProgress + '%' }"></div>
+      <div class="animation-text">
+        {{ animationText }}
+      </div>
+    </div>
 
     <!-- Иконка документа для role_id = 4 и role_id = 5 -->
     <div
@@ -125,7 +137,7 @@
 </template>
 
 <script setup>
-import { computed, ref } from 'vue';
+import { computed, ref, onUnmounted } from 'vue';
 import { useQuasar } from 'quasar';
 import { useFilterStore } from 'src/components/Functions/FilterStoreAcceptButton';
 import { useAuthStore } from 'src/stores/useAuthStore';
@@ -147,6 +159,14 @@ const $q = useQuasar();
 const { uploadFiles } = useFileUploadService();
 const deliveryData = ref({});
 const loading = ref(false);
+
+// Состояния для анимации загрузки
+const fileHover = ref(false);
+const isAnimating = ref(false);
+const animationCompleted = ref(false);
+const animationProgress = ref(0);
+const animationInterval = ref(null);
+const animationDuration = 750; // 1.5 секунды для анимации
 
 // Добавляем состояние для отслеживания загрузки файлов
 const isUploading = ref(false);
@@ -225,6 +245,70 @@ const props = defineProps({
 });
 
 const emit = defineEmits(['file-dropped', 'submitted', 'document-click', 'refresh-delivery-data']);
+
+// Текст для анимации
+const animationText = computed(() => {
+  if (animationCompleted.value) return 'Готово!';
+  if (isAnimating.value) return 'Загрузка...';
+  return 'Перетащите для загрузки';
+});
+
+// Очистка интервала при размонтировании компонента
+onUnmounted(() => {
+  stopAnimation();
+});
+
+const handleMouseOver = (event) => {
+  hover.value = true;
+
+  // Проверяем, есть ли файлы при наведении
+  if (event.dataTransfer && event.dataTransfer.types.includes('Files')) {
+    fileHover.value = true;
+    startAnimation();
+  }
+};
+
+const handleMouseLeave = () => {
+  hover.value = false;
+  fileHover.value = false;
+  stopAnimation();
+};
+
+const startAnimation = () => {
+  if (!isRole4.value) return;
+
+  stopAnimation();
+
+  isAnimating.value = true;
+  animationCompleted.value = false;
+  animationProgress.value = 0;
+
+  const startTime = Date.now();
+
+  animationInterval.value = setInterval(() => {
+    const elapsed = Date.now() - startTime;
+    const progress = Math.min(100, (elapsed / animationDuration) * 100);
+
+    animationProgress.value = progress;
+
+    if (progress >= 100) {
+      animationCompleted.value = true;
+      stopAnimation();
+
+      // Автоматически сбрасываем анимацию через короткое время
+
+    }
+  }, 16); // ~60 FPS
+};
+
+const stopAnimation = () => {
+  if (animationInterval.value) {
+    clearInterval(animationInterval.value);
+    animationInterval.value = null;
+  }
+  isAnimating.value = false;
+};
+
 
 // Добавляем вычисляемое свойство для отображения иконки документа
 const shouldShowDocumentIcon = computed(() => {
@@ -330,6 +414,8 @@ const handleDragEnter = (e) => {
   e.preventDefault();
   dragCounter.value++;
   dragOver.value = true;
+  fileHover.value = true;
+  startAnimation();
 };
 
 const handleDragLeave = (e) => {
@@ -338,13 +424,35 @@ const handleDragLeave = (e) => {
   dragCounter.value--;
   if (dragCounter.value === 0) {
     dragOver.value = false;
+    fileHover.value = false;
+    stopAnimation();
   }
+};
+
+const handleDragOver = (e) => {
+  if (!isRole4.value) return;
+  e.preventDefault();
+  dragOver.value = true;
 };
 
 const handleDrop = async (event) => {
   if (!isRole4.value) return;
+
+  // Если анимация не завершена, прерываем операцию
+  if (!animationCompleted.value) {
+    showNotify({
+      type: 'warning',
+      message: 'Завершите процесс загрузки, удерживая файлы над карточкой',
+      timeout: 500
+    });
+    return;
+  }
+
   dragOver.value = false;
   dragCounter.value = 0;
+  fileHover.value = false;
+  stopAnimation();
+
   const files = Array.from(event.dataTransfer.files);
   if (files.length === 0) return;
 
@@ -483,6 +591,12 @@ const showBottomBar = computed(() => {
   flex-shrink: 0;
   cursor: pointer;
   transition: all 0.2s ease;
+  overflow: hidden;
+}
+
+.service-status-card.file-hover {
+  border-color: #6a0dad;
+  box-shadow: 0 0 10px rgba(106, 13, 173, 0.5);
 }
 
 .station-purple {
@@ -553,6 +667,61 @@ const showBottomBar = computed(() => {
   font-size: 10px;
   line-height: 100%;
   color: #000000;
+}
+
+/* Анимация загрузки при наведении с файлами */
+.file-hover-animation {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(106, 13, 173, 0.1);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 15;
+  transition: all 0.3s ease;
+}
+
+.file-hover-animation.animating {
+  background: rgba(106, 13, 173, 0.2);
+}
+
+.file-hover-animation.completed {
+  background: rgba(0, 128, 0, 0.2);
+}
+
+.animation-progress {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  height: 3px;
+  background: linear-gradient(90deg, #ff0000, #55fc07);
+  transition: width 0.1s linear;
+  border-radius: 0 0 8px 8px;
+}
+
+.file-hover-animation.completed .animation-progress {
+  background: #10ca17;
+}
+
+.animation-text {
+  font-size: 10px;
+  font-weight: 500;
+  color: #6a0dad;
+  text-align: center;
+  padding: 4px 8px;
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 12px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  max-width: 80%;
+  z-index: 1;
+}
+
+.file-hover-animation.completed .animation-text {
+  color: #4caf50;
 }
 
 /* Стили для иконки документа в правом нижнем углу */
