@@ -51,27 +51,12 @@
       <!-- Заголовок с именами сервисов -->
       <div class="services-header sticky-header">
         <div class="cars-header-placeholder">
-          <div class="search-by-letter">
-            <div class="search-title">Поиск по букве:</div>
-            <div class="letter-buttons">
-              <button
-                v-for="letter in availableLetters"
-                :key="letter"
-                @click="toggleLetterFilter(letter)"
-                :class="['letter-btn', { active: activeLetters.includes(letter) }]"
-              >
-                {{ letter }}
-              </button>
-              <button
-                v-if="activeLetters.length > 0"
-                @click="clearFilters"
-                class="clear-filter-btn"
-                title="Очистить фильтры"
-              >
-                ×
-              </button>
-            </div>
-          </div>
+          <LetterSearch
+            :cars="cars"
+            :active-letters="activeLetters"
+            @update:activeLetters="activeLetters = $event"
+            @filter-change="handleFilterChange"
+          />
         </div>
         <div class="service-names-row">
           <ServiceNamesCard
@@ -136,6 +121,7 @@ import { useAuthStore } from 'src/stores/useAuthStore'
 import { getCurrentDateInDB } from 'src/components/Functions/CurrentDateInDB'
 import ColorsOfRepairShops from '../components/Cards/ColorsOfRepairShops.vue'
 import { masterApi } from 'src/components/Functions/masterApi.js'
+import LetterSearch from '../components/Cards/Reading/LetterSearch.vue'
 
 const loading = ref(false)
 const showScrollButton = ref(false)
@@ -148,7 +134,12 @@ const authDialog = ref(null)
 const currentDate = ref('Загрузка даты...')
 const toAcceptRef = ref(null)
 const activeLetters = ref([])
-const availableLetters = ref([])
+
+// Функция для получения данных таблицы для конкретной машины
+const getTableDataForCar = (car) => {
+  const index = cars.value.findIndex(c => c.personal_id === car.personal_id)
+  return index !== -1 ? tableData.value[index] : []
+}
 
 // Вычисляем отфильтрованные машины
 const filteredCars = computed(() => {
@@ -162,45 +153,6 @@ const filteredCars = computed(() => {
     return activeLetters.value.includes(firstLetter)
   })
 })
-
-// Функция для получения данных таблицы для конкретной машины
-const getTableDataForCar = (car) => {
-  const index = cars.value.findIndex(c => c.personal_id === car.personal_id)
-  return index !== -1 ? tableData.value[index] : []
-}
-
-// Функция для получения всех доступных букв из GRZ
-const updateAvailableLetters = () => {
-  const letters = new Set()
-  cars.value.forEach(car => {
-    const firstLetter = car.grz.replace(/\s+/g, '').charAt(0).toUpperCase()
-    if (firstLetter && /[А-ЯA-Z]/.test(firstLetter)) {
-      letters.add(firstLetter)
-    }
-  })
-  availableLetters.value = Array.from(letters).sort()
-}
-
-// Функции для управления фильтрами
-const toggleLetterFilter = (letter) => {
-  const index = activeLetters.value.indexOf(letter)
-  if (index === -1) {
-    activeLetters.value.push(letter)
-  } else {
-    activeLetters.value.splice(index, 1)
-  }
-}
-
-const clearFilters = () => {
-  activeLetters.value = []
-}
-
-// Обновляем доступные буквы при изменении cars
-watch(cars, (newCars) => {
-  if (newCars && newCars.length > 0) {
-    updateAvailableLetters()
-  }
-}, { immediate: true, deep: true })
 
 const shouldShowDivisionControls = computed(() => {
   if (!authStore.isAuth) return true
@@ -291,22 +243,7 @@ const loadMasterData = async () => {
   }
 }
 
-// Следим за изменениями авторизации и station_id
-watch(
-  () => [authStore.isAuth, authStore.user?.users_organization?.station_id],
-  ([isAuth, stationId]) => {
-    if (isAuth && stationId !== null && stationId !== undefined) {
-      console.log('Пользователь авторизован как мастер, station_id:', stationId)
-      loadMasterData()
-    } else if (!isAuth) {
-      // Очищаем данные при выходе
-      tableData.value = []
-      services.value = []
-      cars.value = []
-    }
-  },
-  { immediate: true, deep: true },
-)
+
 
 // Также следим за изменениями пользователя
 watch(
@@ -489,89 +426,6 @@ onUnmounted(() => {
   flex-shrink: 0;
   display: flex;
   flex-direction: column;
-}
-
-.search-by-letter {
-  border-radius: 4px;
-  margin-bottom: 10px;
-}
-
-.search-title {
-  font-size: 12px;
-  font-weight: 600;
-  margin-bottom: 1px;
-  color: #ffffff;
-}
-
-.letter-buttons {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 1px;
-}
-
-.letter-btn {
-  width: 15px;
-  height: 15px;
-  border: 1px solid #ccc;
-  background: white;
-  border-radius: 3px;
-  cursor: pointer;
-  font-size: 10px;
-  font-weight: 500;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.2s;
-}
-
-.letter-btn:hover {
-  background-color: #e3f2fd;
-  border-color: #2196f3;
-}
-
-.letter-btn.active {
-  background-color: #2196f3;
-  color: white;
-  border-color: #2196f3;
-}
-
-.clear-filter-btn {
-  width: 15px;
-  height: 15px;
-  border: 1px solid #ff6b6b;
-  background: white;
-  color: #ff6b6b;
-  border-radius: 3px;
-  cursor: pointer;
-  font-size: 14px;
-  font-weight: bold;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.clear-filter-btn:hover {
-  background-color: #ff6b6b;
-  color: white;
-}
-
-/* Адаптивность для маленьких экранов */
-@media (max-width: 768px) {
-  .cars-header-placeholder {
-    width: 180px;
-  }
-
-  .letter-btn {
-    width: 20px;
-    height: 20px;
-    font-size: 10px;
-  }
-
-  .clear-filter-btn {
-    width: 20px;
-    height: 20px;
-    font-size: 12px;
-  }
 }
 
 .service-names-row {
