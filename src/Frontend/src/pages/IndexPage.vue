@@ -50,7 +50,29 @@
     <div class="data-container">
       <!-- Заголовок с именами сервисов -->
       <div class="services-header sticky-header">
-        <div class="cars-header-placeholder"></div>
+        <div class="cars-header-placeholder">
+          <div class="search-by-letter">
+            <div class="search-title">Поиск по букве:</div>
+            <div class="letter-buttons">
+              <button
+                v-for="letter in availableLetters"
+                :key="letter"
+                @click="toggleLetterFilter(letter)"
+                :class="['letter-btn', { active: activeLetters.includes(letter) }]"
+              >
+                {{ letter }}
+              </button>
+              <button
+                v-if="activeLetters.length > 0"
+                @click="clearFilters"
+                class="clear-filter-btn"
+                title="Очистить фильтры"
+              >
+                ×
+              </button>
+            </div>
+          </div>
+        </div>
         <div class="service-names-row">
           <ServiceNamesCard
             v-for="service in services"
@@ -62,7 +84,7 @@
 
       <!-- Основные данные - машины и статусы -->
       <div class="data-rows">
-        <div v-for="(car, rowIndex) in cars" :key="car.personal_id" class="data-row">
+        <div v-for="(car,) in filteredCars" :key="car.personal_id" class="data-row">
           <CarCard
             :grz="car.grz"
             :model="car.car_model?.name || ''"
@@ -73,7 +95,7 @@
             @status-added="handleStatusAdded"
           />
           <div class="status-cards">
-            <template v-for="(item, itemIndex) in tableData[rowIndex]" :key="itemIndex">
+            <template v-for="(item, itemIndex) in getTableDataForCar(car)" :key="itemIndex">
               <ServiceStatusCard
                 v-if="item"
                 :Divergence="item.divergence"
@@ -125,6 +147,60 @@ const authStore = useAuthStore()
 const authDialog = ref(null)
 const currentDate = ref('Загрузка даты...')
 const toAcceptRef = ref(null)
+const activeLetters = ref([])
+const availableLetters = ref([])
+
+// Вычисляем отфильтрованные машины
+const filteredCars = computed(() => {
+  if (activeLetters.value.length === 0) {
+    return cars.value
+  }
+
+  return cars.value.filter(car => {
+    // Получаем первую букву GRZ (игнорируем пробелы)
+    const firstLetter = car.grz.replace(/\s+/g, '').charAt(0).toUpperCase()
+    return activeLetters.value.includes(firstLetter)
+  })
+})
+
+// Функция для получения данных таблицы для конкретной машины
+const getTableDataForCar = (car) => {
+  const index = cars.value.findIndex(c => c.personal_id === car.personal_id)
+  return index !== -1 ? tableData.value[index] : []
+}
+
+// Функция для получения всех доступных букв из GRZ
+const updateAvailableLetters = () => {
+  const letters = new Set()
+  cars.value.forEach(car => {
+    const firstLetter = car.grz.replace(/\s+/g, '').charAt(0).toUpperCase()
+    if (firstLetter && /[А-ЯA-Z]/.test(firstLetter)) {
+      letters.add(firstLetter)
+    }
+  })
+  availableLetters.value = Array.from(letters).sort()
+}
+
+// Функции для управления фильтрами
+const toggleLetterFilter = (letter) => {
+  const index = activeLetters.value.indexOf(letter)
+  if (index === -1) {
+    activeLetters.value.push(letter)
+  } else {
+    activeLetters.value.splice(index, 1)
+  }
+}
+
+const clearFilters = () => {
+  activeLetters.value = []
+}
+
+// Обновляем доступные буквы при изменении cars
+watch(cars, (newCars) => {
+  if (newCars && newCars.length > 0) {
+    updateAvailableLetters()
+  }
+}, { immediate: true, deep: true })
 
 const shouldShowDivisionControls = computed(() => {
   if (!authStore.isAuth) return true
