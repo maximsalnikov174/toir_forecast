@@ -54,7 +54,9 @@
           <LetterSearch
             :cars="cars"
             :active-letters="activeLetters"
+            :active-digits="activeDigits"
             @update:activeLetters="activeLetters = $event"
+            @update:activeDigits="activeDigits = $event"
             @filter-change="handleFilterChange"
           />
         </div>
@@ -134,6 +136,7 @@ const authDialog = ref(null)
 const currentDate = ref('Загрузка даты...')
 const toAcceptRef = ref(null)
 const activeLetters = ref([])
+const activeDigits = ref([])
 
 // Функция для получения данных таблицы для конкретной машины
 const getTableDataForCar = (car) => {
@@ -143,14 +146,27 @@ const getTableDataForCar = (car) => {
 
 // Вычисляем отфильтрованные машины
 const filteredCars = computed(() => {
-  if (activeLetters.value.length === 0) {
+  if (activeLetters.value.length === 0 && activeDigits.value.length === 0) {
     return cars.value
   }
 
   return cars.value.filter(car => {
-    // Получаем первую букву GRZ (игнорируем пробелы)
-    const firstLetter = car.grz.replace(/\s+/g, '').charAt(0).toUpperCase()
-    return activeLetters.value.includes(firstLetter)
+    const grzWithoutSpaces = car.grz.replace(/\s+/g, '')
+    const firstChar = grzWithoutSpaces.charAt(0)
+
+    // Проверяем букву
+    const isLetterMatch = activeLetters.value.length === 0 ||
+                         (firstChar && /[А-ЯA-Z]/.test(firstChar) &&
+                          activeLetters.value.includes(firstChar.toUpperCase()))
+
+    // Проверяем цифру (ищем первую цифру в GRZ)
+    let isDigitMatch = activeDigits.value.length === 0
+    if (!isDigitMatch) {
+      const firstDigit = grzWithoutSpaces.match(/\d/)?.[0]
+      isDigitMatch = firstDigit && activeDigits.value.includes(firstDigit)
+    }
+
+    return isLetterMatch && isDigitMatch
   })
 })
 
@@ -422,8 +438,7 @@ onUnmounted(() => {
 
 /* Добавляем новые стили для поиска по буквам */
 .cars-header-placeholder {
-  width: 212px;
-  flex-shrink: 0;
+  width: 242px;
   display: flex;
   flex-direction: column;
 }
@@ -434,7 +449,7 @@ onUnmounted(() => {
   overflow-x: auto;
   flex: 1;
   position: relative;
-  margin-left: 10px;
+
 }
 
 .data-rows {
