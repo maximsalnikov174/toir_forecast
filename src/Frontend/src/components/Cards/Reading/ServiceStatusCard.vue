@@ -137,7 +137,7 @@
 </template>
 
 <script setup>
-import { computed, ref, onUnmounted } from 'vue';
+import { computed, ref, onUnmounted, onMounted } from 'vue';
 import { useQuasar } from 'quasar';
 import { useFilterStore } from 'src/components/Functions/FilterStoreAcceptButton';
 import { useAuthStore } from 'src/stores/useAuthStore';
@@ -166,7 +166,7 @@ const isAnimating = ref(false);
 const animationCompleted = ref(false);
 const animationProgress = ref(0);
 const animationInterval = ref(null);
-const animationDuration = 500; // 1.5 секунды для анимации
+const animationDuration = 1500; // 1.5 секунды для анимации
 
 // Добавляем состояние для отслеживания загрузки файлов
 const isUploading = ref(false);
@@ -258,21 +258,18 @@ onUnmounted(() => {
   stopAnimation();
 });
 
-const handleMouseOver = (event) => {
-  hover.value = true;
-
-  // Проверяем, есть ли файлы при наведении
-  if (event.dataTransfer && event.dataTransfer.types.includes('Files')) {
-    fileHover.value = true;
-    startAnimation();
+const handleMouseOver = () => {
+  // Не активируем ховер если идет загрузка
+  if (!isUploading.value) {
+    hover.value = true;
   }
 };
 
 const handleMouseLeave = () => {
-  hover.value = false;
-  fileHover.value = false;
-  stopAnimation();
-  resetAnimation();
+  // Сбрасываем только если нет активной загрузки файлов
+  if (!isUploading.value) {
+    resetAllStates();
+  }
 };
 
 const startAnimation = () => {
@@ -295,11 +292,6 @@ const startAnimation = () => {
     if (progress >= 100) {
       animationCompleted.value = true;
       stopAnimation();
-
-      // Автоматически сбрасываем анимацию через короткое время
-      setTimeout(() => {
-        resetAnimation();
-      }, 1000);
     }
   }, 16); // ~60 FPS
 };
@@ -312,13 +304,16 @@ const stopAnimation = () => {
   isAnimating.value = false;
 };
 
-// Добавляем функцию для полного сброса анимации
-const resetAnimation = () => {
+// Функция для полного сброса всех состояний
+const resetAllStates = () => {
+  hover.value = false;
+  dragOver.value = false;
+  dragCounter.value = 0;
+  fileHover.value = false;
   stopAnimation();
   animationProgress.value = 0;
   animationCompleted.value = false;
   isAnimating.value = false;
-  fileHover.value = false;
 };
 
 // Добавляем вычисляемое свойство для отображения иконки документа
@@ -356,17 +351,19 @@ const topBarClass = computed(() => {
 const serviceWorkId = ref(props.id);
 
 const shouldShowDocumentHover = computed(() => {
+  if (isUploading.value) return false;
   return hover.value && authStore.user?.role_id === 5;
 });
 
 const shouldShowPlusIcon = computed(() => {
+  if (isUploading.value) return false;
   return hover.value &&
          (authStore.user?.is_superuser || authStore.user?.users_organization.id === selectedDivId.value) &&
          (props.zvr_number === null || props.zvr_number === '');
 });
 
 const shouldShowHover = computed(() => {
-  if (!authStore.isAuthenticated) return false;
+  if (!authStore.isAuthenticated || isUploading.value) return false;
   return hover.value &&
          (authStore.user?.is_superuser || authStore.user?.users_organization.station_id !== null || authStore.user?.role_id === 6) &&
          !props.service_work_completed;
@@ -433,11 +430,22 @@ const handleDragLeave = (e) => {
   if (!isRole4.value) return;
   e.preventDefault();
   dragCounter.value--;
-  if (dragCounter.value === 0) {
+
+  // Сбрасываем состояния только когда все drag события завершены
+  if (dragCounter.value <= 0) {
+    dragCounter.value = 0;
     dragOver.value = false;
     fileHover.value = false;
     stopAnimation();
-    resetAnimation();
+  }
+};
+
+// Добавляем обработчик для глобального dragleave
+const handleGlobalDragLeave = (e) => {
+  // Проверяем, что курсор покидает окно браузера
+  if (e.clientY <= 0 || e.clientX <= 0 ||
+      e.clientX >= window.innerWidth || e.clientY >= window.innerHeight) {
+    resetAllStates();
   }
 };
 
@@ -450,14 +458,11 @@ const handleDragOver = (e) => {
 const handleDrop = async (event) => {
   if (!isRole4.value) return;
 
-  // Сбрасываем состояние независимо от результата
-  dragOver.value = false;
-  dragCounter.value = 0;
-  fileHover.value = false;
-  resetAnimation();
-
   const files = Array.from(event.dataTransfer.files);
-  if (files.length === 0) return;
+  if (files.length === 0) {
+    resetAllStates(); // Сбрасываем при отсутствии файлов
+    return;
+  }
 
   // Если анимация не завершена, прерываем операцию
   if (!animationCompleted.value) {
@@ -466,7 +471,7 @@ const handleDrop = async (event) => {
       message: 'Завершите процесс загрузки, удерживая файлы над карточкой',
       timeout: 1000
     });
-    return;
+    resetAllStates();
   }
 
   // Устанавливаем состояние загрузки
@@ -523,10 +528,11 @@ const handleDrop = async (event) => {
       message: 'Неожиданная ошибка при загрузке файлов',
       timeout: 3000
     });
+    resetAllStates();
   } finally {
-    // Сбрасываем состояние загрузки
     isUploading.value = false;
     uploadProgress.value = 0;
+    resetAllStates(); // Всегда сбрасываем в конце
   }
 };
 
@@ -536,7 +542,7 @@ const openModal = () => {
 
 const closeModal = () => {
   showModal.value = false;
-  hover.value = false;
+  resetAllStates();
 };
 
 const openCompletionModal = () => {
@@ -545,7 +551,7 @@ const openCompletionModal = () => {
 
 const closeCompletionModal = () => {
   showCompletionModal.value = false;
-  hover.value = false;
+  resetAllStates();
 };
 
 const formattedDate = computed(() => {
@@ -576,6 +582,15 @@ const showTopBar = computed(() => {
 const showBottomBar = computed(() => {
   return props.service_work_completed !== null;
 });
+
+onMounted(() => {
+  window.addEventListener('dragleave', handleGlobalDragLeave);
+});
+
+onUnmounted(() => {
+  window.removeEventListener('dragleave', handleGlobalDragLeave);
+});
+
 </script>
 
 <style scoped>
