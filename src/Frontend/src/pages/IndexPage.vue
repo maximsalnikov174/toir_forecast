@@ -483,10 +483,95 @@ onUnmounted(() => {
   margin-bottom: 10px;
 }
 
+/* Добавляем новые стили для поиска по буквам */
 .cars-header-placeholder {
   width: 212px;
-  margin-right: 20px;
   flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.search-by-letter {
+  border-radius: 4px;
+  margin-bottom: 10px;
+}
+
+.search-title {
+  font-size: 12px;
+  font-weight: 600;
+  margin-bottom: 1px;
+  color: #ffffff;
+}
+
+.letter-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1px;
+}
+
+.letter-btn {
+  width: 15px;
+  height: 15px;
+  border: 1px solid #ccc;
+  background: white;
+  border-radius: 3px;
+  cursor: pointer;
+  font-size: 10px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.letter-btn:hover {
+  background-color: #e3f2fd;
+  border-color: #2196f3;
+}
+
+.letter-btn.active {
+  background-color: #2196f3;
+  color: white;
+  border-color: #2196f3;
+}
+
+.clear-filter-btn {
+  width: 15px;
+  height: 15px;
+  border: 1px solid #ff6b6b;
+  background: white;
+  color: #ff6b6b;
+  border-radius: 3px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: bold;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.clear-filter-btn:hover {
+  background-color: #ff6b6b;
+  color: white;
+}
+
+/* Адаптивность для маленьких экранов */
+@media (max-width: 768px) {
+  .cars-header-placeholder {
+    width: 180px;
+  }
+
+  .letter-btn {
+    width: 20px;
+    height: 20px;
+    font-size: 10px;
+  }
+
+  .clear-filter-btn {
+    width: 20px;
+    height: 20px;
+    font-size: 12px;
+  }
 }
 
 .service-names-row {
