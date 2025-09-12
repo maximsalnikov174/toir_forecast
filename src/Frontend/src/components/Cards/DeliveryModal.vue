@@ -178,7 +178,7 @@ const barcodeCanvas = ref(null)
 const copiedCells = ref(new Set())
 const currentDeliveryIndex = ref(0)
 
-const emit = defineEmits(['close', 'update:modelValue', 'entered', 'refreshData'])
+const emit = defineEmits(['close', 'update:modelValue', 'entered', 'refreshData', 'submitSuccess'])
 
 const props = defineProps({
   modelValue: {
@@ -354,81 +354,40 @@ const getCellValue = (rowIndex, cellIndex) => {
   }
 }
 
-// Копирование текста в буфер обмена
+// Функция копирования - такая же как во втором компоненте
 const copyToClipboard = (text) => {
   if (!text || isDeliveryBlocked.value || isViewOnly.value) return
 
-  // Создаем textarea для копирования
   const textArea = document.createElement('textarea')
   textArea.value = text
   textArea.style.position = 'fixed'
-  textArea.style.top = '0'
-  textArea.style.left = '0'
-  textArea.style.opacity = '0'
-  textArea.style.width = '0'
-  textArea.style.height = '0'
-  textArea.style.pointerEvents = 'none'
-
   document.body.appendChild(textArea)
+  textArea.focus()
+  textArea.select()
 
-  try {
-    // Выбираем текст
-    textArea.select()
-    textArea.setSelectionRange(0, 99999) // Для мобильных устройств
-
-    // Пытаемся использовать современный API
-    if (navigator.clipboard && window.isSecureContext) {
-      navigator.clipboard.writeText(text).then(() => {
-        showSuccessNotify(text)
-      }).catch(() => {
-        // Fallback для HTTP
-        fallbackCopy(textArea)
-      })
-    } else {
-      // Fallback для HTTP и небезопасных контекстов
-      fallbackCopy(textArea)
-    }
-  } catch (error) {
-    console.error('Ошибка копирования:', error)
-    showNotify({
-      type: 'negative',
-      message: 'Не удалось скопировать текст',
-      timeout: 3000,
-    })
-  } finally {
-    // Всегда удаляем textarea
-    setTimeout(() => {
-      document.body.removeChild(textArea)
-    }, 100)
-  }
-}
-
-// Улучшенный fallback метод копирования
-const fallbackCopy = (textArea) => {
   try {
     const successful = document.execCommand('copy')
     if (successful) {
-      showSuccessNotify(textArea.value)
+      $q.notify({
+        message: 'Значение скопировано в буфер обмена',
+        color: 'positive',
+        position: 'top',
+        timeout: 1000
+      })
     } else {
-      throw new Error('Copy command failed')
+      throw new Error('Copy command unsuccessful')
     }
-  } catch  {
-    showNotify({
-      type: 'negative',
-      message: 'Не удалось скопировать текст. Разрешите доступ к буферу обмена.',
-      timeout: 3000,
+  } catch (err) {
+    console.error('Не удалось скопировать значение:', err)
+    $q.notify({
+      message: 'Ошибка при копировании',
+      color: 'negative',
+      position: 'top',
+      timeout: 1000
     })
+  } finally {
+    document.body.removeChild(textArea)
   }
-}
-
-// Функция для показа уведомления об успешном копировании
-const showSuccessNotify = (text) => {
-  showNotify({
-    type: 'positive',
-    message: `Скопировано: ${text}`,
-    timeout: 2000,
-    position: 'top'
-  })
 }
 
 // Сброс выделения скопированных ячеек
@@ -453,6 +412,7 @@ const handleMarkAsEntered = async () => {
   if (success) {
     emit('entered', currentDelivery.value)
     emit('refreshData')
+    emit('submitSuccess') // Добавьте это
   }
 }
 

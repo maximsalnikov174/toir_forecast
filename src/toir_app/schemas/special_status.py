@@ -17,6 +17,7 @@ class SpecialStatusWithTimestamp(TimestampMixin):
     - на реализации
     - после ВР
     """
+
     status: Optional[SpecialStatusForCarBase] = Field(
         None,
         title='Текущий статус'
@@ -28,13 +29,26 @@ class SpecialStatusWithTimestamp(TimestampMixin):
 
 
 class FullSpecialStatusSchemas(BaseModel):
+    """Пока пусто."""
+
     id: int
     name: str
 
 
 class SpecialStatusForCarSchema(BaseModel):
+    """Схема представления специального статуса ТС. FIXME (тестировать)"""
+
     special_status_id: int
     comment: Optional[str] = None
     date_left: date
     is_active: bool
     assigned_by_user_id: int
+    id: int
+
+
+class SpecialStatusForCarMoveSchema(BaseModel):
+    """Схема перевода специального статуса в архив."""
+
+    id: int
+    is_active: bool
+    date_left: date

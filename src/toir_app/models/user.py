@@ -1,5 +1,5 @@
 from fastapi_users_db_sqlalchemy import SQLAlchemyBaseUserTable
-from sqlalchemy import Column, ForeignKey, Integer, String
+from sqlalchemy import BigInteger, Column, ForeignKey, Integer, String
 from sqlalchemy.orm import Mapped, relationship
 
 from constants import PERSON_FULL_NAME_LEN
@@ -16,6 +16,14 @@ class User(SQLAlchemyBaseUserTable[int], Base):
         String(PERSON_FULL_NAME_LEN),
         nullable=False,
         comment='Фамилия пользователя'
+    )
+    tg_id = Column(
+        BigInteger,
+        unique=True,
+        index=True,
+        nullable=True,
+        default=None,
+        comment='Телеграм-аккаунт пользователя'
     )
 
     # Связи:

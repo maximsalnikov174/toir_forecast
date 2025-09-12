@@ -8,6 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload, selectinload
 
 from api.endpoints.bot import bot_schedular
+from crud.base import DAOBase
 from exception import NotFoundError
 from logger.logger import logger
 from models import (
@@ -17,6 +18,15 @@ from models import (
     SpecialStatusForCar,
     special_status_role_association
 )
+
+
+class DAOSpecialStatusForCar(DAOBase[SpecialStatusForCar]):
+    """DAO для работы с моделью специальных статусов для ТС."""
+
+    model = SpecialStatusForCar
+
+
+dao_special_status_for_car = DAOSpecialStatusForCar(SpecialStatusForCar)
 
 
 async def get_all_special_status(

@@ -133,4 +133,4 @@ class DAOBase(Generic[T]):
         """Проверяем существование объекта в БД."""
         result = await self.get_by_attribute(attr_name, attr_value, session)
         if result is not None:
-            raise ObjectIsExistException
+            raise ObjectIsExistException({attr_name: attr_value})

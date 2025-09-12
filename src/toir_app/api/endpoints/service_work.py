@@ -28,7 +28,14 @@ from crud.service_work import (
     update_completed_real_service_work,
     zvr_delete
 )
-from exception import ObjectIsExistException
+from exception import (
+    AllFilesNotUploadException,
+    BiggestFileException,
+    FilesHashSumNotUniqueException,
+    NotAllFilesSuccessfullyUpload,
+    ObjectIsExistException,
+)
+from function import compare_files
 from models import EventForBot, Organization, SpecialStatus, User
 # from schemas.docs_material import BOMRead
 from schemas.service_work import (
@@ -39,7 +46,7 @@ from schemas.service_work import (
 )
 from schemas.unit_of_bom import (
     BOMDocsCreate,
-    UnitOfBOMRead,
+    # UnitOfBOMRead,
     UnitOfBOMWithDocsCreate,
 )
 
@@ -476,17 +483,18 @@ async def insert_docs(
 
 @router.post(
     '/unit_of_bom',
-    response_model=UnitOfBOMRead,
+    # response_model=UnitOfBOMRead,
+    response_model=dict,
     status_code=status.HTTP_201_CREATED,
     dependencies=[Depends(current_user)]
 )
 async def parse_docs(
     service_work_id: int,
-    file: UploadFile,
+    files: list[UploadFile],
     user: User = Depends(current_user),
     session: AsyncSession = Depends(get_async_session),
 ):
-    """Отправка документа в карточку операции."""
+    """Отправка документов в карточку операции."""
     try:
         service_work = await dao_service_work.get(
             obj_id=service_work_id,
@@ -510,61 +518,119 @@ async def parse_docs(
         # 2. Только для пользователя с ролью Мастер/Оператор/суперюзер:
         check_user_can_add_docs_in_service_work(user)
 
-        # Получаем данные из файла pdf и загоняем их в модель:
-        data = await get_payload_data_in_pdf_file(file=file)
+        # Обрабатываем список файлов (и оставляем только уникальные pdf):
+        valid_files = await compare_files(files)
 
-        # Находим подразделение (нужен ID), указанное в документах, в БД:
-        organization = await dao_organization.get_by_attribute(
-            attr_name='name',
-            attr_value=data.unit_of_bom_doc.from_organization,
-            session=session
-        )
+        # Общий список "имя (размер)" всех поданных файлов:
+        total_files = [f'{file.filename} ({file.size})' for file in files]
 
-        # Проверяем, что ID доставки и указанный штрих-код уникальны:
-        await dao_doc_bom.check_exists(
-            attr_name='delivery',
-            attr_value=getattr(data.unit_of_bom_doc, 'delivery'),
-            session=session,
-        )
+        # Заготовка для списка дубликатов:
+        duplicate_files = []
 
-        await dao_doc_bom.check_exists(
-            attr_name='bar_code',
-            attr_value=getattr(data, 'bar_code'),
-            session=session,
-        )
+        # Заготовка для списка успешно обработанных файлов:
+        success_files: list[str] = []
 
-        # Создаем объект документа BOM:
-        bom_doc = BOMDocsCreate(
-            delivery=data.unit_of_bom_doc.delivery,
-            from_organization=organization.id,
-            service_work_id=service_work_id,
-            user_id=user.id,
-            bar_code=data.bar_code,
-        )
-        bom = await dao_doc_bom.create(obj_in=bom_doc, session=session)
+        # Перебираем уникальные файлы pdf:
+        for file in valid_files:
+            # Получаем данные из файла pdf и загоняем их в модель:
+            data = await get_payload_data_in_pdf_file(file=file)
 
-        # Создаем записи о материалах, указанные в документах:
-        for unit in data.unit_of_bom_list:
-            uob_for_create = UnitOfBOMWithDocsCreate(
-                snb=unit.snb,
-                material_name=unit.material_name,
-                material_count=unit.material_count,
-                maintenance_bom_id=bom.id
+            # Если данные не получены - игнор текущей итерации (файла):
+            if not data:
+                continue
+
+            # Находим подразделение (нужен ID), указанное в документах, в БД:
+            organization = await dao_organization.get_by_attribute(
+                attr_name='name',
+                attr_value=data.unit_of_bom_doc.from_organization,
+                session=session
             )
-            await dao_unit_of_bom.create(
-                obj_in=uob_for_create,
-                session=session,
+
+            # Проверяем, что ID доставки и указанный штрих-код уникальны:
+            try:
+                await dao_doc_bom.check_exists(
+                    attr_name='delivery',
+                    attr_value=getattr(data.unit_of_bom_doc, 'delivery'),
+                    session=session,
+                )
+
+                await dao_doc_bom.check_exists(
+                    attr_name='bar_code',
+                    attr_value=getattr(data, 'bar_code'),
+                    session=session,
+                )
+            except ObjectIsExistException as e:
+                duplicate_files.append(e.args)
+                continue
+
+            # Создаем объект документа BOM:
+            bom_doc = BOMDocsCreate(
+                delivery=data.unit_of_bom_doc.delivery,
+                from_organization=organization.id,
+                service_work_id=service_work_id,
+                user_id=user.id,
+                bar_code=data.bar_code,
             )
+
+            # FIXME Вот здесь надо просто добавлять, но не коммитить!!! FIXME <----
+            bom = await dao_doc_bom.create(obj_in=bom_doc, session=session)
+
+            # Создаем записи о материалах, указанные в документах:
+            for unit in data.unit_of_bom_list:
+                uob_for_create = UnitOfBOMWithDocsCreate(
+                    snb=unit.snb,
+                    material_name=unit.material_name,
+                    material_count=unit.material_count,
+                    maintenance_bom_id=bom.id
+                )
+
+                # FIXME И здесь надо добавлять, но тоже не коммитить!!! FIXME <----
+                await dao_unit_of_bom.create(
+                    obj_in=uob_for_create,
+                    session=session,
+                )
+
+            success_files.append(f'{file.filename} ({file.size})')
 
         # FIXME!!! Как решить проблему отката назад, если что-то пошло не так?
 
-        # Получаем обновленную карточку документа с материалами:
-        return await dao_doc_bom.get_full(obj_id=bom.id, session=session)
+        # Собираем все кривые файлы:
+        bad_filenames = [
+            item for item in total_files if item not in success_files
+        ]
 
+        # ... и если они есть - выбрасываем исключение с этим списком:
+        if bad_filenames:
+            if len(bad_filenames) < len(files):
+                raise NotAllFilesSuccessfullyUpload(bad_filenames)
+            raise AllFilesNotUploadException
+
+        return {'result': f'Загружено уникальных файлов: {len(success_files)}'}
+
+    except AllFilesNotUploadException:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail='Ни один файл не был загружен',
+        )
+    except FilesHashSumNotUniqueException:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail='В ваших файлах есть дубли (что недопустимо)',
+        )
+    except BiggestFileException as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=e.reason,
+        )
     except ObjectIsExistException:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail='Данные в файле PDF не уникальны (что недопустимо)',
+        )
+    except NotAllFilesSuccessfullyUpload as e:
+        raise HTTPException(
+            status_code=status.HTTP_206_PARTIAL_CONTENT,
+            detail=f"Не загружены файлы: {', '.join(e.reason)}",
         )
     except Exception as e:
         raise HTTPException(

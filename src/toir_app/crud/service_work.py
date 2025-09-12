@@ -720,13 +720,13 @@ async def update_completed_real_service_work(
                 detail='Сначала необходимо добавить ЗВР.'
             )
 
-        # Проверяем вложение мастером доков с ТМЦ:
-        # перед переводом в закрытие:
-        if not len(service_work.docs_in_service_work) and add_date:
-            raise HTTPException(
-                status_code=HTTPStatus.BAD_REQUEST,
-                detail='Перед завершением необходимо добавить материалы.'
-            )
+        # # Проверяем вложение мастером доков с ТМЦ:
+        # # перед переводом в закрытие:
+        # if not len(service_work.docs_in_service_work) and add_date:
+        #     raise HTTPException(
+        #         status_code=HTTPStatus.BAD_REQUEST,
+        #         detail='Перед завершением необходимо добавить материалы.'
+        #     )
 
         # TODO перед откатом закрытия (НЕ ТЕСТИРОВАЛ!!!!!!!!!!!!!!!!!!!!!!!!!!):
         if len(service_work.docs_in_service_work) and not add_date:
