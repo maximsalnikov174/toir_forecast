@@ -1,3 +1,4 @@
+from datetime import date
 from http import HTTPStatus
 from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException, Query
@@ -7,11 +8,14 @@ from core.db import get_async_session
 from core.user import current_user, current_superuser
 from crud.special_status import (
     create_association_special_statuses_and_role,
+    dao_special_status_for_car,
     get_all_special_status,
 )
 from models import Role, SpecialStatus, User
 from schemas.special_status import (
     FullSpecialStatusSchemas,
+    SpecialStatusForCarMoveSchema,
+    SpecialStatusForCarSchema,
 )
 
 router = APIRouter()
@@ -87,3 +91,38 @@ async def add_special_status_permissions_for_role(
     # FIXME почему-то без try-except не работает :(
     except Exception as e:
         raise HTTPException(HTTPStatus.BAD_REQUEST, detail=str(e))
+
+
+@router.patch(
+    '/{special_status_id}/deactivate',
+    response_model=SpecialStatusForCarSchema,
+    dependencies=[Depends(current_user)],
+    name='Перевод специального статуса в архив раньше времени.',
+    status_code=HTTPStatus.OK,
+)
+async def move_special_status_in_archive(
+    special_status_id: int,
+    session: AsyncSession = Depends(get_async_session)
+):
+    special_status = await dao_special_status_for_car.get(
+        obj_id=special_status_id,
+        session=session,
+    )
+
+    # FIXME получить ТС, к которому статус был привязан и сравнить его подразд
+    # с подразделением юзера
+
+    if special_status:
+        if not special_status.is_active:
+            raise HTTPException(HTTPStatus.BAD_REQUEST, 'Статус уже в архиве')
+
+        upd_data = SpecialStatusForCarMoveSchema(
+            id=special_status_id,
+            is_active=False,
+            date_left=date.today()
+        )
+        return await dao_special_status_for_car.update(
+            db_obj=special_status,
+            obj_in=upd_data,
+            session=session,
+        )

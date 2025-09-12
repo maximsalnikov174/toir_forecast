@@ -44,3 +44,11 @@ class SpecialStatusForCarSchema(BaseModel):
     is_active: bool
     assigned_by_user_id: int
     id: int
+
+
+class SpecialStatusForCarMoveSchema(BaseModel):
+    """Схема перевода специального статуса в архив."""
+
+    id: int
+    is_active: bool
+    date_left: date
