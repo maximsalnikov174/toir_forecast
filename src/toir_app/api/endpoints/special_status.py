@@ -102,6 +102,7 @@ async def add_special_status_permissions_for_role(
 )
 async def move_special_status_in_archive(
     special_status_id: int,
+    user: User = Depends(current_user),
     session: AsyncSession = Depends(get_async_session)
 ):
     special_status = await dao_special_status_for_car.get(
@@ -109,8 +110,18 @@ async def move_special_status_in_archive(
         session=session,
     )
 
-    # FIXME получить ТС, к которому статус был привязан и сравнить его подразд
-    # с подразделением юзера
+    # Если `цех ТС` == `цех Пользователя` или права суперпользователя):
+    if (
+        special_status.car.organization_id != user.organization_id
+        and not user.is_superuser
+    ):
+        raise HTTPException(
+            HTTPStatus.FORBIDDEN,
+            detail=(
+                'Только пользователь подразделения, '
+                f'где находится ТС {special_status.car.grz}!'
+            ),
+        )
 
     if not special_status:
         raise HTTPException(
