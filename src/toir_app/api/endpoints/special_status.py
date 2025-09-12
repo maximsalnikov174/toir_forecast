@@ -112,17 +112,22 @@ async def move_special_status_in_archive(
     # FIXME получить ТС, к которому статус был привязан и сравнить его подразд
     # с подразделением юзера
 
-    if special_status:
-        if not special_status.is_active:
-            raise HTTPException(HTTPStatus.BAD_REQUEST, 'Статус уже в архиве')
+    if not special_status:
+        raise HTTPException(
+            HTTPStatus.BAD_REQUEST,
+            f'Статус #{special_status_id} не найден',
+        )
 
-        upd_data = SpecialStatusForCarMoveSchema(
-            id=special_status_id,
-            is_active=False,
-            date_left=date.today()
-        )
-        return await dao_special_status_for_car.update(
-            db_obj=special_status,
-            obj_in=upd_data,
-            session=session,
-        )
+    if not special_status.is_active:
+        raise HTTPException(HTTPStatus.BAD_REQUEST, 'Статус уже в архиве')
+
+    upd_data = SpecialStatusForCarMoveSchema(
+        id=special_status_id,
+        is_active=False,
+        date_left=date.today()
+    )
+    return await dao_special_status_for_car.update(
+        db_obj=special_status,
+        obj_in=upd_data,
+        session=session,
+    )
