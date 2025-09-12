@@ -38,3 +38,4 @@ class SpecialStatusForCarSchema(BaseModel):
     date_left: date
     is_active: bool
     assigned_by_user_id: int
+    id: int

@@ -166,7 +166,7 @@ const isAnimating = ref(false);
 const animationCompleted = ref(false);
 const animationProgress = ref(0);
 const animationInterval = ref(null);
-const animationDuration = 1500; // 1.5 секунды для анимации
+const animationDuration = 500; // 0.5 секунды для анимации
 
 // Добавляем состояние для отслеживания загрузки файлов
 const isUploading = ref(false);
@@ -177,7 +177,7 @@ const handleRefreshData = () => {
 };
 
 const isRole4 = computed(() => {
-  return authStore.user?.role_id === 4 || authStore.user?.role_id === 2 || authStore.user?.role_id === 6 || authStore.user?.role_id === 5 ;
+  return authStore.user?.role_id === 4 || authStore.user?.role_id === 2 || authStore.user?.role_id === 5 ;
 });
 
 const showNotify = (options) => {
@@ -325,7 +325,7 @@ const resetAllStates = () => {
 
 // Добавляем вычисляемое свойство для отображения иконки документа
 const shouldShowDocumentIcon = computed(() => {
-  const isAllowedRole = authStore.user?.role_id === 4 || authStore.user?.role_id === 5;
+  const isAllowedRole = authStore.user?.role_id === 4 || authStore.user?.role_id === 5 || authStore.user?.role_id === 6;
   return isAllowedRole &&
          props.total_docs_count !== null &&
          props.total_docs_count !== undefined &&
