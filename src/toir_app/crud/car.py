@@ -1,14 +1,15 @@
 import re
 from datetime import date, timedelta
 from http import HTTPStatus
-from typing import Annotated, Any, Optional
+from typing import Annotated, Any, Optional, Sequence
 
 from fastapi import HTTPException
-from sqlalchemy import and_, or_, select
+from sqlalchemy import exists, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload, selectinload
 
 from constants import MAX_SPECIAL_STATUS_VALID, pattern_grz_input_user
+from crud.base import DAOBase
 from crud.special_status import get_special_status_by_id
 from exception import (
     AlreadyAssignedException,
@@ -28,6 +29,64 @@ from models import (
 from schemas.car import CarToDownloadInDB
 from schemas.car_model import CarModelID
 from schemas.organization import OrganizationID
+
+
+class DAOCar(DAOBase[Car]):
+    """DAO для работ с моделью `Car`."""
+
+    model = Car
+
+    async def get_service_works(
+            self,
+            car_code: int,  # подразумевается абстрактная комбинация ~Ge8g3Les5
+            station_id: Optional[int],
+            session: AsyncSession,
+            with_active_zvr: bool = True,
+    ) -> Optional[Sequence[ServiceWork]]:
+        """Получение списка неархивных `ServiceWork` для ТС.
+
+        ARGS
+        --------
+        - `car_code` уникальный идентификатор ТС;
+        - `station_id` идентификатор станции техобслуживания для фильтрации.
+            Если `None` - фильтрация по станции не применяется;
+        - `with_active_zvr=True` флаг фильтрации по активным (сам ЗВР есть,
+        но работы еще не выполнены) ЗВР.
+
+        RETURNS
+        --------
+        - `Optional[Sequence[ServiceWork]]`: отсортированный по номеру ЗВР
+        список сервисных работ или `None`, если работы не найдены.
+        """
+        stmt = (
+            select(ServiceWork)
+            .join(self.model.service_works)
+            .where(
+                self.model.id == car_code,  # <-- после тестов поменять
+                ServiceWork.in_archive.is_(False),
+            )
+        )
+
+        if with_active_zvr:
+            stmt = stmt.where(
+                ServiceWork.zvr_number.is_not(None),
+                ServiceWork.service_work_completed.is_(None),
+            )
+
+        if station_id:
+            stmt = stmt.where(ServiceWork.station_id == station_id)
+
+        result = await session.scalars(
+            stmt.options(
+                selectinload(ServiceWork.next_service),
+                selectinload(ServiceWork.car),
+            )
+            .order_by(ServiceWork.zvr_number)
+        )
+        return result.all()
+
+
+dao_car = DAOCar(Car)
 
 
 async def get_car_by_personal_id(
@@ -217,24 +276,36 @@ async def get_cars_with_request_and_special_status(
             # - поле «работа завершена фактически» не пустое
             stmt = stmt.where(ServiceWork.service_work_completed.is_not(None))
 
-    # если пользователь - сотрудник цеха эксплуатации:
-    # - нужны только ТС своего цеха и
-    # - расчётные статус "указанный и строже" и
-    # - или у ТС нет специальных статусов
-    # - или у ТС специальный статус истёк
-    # - или у ТС специальный статус "активный" и находится в указанном перечне
     else:
+
+        # Подзапрос для активных статусов машины
+        active_statuses_subq = (
+            select(SpecialStatusForCar.car_id)
+            .where(
+                SpecialStatusForCar.car_id == Car.id,
+                SpecialStatusForCar.is_active.is_(True)
+            )
+            .correlate(Car)  # ← ЯВНО УКАЗЫВАЕМ КОРРЕЛЯЦИЮ
+        )
+
+        # если пользователь - сотрудник цеха эксплуатации нужны:
+        # - только ТС своего цеха
+        # - И расчётные статус "указанный и строже"
+        # - И ... (
         stmt = stmt.where(
             Car.organization_id == organization_id,
             ServiceWork.request_status_id <= request_status_id,
             or_(
-                SpecialStatusForCar.car_id.is_(None),
-                SpecialStatusForCar.is_active.is_(False),
-                and_(
-                    SpecialStatusForCar.special_status_id.in_(
-                        special_status_ids
-                    ),
-                    SpecialStatusForCar.is_active.is_(True),
+                # машины БЕЗ активных статусов
+                ~(exists(active_statuses_subq)),
+
+                # ИЛИ машины С активными статусами из поданного СПИСКА)
+                exists(
+                    active_statuses_subq.where(
+                        SpecialStatusForCar.special_status_id.in_(
+                            special_status_ids
+                        )
+                    )
                 )
             )
         )

@@ -6,8 +6,8 @@ from fastapi import UploadFile
 
 from constants import PATTERN_DATE_OEBS
 from exception import (
+    BadTypeUploadFileException,
     BiggestFileException,
-    FileTypeValidException,
     FilesHashSumNotUniqueException,
 )
 
@@ -60,7 +60,7 @@ async def calc_pdf_hashsum(
 ) -> str:
     """Расчитывает хеш-сумму файла pdf размером до 2 Mb."""
     if upload_file.content_type != 'application/pdf':
-        raise FileTypeValidException
+        raise BadTypeUploadFileException
 
     content = await upload_file.read()
     if len(content) > size_in_mb * 1024 * 1024:
@@ -98,7 +98,7 @@ async def compare_files(elements=list[UploadFile]) -> list[UploadFile]:
 
             hashes.add(file_hash)  # обновляем список хеш-сумм
             result.append(element)  # добавляем файл к успешно пройденным
-        except FileTypeValidException:
+        except BadTypeUploadFileException:
             continue
 
     return result
