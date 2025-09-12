@@ -4,6 +4,7 @@
     :class="{ 'bg-pink-2': isLowDistance, 'selected-division': isSelectedDivision }"
     @click="copyGrzToClipboard"
     style="cursor: pointer;"
+    ref="cardRef"
   >
     <q-card-section horizontal>
       <div class="status-images-container">
@@ -21,29 +22,14 @@
             :key="index"
             class="status-image-wrapper"
             :class="{ 'small-image': activeStatuses.length > 1 }"
+            @mouseenter="showStatusPopup(status, $event)"
+            @mouseleave="hideStatusPopup"
           >
             <q-img
               :src="getStatusImage(status.special_status_id)"
               class="status-image"
               :class="{ 'small': activeStatuses.length > 1 }"
             />
-            <q-tooltip
-              class="bg-red text-body2"
-              anchor="top middle"
-              self="bottom middle"
-              :offset="[0, 10]"
-            >
-              <div class="tooltip-content">
-                <div v-if="status.comment" class="tooltip-row">
-                  <q-icon name="comment" size="sm" />
-                  <span>{{ status.comment }}</span>
-                </div>
-                <div v-if="status.date_left" class="tooltip-row">
-                  <q-icon name="event" size="sm" />
-                  <span>До: {{ formatDate(status.date_left) }}</span>
-                </div>
-              </div>
-            </q-tooltip>
           </div>
 
           <!-- Плюсик для добавления статуса -->
@@ -61,6 +47,36 @@
       </q-card-section>
     </q-card-section>
 
+    <!-- Попап с информацией о статусе (вне карточки) -->
+    <div
+      v-if="currentStatus && isPopupVisible"
+      class="status-popup-global"
+      :style="popupStyle"
+      @mouseenter="keepPopupVisible"
+      @mouseleave="hideStatusPopup"
+      ref="statusPopupRef"
+    >
+      <div class="popup-header">
+        <span>Статус автомобиля</span>
+        <q-icon
+          name="close"
+          class="close-icon"
+          @click="openRemoveStatusDialog(currentStatus)"
+        />
+      </div>
+
+      <div class="popup-content">
+        <div v-if="currentStatus.comment" class="popup-row">
+          <q-icon name="comment" size="sm" />
+          <span>{{ currentStatus.comment }}</span>
+        </div>
+        <div v-if="currentStatus.date_left" class="popup-row">
+          <q-icon name="event" size="sm" />
+          <span>До: {{ formatDate(currentStatus.date_left) }}</span>
+        </div>
+      </div>
+    </div>
+
     <q-dialog v-model="showAddStatusDialog">
       <AddCarSpecialStatus
         :car-id="id"
@@ -69,11 +85,26 @@
         @submit-success="onStatusAdded"
       />
     </q-dialog>
+
+    <!-- Диалог подтверждения удаления статуса -->
+    <q-dialog v-model="showRemoveStatusDialog" persistent>
+      <q-card>
+        <q-card-section class="row items-center">
+          <q-avatar icon="warning" color="primary" text-color="white" />
+          <span class="q-ml-sm">Вы хотите убрать статус?</span>
+        </q-card-section>
+
+        <q-card-actions align="right">
+          <q-btn flat label="Отмена" color="primary" v-close-popup />
+          <q-btn flat label="Подтвердить" color="primary" @click="removeStatus" />
+        </q-card-actions>
+      </q-card>
+    </q-dialog>
   </q-card>
 </template>
 
 <script>
-import { defineComponent, computed, ref } from 'vue'
+import { defineComponent, computed, ref, nextTick } from 'vue'
 import { useQuasar } from 'quasar'
 import AddCarSpecialStatus from '../AddCarSpecialStatus.vue'
 import { useFilterStore } from 'src/components/Functions/FilterStoreAcceptButton'
@@ -121,10 +152,18 @@ export default defineComponent({
       default: () => []
     }
   },
-  emits: ['status-added'],
+  emits: ['status-added', 'status-removed'],
   setup(props, { emit }) {
     const $q = useQuasar()
     const showAddStatusDialog = ref(false)
+    const showRemoveStatusDialog = ref(false)
+    const statusToRemove = ref(null)
+    const isPopupVisible = ref(false)
+    const isHoveringPopup = ref(false)
+    const currentStatus = ref(null)
+    const popupPosition = ref({ top: 0, left: 0 })
+    const cardRef = ref(null)
+    const statusPopupRef = ref(null)
     const { selectedDivId } = useFilterStore()
     const authStore = useAuthStore()
 
@@ -144,6 +183,14 @@ export default defineComponent({
       return authStore.user?.is_superuser || authStore.user?.users_organization.id === selectedDivId.value
     })
 
+    const popupStyle = computed(() => {
+      return {
+        top: `${popupPosition.value.top}px`,
+        left: `${popupPosition.value.left}px`,
+        display: isPopupVisible.value ? 'block' : 'none'
+      }
+    })
+
     const getStatusImage = (statusId) => {
       switch(statusId) {
         case 1: return status1
@@ -161,9 +208,108 @@ export default defineComponent({
       return date.toLocaleDateString('ru-RU')
     }
 
+    // Функция для нахождения максимального z-index на странице
+    const findMaxZIndex = () => {
+      const allElements = document.querySelectorAll('*')
+      let maxZIndex = 9999998
+
+      allElements.forEach(el => {
+        if (el === statusPopupRef.value) return // Пропускаем сам попап
+
+        const zIndex = parseInt(window.getComputedStyle(el).zIndex)
+        if (!isNaN(zIndex) && zIndex > maxZIndex) {
+          maxZIndex = zIndex
+        }
+      })
+
+      return maxZIndex + 1
+    }
+
+    // Функция для установки максимального z-index
+    const setMaxZIndex = () => {
+      if (statusPopupRef.value) {
+        const maxZIndex = findMaxZIndex()
+        statusPopupRef.value.style.zIndex = maxZIndex.toString()
+      }
+    }
+
+    const showStatusPopup = (status, event) => {
+      currentStatus.value = status
+
+      // Получаем позицию элемента статуса относительно документа
+      const statusElement = event.target
+      const statusRect = statusElement.getBoundingClientRect()
+
+      // Позиционируем попап относительно документа
+      popupPosition.value = {
+        top: statusRect.bottom + window.scrollY - 340,
+        left: statusRect.left + window.scrollX
+      }
+
+      isPopupVisible.value = true
+      isHoveringPopup.value = false
+
+      // Устанавливаем максимальный z-index после отображения попапа
+      nextTick(() => {
+        setMaxZIndex()
+      })
+    }
+
+    const hideStatusPopup = () => {
+      isHoveringPopup.value = false
+      // Добавляем небольшую задержку перед скрытием, чтобы можно было переместить курсор на попап
+      setTimeout(() => {
+        if (!isHoveringPopup.value) {
+          isPopupVisible.value = false
+        }
+      }, 100)
+    }
+
+    const keepPopupVisible = () => {
+      isHoveringPopup.value = true
+    }
+
     const openAddStatusDialog = () => {
       if (showPlusIcon.value) {
         showAddStatusDialog.value = true
+      }
+    }
+
+    const openRemoveStatusDialog = (status) => {
+      if (showPlusIcon.value) {
+        statusToRemove.value = status
+        isPopupVisible.value = false // Скрываем попап при открытии диалога
+        showRemoveStatusDialog.value = true
+      }
+    }
+
+    const removeStatus = async () => {
+      try {
+        // Здесь должен быть API-запрос для удаления статуса
+        // Например: await api.removeCarStatus(statusToRemove.value.id)
+
+        // После успешного удаления:
+        $q.notify({
+          message: 'Статус успешно удален',
+          color: 'positive',
+          position: 'top',
+          timeout: 1000
+        })
+
+        // Эмитируем событие для обновления родительского компонента
+        emit('status-removed', statusToRemove.value)
+
+        // Закрываем диалог
+        showRemoveStatusDialog.value = false
+        statusToRemove.value = null
+      } catch (error) {
+        console.error('Ошибка при удалении статуса:', error)
+        $q.notify({
+          message: 'Ошибка при удалении статуса',
+          color: 'negative',
+          position: 'top',
+          timeout: 1000
+        })
       }
     }
 
@@ -213,9 +359,20 @@ export default defineComponent({
       formatDate,
       copyGrzToClipboard,
       showAddStatusDialog,
+      showRemoveStatusDialog,
       openAddStatusDialog,
+      openRemoveStatusDialog,
+      removeStatus,
       showPlusIcon,
-      onStatusAdded
+      onStatusAdded,
+      showStatusPopup,
+      hideStatusPopup,
+      keepPopupVisible,
+      isPopupVisible,
+      currentStatus,
+      popupStyle,
+      cardRef,
+      statusPopupRef
     }
   }
 })
@@ -232,6 +389,7 @@ export default defineComponent({
   margin-right: 20px;
   flex-shrink: 0;
   transition: transform 0.2s;
+  position: relative;
 }
 
 .car-card:hover {
@@ -356,13 +514,46 @@ export default defineComponent({
   margin-left: 5px;
 }
 
-.tooltip-content {
+/* Стили для глобального попапа статуса (вне карточки) */
+.status-popup-global {
+  position: fixed;
+  z-index: 10000; /* Базовый высокий z-index */
+  background: white;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  padding: 10px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+  min-width: 200px;
+  pointer-events: auto;
+}
+
+.popup-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+  font-weight: bold;
+  border-bottom: 1px solid #eee;
+  padding-bottom: 5px;
+}
+
+.close-icon {
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 50%;
+}
+
+.close-icon:hover {
+  background-color: rgba(0, 0, 0, 0.1);
+}
+
+.popup-content {
   display: flex;
   flex-direction: column;
   gap: 6px;
 }
 
-.tooltip-row {
+.popup-row {
   display: flex;
   align-items: center;
   gap: 8px;
