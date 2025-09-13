@@ -204,7 +204,9 @@ async def get_active_service_work_list_by_car(
     if request_status_id is not None:
         stmt = stmt.where(ServiceWork.request_status_id <= request_status_id)
 
-    result = await session.scalars(stmt)
+    result = await session.scalars(
+        stmt.options(selectinload(ServiceWork.station))  # догружаем станции
+    )
     return result.all()
 
 
