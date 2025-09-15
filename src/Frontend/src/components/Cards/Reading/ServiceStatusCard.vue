@@ -325,7 +325,7 @@ const resetAllStates = () => {
 
 // Добавляем вычисляемое свойство для отображения иконки документа
 const shouldShowDocumentIcon = computed(() => {
-  const isAllowedRole = authStore.user?.role_id === 4 || authStore.user?.role_id === 5 || authStore.user?.role_id === 6;
+  const isAllowedRole = authStore.user?.role_id === 4 || authStore.user?.role_id === 5 || authStore.user?.role_id === 6 || authStore.user?.role_id === 1;
   return isAllowedRole &&
          props.total_docs_count !== null &&
          props.total_docs_count !== undefined &&
@@ -365,6 +365,8 @@ const shouldShowDocumentHover = computed(() => {
 
 const shouldShowPlusIcon = computed(() => {
   if (isUploading.value) return false;
+  if (authStore.user?.role_id === 1) return false; // Не показывать для role_id = 1
+
   return hover.value &&
          (authStore.user?.is_superuser || authStore.user?.users_organization.id === selectedDivId.value) &&
          (props.zvr_number === null || props.zvr_number === '');
@@ -372,6 +374,8 @@ const shouldShowPlusIcon = computed(() => {
 
 const shouldShowHover = computed(() => {
   if (!authStore.isAuthenticated || isUploading.value) return false;
+  if (authStore.user?.role_id === 1) return false; // Не показывать для role_id = 1
+
   return hover.value &&
          (authStore.user?.is_superuser || authStore.user?.users_organization.station_id !== null || authStore.user?.role_id === 6) &&
          !props.service_work_completed;
