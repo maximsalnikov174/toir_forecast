@@ -168,6 +168,7 @@ import JsBarcode from 'jsbarcode'
 import { useDeliveryActions } from 'src/components/Functions/useDeliveryActions'
 import { storeToRefs } from 'pinia'
 import { useAuthStore } from 'src/stores/useAuthStore'
+import { ROLES } from '../../constants'
 
 const $q = useQuasar()
 const showModal = ref(false)
@@ -204,7 +205,7 @@ const { user } = storeToRefs(authStore)
 
 // Проверка роли пользователя (только просмотр для role_id = 4)
 const isViewOnly = computed(() => {
-  return user.value?.role_id === 4 || user.value?.role_id === 2 || user.value?.role_id === 6 || user.value?.role_id === 1
+  return user.value?.role_id === ROLES.Read_only || user.value?.role_id === ROLES.Edits_his_workshop || user.value?.role_id === ROLES.Distributor_controller || user.value?.role_id === ROLES.Read_only
 })
 
 const {
@@ -221,7 +222,7 @@ const isDeliveryBlocked = computed(() => {
 
 // Проверка, требуется ли перемещение (для role_id = 4)
 const showTransferWarning = computed(() => {
-  return user.value?.role_id === 5 && currentDelivery.value.transfer === true
+  return user.value?.role_id === ROLES.Operator && currentDelivery.value.transfer === true
 })
 
 // Вычисляемое свойство для массива доставок (обновлено для нового формата)
