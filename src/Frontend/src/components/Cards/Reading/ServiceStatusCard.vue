@@ -111,7 +111,7 @@
       :serviceWorkId="serviceWorkId"
       @close="closeModal"
       @submitted="$emit('submitted')"
-      :onSubmitSuccess="handleApply"
+
     />
 
     <WindowCompletion
@@ -119,7 +119,7 @@
       :serviceWorkId="serviceWorkId"
       @close="closeCompletionModal"
       @submitted="$emit('submitted')"
-      :onSubmitSuccess="handleApply"
+
       :onSubmitSuccessMaster="onSubmitSuccessMaster"
     />
 
@@ -130,7 +130,6 @@
       @close="closeDeliveryModal"
       @refresh-data="handleRefreshData"
       @submit-success="onSubmitSuccessMaster"
-      :bar-code="barCodeValue"
       :zvr_number="zvr_number"
     />
   </div>

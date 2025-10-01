@@ -27,8 +27,6 @@
 
     <LoginRegisterDialog
       ref="authDialog"
-      @login="handleLogin"
-      @register="handleRegister"
       @close="handleDialogClose"
     />
 
@@ -57,7 +55,6 @@
             :active-digits="activeDigits"
             @update:activeLetters="activeLetters = $event"
             @update:activeDigits="activeDigits = $event"
-            @filter-change="handleFilterChange"
           />
         </div>
         <div class="service-names-row">
