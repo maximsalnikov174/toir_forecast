@@ -1,14 +1,25 @@
 from asyncio import create_task, sleep
+from typing import Union
 
 from aiogram.types import Message
+from aiogram.exceptions import TelegramBadRequest
 
-from constants import KEYBOARD_DELETE_FROM_SECONDS
+from constants import KEYBOARD_BASE_ALIVE_IN_SECONDS
 
 
-async def delete_message(message: Message, delay: int) -> None:  # noqa: E501 FIXME -> return type
-    """Удаляет сообщение после указанного в секундах времени."""
+async def delete_message(message: Message, delay: Union[int, float]) -> None:  # noqa: E501 FIXME -> return type
+    """Удаляет сообщение после указанного в секундах времени.
+
+    Exception
+    ---------
+        `TelegramBadRequest`: если сообщение уже удалено - просто пропускаем.
+    """
     await sleep(delay)
-    await message.delete()
+
+    try:
+        await message.delete()
+    except TelegramBadRequest:
+        pass
 
 
 async def fast_remove_keyboard(message: Message) -> None:
@@ -18,7 +29,7 @@ async def fast_remove_keyboard(message: Message) -> None:
 
 async def create_task_for_delete_message_after_delay(
         message: Message,
-        delay: int = KEYBOARD_DELETE_FROM_SECONDS,
+        delay: Union[int, float] = KEYBOARD_BASE_ALIVE_IN_SECONDS,
 ) -> None:
     """Создает задачу для удаления сообщения (в т.ч. с клавиатурой).
 

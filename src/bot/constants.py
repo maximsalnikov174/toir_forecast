@@ -18,4 +18,5 @@ KEYBOARD_WIDTH = 3
 MIN_KEYBOARD_WIDTH = 1
 
 # Общее время после нажатия кнопки (предполагается, что на проде это будет 60+)
-KEYBOARD_DELETE_FROM_SECONDS = 10
+KEYBOARD_BASE_ALIVE_IN_SECONDS = .1
+KEYBOARD_MAX_ALIVE_IN_SECONDS = 30

@@ -3,7 +3,7 @@ from __future__ import annotations
 import asyncio
 from http import HTTPStatus
 from types import TracebackType
-from typing import Any, Type
+from typing import Any, Optional, Type
 
 from aiohttp import ClientError, ClientSession, ClientTimeout
 
@@ -15,7 +15,8 @@ from constants import (
 )
 from core.config import settings
 from exception import NoConnectToBackendException
-from backend_path import CAR_PATH, SERVICE_WORK_PATH
+from backend_path import CAR_PATH, SERVICE_WORK_PATH, USER_PATH
+from schemas.service_work import ActiveServiceWorksSchema
 
 
 class BackendApiGateway():
@@ -27,9 +28,39 @@ class BackendApiGateway():
         sock_read=SECONDS_FOR_SESSION_READ_DATA,  # время на чтение данных
     )
 
-    def __init__(self) -> None:
+    def __init__(self, token: Optional[str] = None) -> None:
         """Создание экземпляра (пока без сессии)."""
         self._session: ClientSession | None = None
+        self._token: Optional[str] = token  # Приватное поле для токена
+
+    @property
+    def token(self) -> Optional[str]:
+        """Геттер для токена."""
+        return self._token
+
+    @token.setter
+    def token(self, value: str) -> None:
+        """Сеттер для токена."""
+        self._token = value
+
+    def _get_headers(self) -> dict[str, str]:
+        "Формирование словаря для передачи токена пользователя."
+        return {
+            'accept': 'application/json',
+            'Authorization': f'Bearer {self._token}'
+        }
+
+    async def get_user_token(self, telegram_id: int) -> Optional[str]:
+        """Entrypoint для получения user-токена по telegram_id."""
+        result = await self._fetch_api_data(
+            method='get',
+            rel_path=(
+                f'{USER_PATH}/secret/'
+                f'get_token_for_use_in_telegram/{telegram_id}'
+            )
+        )
+        self._token = result.get('access_token')
+        return self._token
 
     async def __aenter__(self) -> BackendApiGateway:
         """Создаёт сессию при входе в контекст."""
@@ -91,14 +122,15 @@ class BackendApiGateway():
         """
         url = f'{self.root_url}/{path.lstrip("/")}'
         async with self.session.request(method, url, **kwargs) as resp:
+            data = await resp.json()
+
             if resp.status in (HTTPStatus.OK, HTTPStatus.CREATED):
-                data = await resp.json()
                 return data
-            if resp.status >= HTTPStatus.BAD_REQUEST:
-                body = await resp.text()
-                raise RuntimeError(f'Backend replied {resp.status}: {body}')
-            # Если обрабатывать другие статусы:
-            return {'data': '...'}  # заглушка
+            if resp.status == HTTPStatus.BAD_REQUEST:
+                return {'result': data['detail'], 'status': resp.status}
+            else:
+                # FIXME (пока не знаю, как работает)
+                raise RuntimeError(f'Backend replied {resp.status}: {data}')
 
     async def _fetch_api_data(
             self,
@@ -163,8 +195,57 @@ class BackendApiGateway():
         """Получение архива `service_work` по `ID` выбранного ТС."""
         return await self._fetch_api_data(
             method='get',
-            rel_path=f'{CAR_PATH}/get_history?car_id={path}',  # 145 или 106
+            rel_path=f'{CAR_PATH}/{path}',
+        )
+
+    async def get_service_work_for_current_car(
+            self, car_attr: str,
+    ) -> list[ActiveServiceWorksSchema]:
+        """Получение списка активных работ (с ЗВР) для клавиатуры мастера.
+
+        Здесь надо сделать, чтобы мастер видел только работы своей мастерской!
+        """
+        return await self._fetch_api_data(
+            method='get',
+            rel_path=f'{CAR_PATH}/{car_attr}/service_work'
+        )
+
+    async def completed_real_service_work(
+            self,
+            service_work_id: int,
+    ):
+        """Фиксация факта фактического завершения выбранной работы."""
+        try:
+            result = await self._fetch_api_data(
+                method='PATCH',
+                rel_path=(
+                    f'{SERVICE_WORK_PATH}/de_facto_completed/'
+                    f'?service_work_id={service_work_id}'
+                ),
+                headers=self._get_headers(),
+            )
+            return result
+        except Exception as e:
+            print(e)
+
+    async def get_token(
+            self,
+            chat_user_id: int,
+    ):
+        """Получение токена для выполнения запросов, требующих полномочий."""
+        return await self._fetch_api_data(
+            method='get',
+            rel_path=(
+                f'{USER_PATH}/secret/get_token_for_use_in_telegram/'
+                f'{chat_user_id}'
+            )
         )
 
 
 backend_gateway = BackendApiGateway()
+
+
+async def get_connector():
+    """Создание подключения к бэкенду через точку входа."""
+    async with backend_gateway as gateway:
+        yield gateway

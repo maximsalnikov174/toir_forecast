@@ -6,3 +6,5 @@ class BotCommand(Enum):
 
     CAR = 'car_'
     SERVICE_WORK = 'service_work_'
+    SERVICE_WORK_DONE = 'work_done'
+    SERVICE_WORK_BACK = 'work_back'
