@@ -1,10 +1,12 @@
 import re
+import secrets
+import uuid
 from datetime import date, timedelta
 from http import HTTPStatus
 from typing import Annotated, Any, Optional, Sequence
 
 from fastapi import HTTPException
-from sqlalchemy import exists, or_, select
+from sqlalchemy import exists, or_, select, func
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload, selectinload
 
@@ -30,15 +32,136 @@ from schemas.car import CarToDownloadInDB
 from schemas.car_model import CarModelID
 from schemas.organization import OrganizationID
 
+STANDARD_UUID_HEX_LENGTH = 32
+
+
+class CarsUUID():
+    """Уникальный идентификатор для ТС."""
+
+    def generate_car_uuid(self, value: Optional[str] = None) -> str:
+        """Генерация 32-х значного набора из символов 0-9, a-z, A-Z (опц).
+
+        Args:
+            value: `uuid5` без A-Z (воспроизводимое значение (для ГРЗ))
+            None: `uuid4` (для однократной генерации с записью в БД)
+        """
+        uuid_hex = (
+            uuid.uuid5(uuid.NAMESPACE_URL, value) if value else uuid.uuid4()
+        ).hex
+        result = [None] * len(uuid_hex)  # резервирует длину строки
+
+        for i, el in enumerate(uuid_hex):
+            # Для случайных UUID - добавляем рандом в регистр букв
+            if el.isalpha() and not value:
+                result[i] = el.upper() if secrets.randbelow(2) == 0 else el
+            else:  # Для детерминированных UUID оставляем как есть
+                result[i] = el
+
+        return ''.join(result)
+
+    def get_uuid_substring(
+            self,
+            seed_value: str,
+            length: int = 5,
+    ) -> str:
+        """Возвращает случайную подстроку из поданного (фиксированного) UUID.
+
+        Args:
+            seed_value: значение для генерации детерминированного UUID
+            length: длина подстроки (1-32)
+
+        Returns:
+            Случайная подстрока указанной длины.
+        """
+        if length <= 0 or length > STANDARD_UUID_HEX_LENGTH:
+            raise ValueError(
+                f'Длина должна быть от 1 до {STANDARD_UUID_HEX_LENGTH}'
+            )
+
+        full_value = self.generate_car_uuid(seed_value)  # в нижнем регистре
+
+        if len(full_value) != STANDARD_UUID_HEX_LENGTH:
+            raise ValueError(
+                f'Неверная длина UUID. Ожидается {STANDARD_UUID_HEX_LENGTH}, '
+                f'получено {len(full_value)}')
+
+        max_start_position = STANDARD_UUID_HEX_LENGTH - length
+        start_position = secrets.randbelow(max_start_position + 1)
+        return full_value[start_position:start_position + length]
+
+    def generate_uuids_list(self, count: int) -> list[str]:
+        """Создаёт необходимое количество uuids для записи в БД."""
+        if count < 1:
+            raise ValueError('Количество должна быть больше 0')
+
+        result: set[str] = set()
+        while len(result) < count:
+            result.add(self.generate_car_uuid())
+        return list(result)
+
 
 class DAOCar(DAOBase[Car]):
     """DAO для работ с моделью `Car`."""
 
     model = Car
 
+    async def get_total_count_of_active_cars(
+            self, session: AsyncSession
+    ) -> int:
+        """Получение количества активных ТС (для добавления UUIDs ТС)."""
+        base_query = select(self.model).where(self.model.in_archive.is_(False))
+
+        # Создаем запрос подсчета на основе базового:
+        count_query = select(func.count()).select_from(base_query.subquery())
+        return (await session.execute(count_query)).scalar_one()
+
+    async def get_all_active_cars(
+            self, session: AsyncSession, only_without_tg_uuid: bool = False,
+    ) -> Sequence[Car]:
+        """Получение всех активных ТС (для добавления UUIDs ТС).
+
+        Args:
+            only_without_tg_uuid: если нужны только ТС без tg_uuid
+        """
+        base_query = select(self.model).where(self.model.in_archive.is_(False))
+
+        if only_without_tg_uuid:
+            base_query = base_query.where(self.model.tg_uuid.is_not(None))
+
+        return (await session.scalars(base_query)).all()
+
+    async def add_uuid_to_active_cars(
+            self, session: AsyncSession
+    ) -> bool:
+        """Добавление UUID к активным ТС в базе, не имеющим tg_uuid."""
+        try:
+            # Получаем активные машины
+            active_cars = await self.get_all_active_cars(
+                session, only_without_tg_uuid=True
+            )
+
+            if not active_cars:
+                return True  # Нет активных ТС без tg_uuid
+
+            # Генерируем нужное количество UUID
+            uuid_generator = CarsUUID()
+            uuid_list = uuid_generator.generate_uuids_list(len(active_cars))
+
+            # Назначаем UUID:
+            for car, car_uuid in zip(active_cars, uuid_list):
+                car.tg_uuid = car_uuid
+                session.add(car)
+
+            await session.commit()
+            return True
+
+        except Exception as e:
+            await session.rollback()
+            raise e
+
     async def get_service_works(
             self,
-            car_code: int,  # подразумевается абстрактная комбинация ~Ge8g3Les5
+            car_code: str,  # абстрактная комбинация ~Ge8g3Les5...
             station_id: Optional[int],
             session: AsyncSession,
             with_active_zvr: bool = True,
@@ -62,7 +185,7 @@ class DAOCar(DAOBase[Car]):
             select(ServiceWork)
             .join(self.model.service_works)
             .where(
-                self.model.id == car_code,  # <-- после тестов поменять
+                self.model.tg_uuid == car_code,
                 ServiceWork.in_archive.is_(False),
             )
         )

@@ -191,23 +191,29 @@ class BackendApiGateway():
         # Если дошёл - значит бэк не отвечает:
         raise NoConnectToBackendException(last_error)
 
-    async def get_car_info(self, path: int) -> dict:
-        """Получение архива `service_work` по `ID` выбранного ТС."""
+    async def get_car_info(self, path: str) -> dict:
+        """Получение архива `service_work` по `tg_UUID` выбранного ТС."""
         return await self._fetch_api_data(
             method='get',
-            rel_path=f'{CAR_PATH}/{path}',
+            rel_path=f'{CAR_PATH}/by_tg_uuid/{path}',
         )
 
     async def get_service_work_for_current_car(
-            self, car_attr: str,
+            self, car_attr: str, station_id: Optional[int] = None,
     ) -> list[ActiveServiceWorksSchema]:
         """Получение списка активных работ (с ЗВР) для клавиатуры мастера.
 
-        Здесь надо сделать, чтобы мастер видел только работы своей мастерской!
+        ## Params:
+            - Мастер видит только работы своей мастерской!
         """
+        params = {}
+        if station_id is not None:
+            params['station_id'] = station_id
+
         return await self._fetch_api_data(
             method='get',
-            rel_path=f'{CAR_PATH}/{car_attr}/service_work'
+            rel_path=f'{CAR_PATH}/{car_attr}/service_work',
+            params=params,
         )
 
     async def completed_real_service_work(

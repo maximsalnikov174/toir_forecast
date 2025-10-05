@@ -40,11 +40,11 @@ async def get_cars_active_service_work(
 
     async with backend_gateway as connector:
         if message.text:
-            car_id = message.text.split(BotCommand.CAR.value)[1]
-            if car_id.isdigit():
+            car_uuid = message.text.split(BotCommand.CAR.value)[1]
+            if car_uuid.isascii():
                 # Выполняем запросы к бэкенду:
                 # - получаем информацию по ТС
-                car = await connector.get_car_info(path=int(car_id))
+                car = await connector.get_car_info(path=car_uuid)
                 # - определяем полномочия текущего пользователя
                 user_data = await connector.get_token(message.chat.id)
 
@@ -52,18 +52,21 @@ async def get_cars_active_service_work(
 
                 # Сохранение состояния о ТС
                 await state.update_data(
-                    car_id=car_id,
+                    car_uuid=car_uuid,
                     car_grz=car.get('grz'),
                     user_permission=user_data['token'],
                     user_info=user_data['user'],
                     message_auto_delete=True,
                 )
 
-        data = await connector.get_service_work_for_current_car(car_id)
+        service_works = await connector.get_service_work_for_current_car(
+            car_attr=car_uuid,
+            station_id=user_data['user']['users_organization']['station_id']
+        )
 
         # Если работы есть (возможно, несколько):
-        if len(data):
-            buttons = await build_zvr_list_buttons(data, state)
+        if len(service_works):
+            buttons = await build_zvr_list_buttons(service_works, state)
 
             msg = f"{CommonAnswer.ACTIVE_WORKS}{hbold(car['grz'])}:"
             answer_message = await message.answer(
@@ -174,10 +177,13 @@ async def back_to_active_service_work_list(
         Пользователь, находясь внутри выбранного ЗВР, нажал кнопку `назад`.
     """
     fsm_data = await state.get_data()
+    user_data = fsm_data.get('user_info')
+    station_id = user_data['users_organization']['station_id']
 
     async with backend_gateway as connector:
         data = await connector.get_service_work_for_current_car(
-            car_attr=fsm_data.get('car_id'),
+            car_attr=fsm_data.get('car_uuid'),
+            station_id=station_id,
         )
 
         # Если работы есть (возможно, несколько):

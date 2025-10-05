@@ -26,6 +26,13 @@ class Car(Base):
         default=False,
         comment='Флаг нахождения в архиве (при списании/продаже)'
     )
+    tg_uuid = Column(
+        String(32),
+        nullable=True,
+        unique=True,
+        default=None,
+        comment='Уникальный UUID ТС',
+    )
     # Связи:
     car_model_id = Column(
         Integer,

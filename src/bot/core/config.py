@@ -12,6 +12,9 @@ class Settings(BaseSettings):
     # если бэкенд запущен в докере на локальном хосте
     backend_api_url: str = 'http://localhost:8877'
 
+    # # если бэкенд запущен локально
+    # backend_api_url: str = 'http://localhost:8000'
+
     # # при локальном запуске бота для обращения к проду 131:
     # backend_api_url: str = 'http://toir.atu.mmk.ru:8877'
 

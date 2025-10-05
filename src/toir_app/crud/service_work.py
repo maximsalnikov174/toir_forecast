@@ -204,7 +204,9 @@ async def get_active_service_work_list_by_car(
     if request_status_id is not None:
         stmt = stmt.where(ServiceWork.request_status_id <= request_status_id)
 
-    result = await session.scalars(stmt)
+    result = await session.scalars(
+        stmt.options(selectinload(ServiceWork.station))  # догружаем станции
+    )
     return result.all()
 
 
@@ -709,6 +711,12 @@ async def update_completed_real_service_work(
     )
 
     if service_work:
+        if service_work.service_work_completed:
+            raise HTTPException(
+                status_code=HTTPStatus.BAD_REQUEST,
+                detail='Дата фактического завершения работ уже установлена.'
+            )
+
         check_users_can_edit_service_work(
             user=user,
             service_work=service_work,
