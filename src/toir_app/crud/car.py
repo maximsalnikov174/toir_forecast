@@ -126,7 +126,7 @@ class DAOCar(DAOBase[Car]):
         base_query = select(self.model).where(self.model.in_archive.is_(False))
 
         if only_without_tg_uuid:
-            base_query = base_query.where(self.model.tg_uuid.is_not(None))
+            base_query = base_query.where(self.model.tg_uuid.is_(None))
 
         return (await session.scalars(base_query)).all()
 
@@ -141,7 +141,7 @@ class DAOCar(DAOBase[Car]):
             )
 
             if not active_cars:
-                return True  # Нет активных ТС без tg_uuid
+                return False  # Нет активных ТС без tg_uuid
 
             # Генерируем нужное количество UUID
             uuid_generator = CarsUUID()
