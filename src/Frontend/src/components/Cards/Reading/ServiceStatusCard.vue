@@ -325,7 +325,7 @@ const resetAllStates = () => {
 
 // Добавляем вычисляемое свойство для отображения иконки документа
 const shouldShowDocumentIcon = computed(() => {
-  const isAllowedRole = authStore.user?.role_id === ROLES.Master || authStore.user?.role_id === ROLES.Operator || authStore.user?.role_id === ROLES.Distributor_controller || authStore.user?.role_id === ROLES.Read_only;
+  const isAllowedRole = authStore.user?.role_id === ROLES.Master || authStore.user?.role_id === ROLES.Operator || authStore.user?.role_id === ROLES.Distributor_controller || authStore.user?.role_id === ROLES.Read_only || authStore.user?.role_id === ROLES.Edits_his_workshop;
   return isAllowedRole &&
          props.total_docs_count !== null &&
          props.total_docs_count !== undefined &&
