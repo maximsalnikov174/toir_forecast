@@ -27,8 +27,6 @@
 
     <LoginRegisterDialog
       ref="authDialog"
-      @login="handleLogin"
-      @register="handleRegister"
       @close="handleDialogClose"
     />
 
@@ -57,7 +55,6 @@
             :active-digits="activeDigits"
             @update:activeLetters="activeLetters = $event"
             @update:activeDigits="activeDigits = $event"
-            @filter-change="handleFilterChange"
           />
         </div>
         <div class="service-names-row">
@@ -124,6 +121,7 @@ import { getCurrentDateInDB } from 'src/components/Functions/CurrentDateInDB'
 import ColorsOfRepairShops from '../components/Cards/ColorsOfRepairShops.vue'
 import { masterApi } from 'src/components/Functions/masterApi.js'
 import LetterSearch from '../components/Cards/Reading/LetterSearch.vue'
+import { ROLES } from '../constants'
 
 const loading = ref(false)
 const showScrollButton = ref(false)
@@ -172,6 +170,7 @@ const filteredCars = computed(() => {
 
 const shouldShowDivisionControls = computed(() => {
   if (!authStore.isAuth) return true
+  if (authStore.user?.role_id === ROLES.Read_only) return true;
   if (!authStore.user?.users_organization) return true
   return authStore.user.users_organization.station_id === null
 })
@@ -179,6 +178,7 @@ const shouldShowDivisionControls = computed(() => {
 const isMasterUser = computed(() => {
   return (
     authStore.isAuth &&
+    authStore.user?.role_id !== ROLES.Read_only &&
     authStore.user?.users_organization &&
     authStore.user.users_organization.station_id !== null
   )

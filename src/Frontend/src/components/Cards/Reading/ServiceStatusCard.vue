@@ -46,8 +46,8 @@
     <div
       v-if="shouldShowDocumentIcon"
       class="document-icon-corner"
-      :class="{ 'no-click': authStore.user?.role_id === 5 }"
-      @click.stop="authStore.user?.role_id !== 5 ? handleDocumentIconClick() : null"
+      :class="{ 'no-click': authStore.user?.role_id === ROLES.Operator }"
+      @click.stop="authStore.user?.role_id !== ROLES.Operator ? handleDocumentIconClick() : null"
     >
       📄
       <span v-if="showDocCountBadge" class="doc-count-badge">{{ unprocessedDocsCount }}</span>
@@ -111,7 +111,7 @@
       :serviceWorkId="serviceWorkId"
       @close="closeModal"
       @submitted="$emit('submitted')"
-      :onSubmitSuccess="handleApply"
+
     />
 
     <WindowCompletion
@@ -119,7 +119,7 @@
       :serviceWorkId="serviceWorkId"
       @close="closeCompletionModal"
       @submitted="$emit('submitted')"
-      :onSubmitSuccess="handleApply"
+
       :onSubmitSuccessMaster="onSubmitSuccessMaster"
     />
 
@@ -130,7 +130,6 @@
       @close="closeDeliveryModal"
       @refresh-data="handleRefreshData"
       @submit-success="onSubmitSuccessMaster"
-      :bar-code="barCodeValue"
       :zvr_number="zvr_number"
     />
   </div>
@@ -146,6 +145,7 @@ import ModalWindow from '../ModalWindow.vue';
 import WindowCompletion from '../WindowCompletion.vue';
 import DeliveryModal from '../DeliveryModal.vue';
 import { deliveryService } from '../../Functions/deliveryService';
+import { ROLES } from '../../../constants';
 
 const hover = ref(false);
 const dragOver = ref(false);
@@ -177,7 +177,7 @@ const handleRefreshData = () => {
 };
 
 const isRole4 = computed(() => {
-  return authStore.user?.role_id === 4 || authStore.user?.role_id === 2 || authStore.user?.role_id === 5 ;
+  return authStore.user?.role_id === ROLES.Master || authStore.user?.role_id === ROLES.Edits_his_workshop || authStore.user?.role_id === ROLES.Operator ;
 });
 
 const showNotify = (options) => {
@@ -325,7 +325,7 @@ const resetAllStates = () => {
 
 // Добавляем вычисляемое свойство для отображения иконки документа
 const shouldShowDocumentIcon = computed(() => {
-  const isAllowedRole = authStore.user?.role_id === 4 || authStore.user?.role_id === 5 || authStore.user?.role_id === 6;
+  const isAllowedRole = authStore.user?.role_id === ROLES.Master || authStore.user?.role_id === ROLES.Operator || authStore.user?.role_id === ROLES.Distributor_controller || authStore.user?.role_id === ROLES.Read_only || authStore.user?.role_id === ROLES.Edits_his_workshop;
   return isAllowedRole &&
          props.total_docs_count !== null &&
          props.total_docs_count !== undefined &&
@@ -360,11 +360,13 @@ const serviceWorkId = ref(props.id);
 
 const shouldShowDocumentHover = computed(() => {
   if (isUploading.value) return false;
-  return hover.value && authStore.user?.role_id === 5;
+  return hover.value && authStore.user?.role_id === ROLES.Operator;
 });
 
 const shouldShowPlusIcon = computed(() => {
   if (isUploading.value) return false;
+  if (authStore.user?.role_id === ROLES.Read_only) return false; // Не показывать для role_id = 1
+
   return hover.value &&
          (authStore.user?.is_superuser || authStore.user?.users_organization.id === selectedDivId.value) &&
          (props.zvr_number === null || props.zvr_number === '');
@@ -372,8 +374,10 @@ const shouldShowPlusIcon = computed(() => {
 
 const shouldShowHover = computed(() => {
   if (!authStore.isAuthenticated || isUploading.value) return false;
+  if (authStore.user?.role_id === ROLES.Read_only) return false; // Не показывать для role_id = 1
+
   return hover.value &&
-         (authStore.user?.is_superuser || authStore.user?.users_organization.station_id !== null || authStore.user?.role_id === 6) &&
+         (authStore.user?.is_superuser || authStore.user?.users_organization.station_id !== null || authStore.user?.role_id === ROLES.Distributor_controller) &&
          !props.service_work_completed;
 });
 
