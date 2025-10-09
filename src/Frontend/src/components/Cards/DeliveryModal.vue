@@ -355,19 +355,27 @@ const getCellValue = (rowIndex, cellIndex) => {
   }
 }
 
-// Функция копирования - такая же как во втором компоненте
+// Функция копирования с использованием существующих элементов
 const copyToClipboard = (text) => {
   if (!text || isDeliveryBlocked.value || isViewOnly.value) return
 
-  const textArea = document.createElement('textarea')
-  textArea.value = text
-  textArea.style.position = 'fixed'
-  document.body.appendChild(textArea)
-  textArea.focus()
-  textArea.select()
-
   try {
+    // Используем существующий элемент модального окна как контейнер
+    const modal = document.querySelector('.delivery-modal')
+    if (!modal) throw new Error('Modal not found')
+
+    // Создаем временный инпут внутри модального окна
+    const tempInput = document.createElement('input')
+    tempInput.value = text
+    tempInput.style.cssText = 'position: fixed; top: 0; left: 0; opacity: 0; pointer-events: none;'
+
+    modal.appendChild(tempInput)
+    tempInput.select()
+    tempInput.setSelectionRange(0, 99999)
+
     const successful = document.execCommand('copy')
+    modal.removeChild(tempInput)
+
     if (successful) {
       $q.notify({
         message: 'Значение скопировано в буфер обмена',
@@ -386,8 +394,6 @@ const copyToClipboard = (text) => {
       position: 'top',
       timeout: 1000
     })
-  } finally {
-    document.body.removeChild(textArea)
   }
 }
 
