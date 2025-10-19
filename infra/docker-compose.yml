@@ -69,23 +69,23 @@ services:
         condition: service_started
     networks: [internal]
 
-  # frontend:
-  #   build: ../src/Frontend/
-  #   command: cp -r /app/dist/spa/. /frontend_static/
-  #   volumes:
-  #     - static:/frontend_static
-  #   depends_on:
-  #     - backend
+  frontend:
+    build: ../src/Frontend/
+    command: cp -r /app/dist/spa/. /frontend_static/
+    volumes:
+      - static:/frontend_static
+    depends_on:
+      - backend
 
-  # gateway:
-  #   build: ./nginx/
-  #   ports:
-  #     - 8811:80
-  #   depends_on:
-  #     - backend
-  #   networks: [internal]
-  #   volumes:
-  #     - static:/staticfiles/
+  gateway:
+    build: ./nginx/
+    ports:
+      - 8811:80
+    depends_on:
+      - backend
+    networks: [internal]
+    volumes:
+      - static:/staticfiles/
 
 volumes:
   toir_app_data:
