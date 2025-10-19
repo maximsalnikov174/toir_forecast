@@ -6,11 +6,11 @@ class Settings(BaseSettings):
 
     tg_bot_token: str = 'bot_config'
 
-    # # для чистой работы всех сервисов в контейнерах в единой сети
-    # backend_api_url: str = 'http://backend:8877'
+    # для чистой работы всех сервисов в контейнерах в единой сети
+    backend_api_url: str = 'http://backend:8877'
 
-    # если бэкенд запущен в докере на локальном хосте
-    backend_api_url: str = 'http://localhost:8877'
+    # # если бэкенд запущен в докере на локальном хосте
+    # backend_api_url: str = 'http://localhost:8877'
 
     # # если бэкенд запущен локально
     # backend_api_url: str = 'http://localhost:8000'
