@@ -126,7 +126,7 @@ class BackendApiGateway():
 
             if resp.status in (HTTPStatus.OK, HTTPStatus.CREATED):
                 return data
-            if resp.status == HTTPStatus.BAD_REQUEST:
+            if resp.status in (HTTPStatus.BAD_REQUEST, HTTPStatus.NOT_FOUND):
                 return {'result': data['detail'], 'status': resp.status}
             else:
                 # FIXME (пока не знаю, как работает)
@@ -215,6 +215,22 @@ class BackendApiGateway():
             rel_path=f'{CAR_PATH}/{car_attr}/service_work',
             params=params,
         )
+
+    async def get_bom_for_service_work(
+            self,
+            service_work_id: int,
+    ):
+        """Получение списка уже вложенных в работу материалов."""
+        try:
+            result = await self._fetch_api_data(
+                method='GET',
+                rel_path=(
+                    f'{SERVICE_WORK_PATH}/{service_work_id}/unit_of_bom'
+                ),
+            )
+            return result
+        except Exception as e:
+            print(e)
 
     async def completed_real_service_work(
             self,
