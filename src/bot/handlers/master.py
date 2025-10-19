@@ -48,6 +48,14 @@ async def get_cars_active_service_work(
                 # - определяем полномочия текущего пользователя
                 user_data = await connector.get_token(message.chat.id)
 
+                # Если кто-то без аккаунта считал QR-код на ТС:
+                if (
+                    user_data
+                    and user_data.get('status') == HTTPStatus.NOT_FOUND
+                ):
+                    await message.answer(f"Пока это просто {car.get('grz')}")
+                    return
+
                 await state.set_state(FSMForCar.service_work)  # установили
 
                 # Сохранение состояния о ТС
@@ -109,6 +117,19 @@ async def handle_service_work(
     )
     msg = f'Объект «{hbold(car)}»\n🛠️ {hbold(service_work_info_on_button)}\n'
     await state.update_data(msg=msg)
+
+    # TODO Получение данных об использованных материалах:
+    total_bom = []
+    async with backend_gateway as connector:
+        materials = await connector.get_bom_for_service_work(service_work_id)
+        if delivery := materials.get('docs_in_service_work'):
+            for el_delivery in delivery:
+                el_data = el_delivery.get('components')
+                for el in el_data:
+                    total_bom.append(f"{el['snb']} {el['material_name']}")
+
+    # FIXME Пока с этим ничего не надо будет делать:
+    print(total_bom)
 
     # Редактируем сообщение и клавиатуру:
     await callback.message.edit_text(
