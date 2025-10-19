@@ -25,6 +25,16 @@ class DAOSpecialStatusForCar(DAOBase[SpecialStatusForCar]):
 
     model = SpecialStatusForCar
 
+    async def get(self, obj_id, session):
+        """Получение специальных статусов для ТС, расширенное доп.полями."""
+        return await session.scalar(
+            select(self.model)
+            .options(
+                joinedload(self.model.car),
+                joinedload(self.model.special_status)
+            ).where(self.model.id == obj_id)
+        )
+
 
 dao_special_status_for_car = DAOSpecialStatusForCar(SpecialStatusForCar)
 
