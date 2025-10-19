@@ -16,6 +16,7 @@ class CommonKeyboardCommand(BaseCommand):
 
     BACK = '⬅️ К списку работ'
     DONE = '✅ Завершаем эту работу!'
+    BOM = '📦 Посмотреть запчасти'
 
 
 class CommonAnswer(BaseCommand):

@@ -12,7 +12,7 @@ from aiogram.utils.markdown import hbold
 
 from bot_command import BotCommand
 from constants import KEYBOARD_MAX_ALIVE_IN_SECONDS
-from common import get_button_text_from_state
+from common import get_button_text_from_state, organize_service_work_bom_list
 from core.fsm_states import FSMForCar
 from filters.service_work_filter import ServiceWorkFilter
 from filters.user_filter import check_user_can_de_facto_close_service_work
@@ -116,20 +116,15 @@ async def handle_service_work(
         callback=callback,
     )
     msg = f'Объект «{hbold(car)}»\n🛠️ {hbold(service_work_info_on_button)}\n'
-    await state.update_data(msg=msg)
 
-    # TODO Получение данных об использованных материалах:
-    total_bom = []
+    # Получение данных об использованных материалах:
     async with backend_gateway as connector:
-        materials = await connector.get_bom_for_service_work(service_work_id)
-        if delivery := materials.get('docs_in_service_work'):
-            for el_delivery in delivery:
-                el_data = el_delivery.get('components')
-                for el in el_data:
-                    total_bom.append(f"{el['snb']} {el['material_name']}")
-
-    # FIXME Пока с этим ничего не надо будет делать:
-    print(total_bom)
+        total_bom = await organize_service_work_bom_list(
+            service_work_id=service_work_id,
+            async_session=connector,
+        )
+    # Сохранение состояния:
+    await state.update_data(msg=msg, total_bom=total_bom)
 
     # Редактируем сообщение и клавиатуру:
     await callback.message.edit_text(
@@ -139,6 +134,18 @@ async def handle_service_work(
 
     await callback.message.edit_reply_markup(
         reply_markup=(await build_done_button(state)).as_markup()
+    )
+
+
+@router.callback_query(F.data == BotCommand.MATERIALS.value)
+async def get_bom_list_for_service_work(
+    callback: CallbackQuery,
+    state: FSMContext,
+):
+    """Отображение списка используемых материалов в ЗВР."""
+    await callback.message.edit_text(
+        text=await state.get_value('total_bom'),
+        reply_markup=(await build_back_button(state)).as_markup(),
     )
 
 

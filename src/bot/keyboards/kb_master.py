@@ -41,14 +41,24 @@ async def build_zvr_list_buttons(
 async def build_done_button(state: FSMContext) -> InlineKeyboardBuilder:
     """Создает клавиатуру с кнопками `завершить работу` и `назад к списку`."""
     builder = InlineKeyboardBuilder()
+
+    # Кнопка с переходом к списку использованных материалов:
+    # FIXME должна быть только тогда, когда хоть сколько-то материалов вложено:
+    builder.button(
+        text=CommonKeyboardCommand.BOM,
+        callback_data=BotCommand.MATERIALS,
+    )
+    # Кнопка с подтверждением выполнения работы:
     builder.button(
         text=CommonKeyboardCommand.DONE,
         callback_data=BotCommand.SERVICE_WORK_DONE,
     )
+    # Кнопка с возвратом к предыдущему состоянию:
     builder.button(
         text=CommonKeyboardCommand.BACK,
         callback_data=BotCommand.SERVICE_WORK_BACK,
     )
+
     builder.adjust(1)  # <-- по одной в ряд
     return builder
 
