@@ -48,5 +48,5 @@ async def organize_service_work_bom_list(
             # Перебираем все элементы внутри документа:
             for elem in components:
                 data = f"{elem['snb']} {elem['material_name']}"
-                result.append('✔️ ' + data + '\n')
+                result.append('✔️ ' + data[:50] + '\n')
     return result
