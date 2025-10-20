@@ -99,7 +99,7 @@ async def get_cars_active_service_work(
 async def handle_service_work(
     callback: CallbackQuery,
     state: FSMContext,
-    service_work_id: int  # Данные перехватывает ServiceWorkFilter
+    service_work_id: int,  # Данные перехватывает ServiceWorkFilter
 ):
     """Действие с выбранным мастером цеха ремонта активным ЗВР (работой)."""
     # Дополняем FSM выбранной пользователем работой (pk):
@@ -121,7 +121,7 @@ async def handle_service_work(
     async with backend_gateway as connector:
         total_bom = await organize_service_work_bom_list(
             service_work_id=service_work_id,
-            async_session=connector,
+            session=connector,
         )
     # Сохранение состояния:
     await state.update_data(msg=msg, total_bom=total_bom)
@@ -144,7 +144,7 @@ async def get_bom_list_for_service_work(
 ):
     """Отображение списка используемых материалов в ЗВР."""
     await callback.message.edit_text(
-        text=await state.get_value('total_bom'),
+        text='\n'.join(await state.get_value('total_bom')),
         reply_markup=(await build_back_button(state)).as_markup(),
     )
 

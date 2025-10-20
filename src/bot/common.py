@@ -33,21 +33,20 @@ async def get_button_text_from_state(
 
 async def organize_service_work_bom_list(
     service_work_id: int,
-    async_session: BackendApiGateway,
+    session: BackendApiGateway,
 ) -> list[str]:
     """Формирует ответ со списком использованных в ЗВР материалов."""
     result: list[str] = []
-    async with async_session as session:
-        total_materials = (
-            await session.get_bom_for_service_work(service_work_id)
-        )
-        if docs := total_materials.get('docs_in_service_work'):
-            # Перебираем все документы:
-            for doc in docs:
-                components = doc.get('components')
+    total_materials = (
+        await session.get_bom_for_service_work(service_work_id)
+    )
+    if docs := total_materials.get('docs_in_service_work'):
+        # Перебираем все документы:
+        for doc in docs:
+            components = doc.get('components')
 
-                # Перебираем все элементы внутри документа:
-                for elem in components:
-                    data = f"✔️ {elem['snb']} {elem['material_name']}\n\n"
-                    result.append(data[50])
+            # Перебираем все элементы внутри документа:
+            for elem in components:
+                data = f"{elem['snb']} {elem['material_name']}"
+                result.append('✔️ ' + data + '\n')
     return result
