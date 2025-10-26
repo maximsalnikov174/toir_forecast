@@ -67,6 +67,14 @@ async def get_cars_active_service_work(
                     message_auto_delete=True,
                 )
 
+        # Текстовое сообщение с ближайшей сервисной работой:
+        message_for_all = (
+            await connector.show_nearest_service_works_for_current_car(
+                car_attr=car_uuid
+            )
+        )
+        await state.update_data(msg_for_all=message_for_all)
+
         service_works = await connector.get_service_work_for_current_car(
             car_attr=car_uuid,
             station_id=user_data['user']['users_organization']['station_id']
@@ -148,6 +156,18 @@ async def get_bom_list_for_service_work(
     await callback.message.edit_text(
         text='\n'.join(await state.get_value('total_bom')),
         reply_markup=(await build_back_button(state, False)).as_markup(),
+    )
+
+
+@router.callback_query(F.data == BotCommand.NEXT_WORKS.value)
+async def get_nearest_service_works(
+    callback: CallbackQuery,
+    state: FSMContext,
+):
+    """Отображение списка ближайших сервисных работ."""
+    await callback.message.edit_text(
+        text=await state.get_value('msg_for_all'),
+        reply_markup=(await build_back_button(state)).as_markup(),
     )
 
 

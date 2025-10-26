@@ -28,6 +28,11 @@ async def build_zvr_list_buttons(
 
         builder.button(text=msg, callback_data=data)
 
+    builder.button(
+        text='📊 Прогноз работ',
+        callback_data=BotCommand.NEXT_WORKS.value
+    )
+
     # Обновляем состояние FSM:
     await state.update_data(
         button_mapping=button_mapping,
