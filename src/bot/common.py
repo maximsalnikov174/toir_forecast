@@ -3,6 +3,7 @@ from typing import Optional
 from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery
 
+from constants import BOM_DESCRIPTION_LEN
 from services.gateway import BackendApiGateway
 
 
@@ -45,8 +46,11 @@ async def organize_service_work_bom_list(
         for doc in docs:
             components = doc.get('components')
 
-            # Перебираем все элементы внутри документа:
+            # Перебираем все элементы внутри каждого документа:
             for elem in components:
-                data = f"{elem['snb']} {elem['material_name']}"
-                result.append('✔️ ' + data[:50] + '\n')
+                data = (
+                    f"{elem['material_name'][:BOM_DESCRIPTION_LEN]} "
+                    f"({elem['material_count']} ед.)"
+                )
+                result.append('✔️ ' + data + '\n')
     return result

@@ -63,12 +63,20 @@ async def build_done_button(state: FSMContext) -> InlineKeyboardBuilder:
     return builder
 
 
-async def build_back_button(state: FSMContext) -> InlineKeyboardBuilder:
+async def build_back_button(
+        state: FSMContext, in_works: bool = True,
+) -> InlineKeyboardBuilder:
     """Создает клавиатуру с кнопкой `назад к списку`."""
     builder = InlineKeyboardBuilder()
-    builder.button(
-        text=CommonKeyboardCommand.BACK,
-        callback_data=BotCommand.SERVICE_WORK_BACK,
-    )
+    # По умолчанию возвращаемся к списку всех активных работ:
+    if in_works:
+        msg = CommonKeyboardCommand.BACK
+        cb_data = BotCommand.SERVICE_WORK_BACK
+    else:  # ... а если нет - то формируем callback для конкретной работы:
+        msg = CommonKeyboardCommand.BACK_TO_WORK
+        service_work_id = await state.get_value('service_work_id')
+        cb_data = f'{BotCommand.SERVICE_WORK.value}{service_work_id}'
+
+    builder.button(text=msg, callback_data=cb_data)
     builder.adjust(1)  # <-- по одной в ряд
     return builder
