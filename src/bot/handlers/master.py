@@ -95,7 +95,9 @@ async def get_cars_active_service_work(
         )
 
 
-@router.callback_query(ServiceWorkFilter(BotCommand.SERVICE_WORK))
+@router.callback_query(
+        ServiceWorkFilter(BotCommand.SERVICE_WORK)
+)
 async def handle_service_work(
     callback: CallbackQuery,
     state: FSMContext,
@@ -145,7 +147,7 @@ async def get_bom_list_for_service_work(
     """Отображение списка используемых материалов в ЗВР."""
     await callback.message.edit_text(
         text='\n'.join(await state.get_value('total_bom')),
-        reply_markup=(await build_back_button(state)).as_markup(),
+        reply_markup=(await build_back_button(state, False)).as_markup(),
     )
 
 

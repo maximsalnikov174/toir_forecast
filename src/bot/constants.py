@@ -19,4 +19,7 @@ MIN_KEYBOARD_WIDTH = 1
 
 # Общее время после нажатия кнопки (предполагается, что на проде это будет 60+)
 KEYBOARD_BASE_ALIVE_IN_SECONDS = .1
-KEYBOARD_MAX_ALIVE_IN_SECONDS = 30
+KEYBOARD_MAX_ALIVE_IN_SECONDS = 60 * 3
+
+# Длина описания СНБ-позиции при выводе списка материалов в боте:
+BOM_DESCRIPTION_LEN = 60
