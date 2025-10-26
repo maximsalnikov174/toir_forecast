@@ -42,12 +42,13 @@ async def build_done_button(state: FSMContext) -> InlineKeyboardBuilder:
     """Создает клавиатуру с кнопками `завершить работу` и `назад к списку`."""
     builder = InlineKeyboardBuilder()
 
-    # Кнопка с переходом к списку использованных материалов:
-    # FIXME должна быть только тогда, когда хоть сколько-то материалов вложено:
-    builder.button(
-        text=CommonKeyboardCommand.BOM,
-        callback_data=BotCommand.MATERIALS,
-    )
+    # Кнопка с переходом к списку использованных материалов,
+    # когда вложен (в FSM) хоть один материал:
+    if len(await state.get_value('total_bom')):
+        builder.button(
+            text=CommonKeyboardCommand.BOM,
+            callback_data=BotCommand.MATERIALS,
+        )
     # Кнопка с подтверждением выполнения работы:
     builder.button(
         text=CommonKeyboardCommand.DONE,
