@@ -216,6 +216,15 @@ class BackendApiGateway():
             params=params,
         )
 
+    async def show_nearest_service_works_for_current_car(
+            self, car_attr: str,
+    ) -> str:
+        """Отображение ближайших незапланированных сервисных работ."""
+        return await self._fetch_api_data(
+            method='get',
+            rel_path=f'{CAR_PATH}/{car_attr}/show_nearest_service_works',
+        )
+
     async def get_bom_for_service_work(
             self,
             service_work_id: int,

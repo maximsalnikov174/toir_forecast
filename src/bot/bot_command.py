@@ -9,3 +9,4 @@ class BotCommand(Enum):
     MATERIALS = 'materials'
     SERVICE_WORK_DONE = 'work_done'
     SERVICE_WORK_BACK = 'work_back'
+    NEXT_WORKS = 'next_works'
