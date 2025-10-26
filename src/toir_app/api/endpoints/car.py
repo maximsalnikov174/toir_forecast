@@ -173,6 +173,52 @@ async def get_car_service_work(
     return result
 
 
+@router.get(
+    '/{car_attr}/show_nearest_service_works',
+    status_code=HTTPStatus.OK,
+    name='Получение описания ближайших сервисных работ для ТС.',
+)
+async def get_nearest_service_works(
+    car_attr: str,
+    session: AsyncSession = Depends(get_async_session)
+) -> str:
+    """Получение описания ближайших сервисных работ для ТС.
+
+    ARGS:
+        - car_attr: уникальный car_id_for_telegram
+    """
+    result = await dao_car.search_nearest_event(
+        obj_uuid=car_attr,
+        session=session
+    )
+
+    service_work_list: list[str] = []
+    for element in result:
+        divergence = (
+            element.base_interval
+            - element.request_reading
+            + element.last_service_reading
+        )
+        service_work_list.append(
+            f'{element.next_service.name} '
+            f'[{element.calculated_status.value.lower()}]'
+        )
+
+    if len(service_work_list) == 1:
+        text_a, text_b = 'а', 'ой'
+    else:
+        text_a, text_b = 'ы', 'ых'
+
+    text_c = 'через' if divergence > 0 else 'просрочены на'
+    union_service_work_list = '\n'.join(service_work_list)
+
+    return (
+        f'Работ{text_a}, для котор{text_b} ЗВР ещё не создан:'
+        f'\n{"-" * 30}\n{union_service_work_list}'
+        f'\n{"-" * 30}\n{text_c} {abs(divergence)} км.'
+    )
+
+
 @router.patch(
     '/{car_id}/add_special_status',
     response_model=CarWithCarModelAndOrganizationIDs,

@@ -208,6 +208,44 @@ class DAOCar(DAOBase[Car]):
         )
         return result.all()
 
+    async def search_nearest_event(
+            self,
+            obj_uuid: str,
+            session: AsyncSession,
+    ):
+        """Находит ближайшие виды обслуживания для конкретного ТС."""
+        subq = (
+            select(
+                func.min(
+                    ServiceWork.request_reading
+                    - ServiceWork.last_service_reading
+                )
+            )
+            .join(self.model.service_works)
+            .where(
+                self.model.tg_uuid == obj_uuid,
+                ServiceWork.in_archive.is_(False),
+                ServiceWork.zvr_number.is_(None),
+            )
+            .scalar_subquery()
+        )
+
+        # Ищем запись с этой разницей
+        stmt = (
+            select(ServiceWork)
+            .options(selectinload(ServiceWork.next_service))
+            .join(self.model.service_works)
+            .where(
+                self.model.tg_uuid == obj_uuid,
+                ServiceWork.in_archive.is_(False),
+                ServiceWork.request_reading
+                - ServiceWork.last_service_reading == subq,
+                ServiceWork.zvr_number.is_(None),
+            )
+        )
+        result = await session.scalars(stmt)
+        return result.all()
+
 
 dao_car = DAOCar(Car)
 
