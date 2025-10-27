@@ -205,17 +205,17 @@ async def get_nearest_service_works(
         )
 
     if len(service_work_list) == 1:
-        text_a, text_b = 'а', 'ой'
+        text_a, text_b, text_c = 'ая', 'а', 'ой'
     else:
-        text_a, text_b = 'ы', 'ых'
+        text_a, text_b, text_c = 'ие', 'ы', 'ых'
 
-    text_c = 'через' if divergence > 0 else 'просрочены на'
+    text_d = 'через' if divergence > 0 else 'просрочены на'
     union_service_work_list = '\n'.join(service_work_list)
 
     return (
-        f'Работ{text_a}, для котор{text_b} ЗВР ещё не создан:'
+        f'Ближайш{text_a} работ{text_b}, для котор{text_c} ЗВР ещё не создан:'
         f'\n{"-" * 30}\n{union_service_work_list}'
-        f'\n{"-" * 30}\n{text_c} {abs(divergence)} км.'
+        f'\n{"-" * 30}\n{text_d} {abs(divergence)} км'
     )
 
 
