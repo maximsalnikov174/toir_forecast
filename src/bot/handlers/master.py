@@ -48,24 +48,21 @@ async def get_cars_active_service_work(
                 # - определяем полномочия текущего пользователя
                 user_data = await connector.get_token(message.chat.id)
 
+                await state.set_state(FSMForCar.service_work)  # установили
+
                 # Если кто-то без аккаунта считал QR-код на ТС:
                 if (
                     user_data
-                    and user_data.get('status') == HTTPStatus.NOT_FOUND
+                    and user_data.get('status') == HTTPStatus.OK
                 ):
-                    await message.answer(f"Пока это просто {car.get('grz')}")
-                    return
-
-                await state.set_state(FSMForCar.service_work)  # установили
-
-                # Сохранение состояния о ТС
-                await state.update_data(
-                    car_uuid=car_uuid,
-                    car_grz=car.get('grz'),
-                    user_permission=user_data['token'],
-                    user_info=user_data['user'],
-                    message_auto_delete=True,
-                )
+                    # Сохранение состояния о ТС
+                    await state.update_data(
+                        car_uuid=car_uuid,
+                        car_grz=car.get('grz'),
+                        user_permission=user_data['token'],
+                        user_info=user_data['user'],
+                        message_auto_delete=True,
+                    )
 
         # Текстовое сообщение с ближайшей сервисной работой:
         message_for_all = (
@@ -75,13 +72,18 @@ async def get_cars_active_service_work(
         )
         await state.update_data(msg_for_all=message_for_all)
 
+        # Находит станцию пользователя, а для незарегистрированного будет None:
+        station_id = (
+            user_data['user']['users_organization']['station_id']
+        ) if user_data['status'] == HTTPStatus.OK else None
+
         service_works = await connector.get_service_work_for_current_car(
             car_attr=car_uuid,
-            station_id=user_data['user']['users_organization']['station_id']
+            station_id=station_id
         )
 
-        # Если работы есть (возможно, несколько):
-        if len(service_works):
+        # Если работы есть (возможно, несколько) и есть пользователь:
+        if len(service_works) and user_data:
             buttons = await build_zvr_list_buttons(service_works, state)
 
             msg = f"{CommonAnswer.ACTIVE_WORKS}{hbold(car['grz'])}:"
@@ -90,13 +92,14 @@ async def get_cars_active_service_work(
                 reply_markup=buttons.as_markup(),
                 parse_mode=ParseMode.HTML,
             )
-
         else:
-            answer_message = await message.answer(CommonAnswer.NO_DATA)
+            answer_message = await message.answer(
+                f'🚗 {hbold(car["grz"])}\n{message_for_all}',
+                parse_mode=ParseMode.HTML,
+            )
 
         # Создание задач для очистки сообщений после некоторого времени:
         await create_task_for_delete_message_after_delay(message=message)
-
         await create_task_for_delete_message_after_delay(
             message=answer_message,
             delay=KEYBOARD_MAX_ALIVE_IN_SECONDS,
