@@ -212,7 +212,8 @@ async def get_nearest_service_works(
     else:
         text_a, text_b, text_c = 'ие', 'ы', 'ых'
 
-    text_d = 'через' if divergence > 0 else 'просрочены на'
+    text_d = 'через' if divergence > 0 else f'просрочен{text_b} на'
+
     union_service_work_list = '\n'.join(service_work_list)
 
     return (
