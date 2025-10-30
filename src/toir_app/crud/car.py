@@ -215,7 +215,13 @@ class DAOCar(DAOBase[Car]):
     ):
         """Находит ближайшие виды обслуживания для конкретного ТС."""
         subq = (
-            select(func.min(ServiceWork._calculate_divergence))
+            select(
+                func.min(
+                    ServiceWork.last_service_reading
+                    + ServiceWork.base_interval
+                    - ServiceWork.request_reading
+                )
+            )
             .join(self.model.service_works)
             .where(
                 self.model.tg_uuid == obj_uuid,
@@ -233,7 +239,9 @@ class DAOCar(DAOBase[Car]):
             .where(
                 self.model.tg_uuid == obj_uuid,
                 ServiceWork.in_archive.is_(False),
-                ServiceWork._calculate_divergence == subq,
+                ServiceWork.last_service_reading
+                + ServiceWork.base_interval
+                - ServiceWork.request_reading == subq,
                 ServiceWork.zvr_number.is_(None),
             )
         )
