@@ -40,6 +40,7 @@ async def get_cars_active_service_work(
 
     async with backend_gateway as connector:
         if message.text:
+            is_active_user = False
             car_uuid = message.text.split(BotCommand.CAR.value)[1]
             if car_uuid.isascii():
                 # Выполняем запросы к бэкенду:
@@ -51,10 +52,10 @@ async def get_cars_active_service_work(
                 await state.set_state(FSMForCar.service_work)  # установили
 
                 # Если кто-то без аккаунта считал QR-код на ТС:
-                if (
-                    user_data
-                    and user_data.get('status') == HTTPStatus.OK
-                ):
+                if user_data.get('token'):
+
+                    is_active_user = True
+
                     # Сохранение состояния о ТС
                     await state.update_data(
                         car_uuid=car_uuid,
@@ -75,7 +76,7 @@ async def get_cars_active_service_work(
         # Находит станцию пользователя, а для незарегистрированного будет None:
         station_id = (
             user_data['user']['users_organization']['station_id']
-        ) if user_data['status'] == HTTPStatus.OK else None
+        ) if is_active_user else None
 
         service_works = await connector.get_service_work_for_current_car(
             car_attr=car_uuid,
@@ -83,7 +84,7 @@ async def get_cars_active_service_work(
         )
 
         # Если работы есть (возможно, несколько) и есть пользователь:
-        if len(service_works) and user_data:
+        if len(service_works) and is_active_user:
             buttons = await build_zvr_list_buttons(service_works, state)
 
             msg = f"{CommonAnswer.ACTIVE_WORKS}{hbold(car['grz'])}:"
