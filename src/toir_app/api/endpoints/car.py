@@ -192,6 +192,9 @@ async def get_nearest_service_works(
         session=session
     )
 
+    if not len(result):
+        return 'Повезло, все работы запланированы!'
+
     service_work_list: list[str] = []
     for element in result:
         divergence = (
