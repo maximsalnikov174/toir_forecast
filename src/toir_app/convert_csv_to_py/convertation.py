@@ -19,6 +19,7 @@ class UsersServiceName(str, Enum):
     - работы выстроены по приоритету от самых важных/частых к специфическим.
     """
     TO_4 = 'ТО-4'
+    TO_3 = 'ТО-3'
     TO_2 = 'ТО-2'
     TO = 'ТО'
     TO_1 = 'ТО-1'
@@ -88,6 +89,9 @@ convert_service_name: ServiceNameMapping = {
     ],
     UsersServiceName.TO_2.value: [
         'ТО-2'
+    ],
+    UsersServiceName.TO_3.value: [
+        'ТО-3'
     ],
     UsersServiceName.TO_4.value: [
         'ТО-4'
