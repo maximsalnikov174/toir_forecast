@@ -25,7 +25,7 @@
     ></div>
 
     <div class="status-indicator" :class="indicatorClass"></div>
-    <div class="characteristic-title">{{ Divergence }} км</div>
+    <div class="characteristic-title">{{ displayDivergence }}</div>
     <div class="other-text">{{ displayDate }}</div>
     <div v-if="zvr_create_date" class="zvr-create-date">{{ zvr_create_date }}</div>
     <div v-if="DBSWCAN" class="additional-text">{{ DBSWCAN }} </div>
@@ -242,6 +242,10 @@ const props = defineProps({
     type: [String, Number],
     default: 0
   },
+  base_interval:{
+    type: [String, Number],
+    default: 'Н/Д'
+  },
 });
 
 const emit = defineEmits(['file-dropped', 'submitted', 'document-click', 'refresh-delivery-data']);
@@ -251,6 +255,16 @@ const animationText = computed(() => {
   if (animationCompleted.value) return 'Готово!';
   if (isAnimating.value) return 'Загрузка...';
   return 'Перетащите для загрузки';
+});
+
+// Добавляем вычисляемое свойство для отображения Divergence
+const displayDivergence = computed(() => {
+  const baseIntervalValue = Number(props.base_interval);
+
+  // Определяем единицу измерения на основе base_interval
+  const unit = (!isNaN(baseIntervalValue) && baseIntervalValue <= 2000) ? 'мч' : 'км';
+
+  return `${props.Divergence} ${unit}`;
 });
 
 // Очистка интервала при размонтировании компонента

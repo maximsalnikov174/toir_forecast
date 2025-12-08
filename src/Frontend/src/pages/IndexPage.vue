@@ -95,6 +95,7 @@
                 :onSubmitSuccessMaster="loadMasterData"
                 :total_docs_count="item.total_docs_count"
                 :total_docs_processed_count="item.total_docs_processed_count"
+                :base_interval="item.base_interval"
               />
               <div v-else class="empty-status-card"></div>
             </template>
