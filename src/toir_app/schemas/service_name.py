@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from constants import SERVICE_STATUS_NAME_LEN
 
@@ -7,6 +7,8 @@ class ServiceNameID(BaseModel):
     """
     Базовая схема видов Сервисного Обслуживания (только ID видов ТО).
     """
+
+    model_config = ConfigDict(from_attributes=True)
 
     id: int = Field(
         ...,

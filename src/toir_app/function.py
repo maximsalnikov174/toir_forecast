@@ -1,7 +1,9 @@
+import io
 import hashlib
 from calendar import monthrange
 from datetime import datetime as dt
 
+import pandas as pd
 from fastapi import UploadFile
 
 from constants import PATTERN_DATE_OEBS
@@ -102,3 +104,11 @@ async def compare_files(elements=list[UploadFile]) -> list[UploadFile]:
             continue
 
     return result
+
+
+def convert_pandas_table_to_xlsx(table: pd.DataFrame):
+    """Преобразует данные из таблицы Pandas в Excel."""
+    output = io.BytesIO()
+    table.to_excel(output, index=False, engine='openpyxl')
+    output.seek(0)
+    return output

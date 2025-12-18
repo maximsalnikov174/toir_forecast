@@ -1,8 +1,10 @@
 import csv
 import re
 from array import array
+from datetime import date, datetime, time
 from typing import Annotated
 
+import pandas as pd
 from fastapi import (
     APIRouter,
     Depends,
@@ -11,6 +13,7 @@ from fastapi import (
     Query,
     UploadFile,
 )
+from fastapi.responses import StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from tqdm import tqdm
 
@@ -41,6 +44,7 @@ from crud.special_status import (
 )
 from crud.stats import (
     add_statement_after_loading_csv_file,
+    get_completed_service_works_stats,
     get_stats_for_organization,
 )
 from exception import (
@@ -49,9 +53,10 @@ from exception import (
     ServiceNameNotFoundException,
     StaticDataInDBNotFoundException,
 )
+from function import convert_pandas_table_to_xlsx
 from logger.logger import logger
 from models import Organization, StaticOrganization, User
-from schemas.service_work_stats import ServiceStatusStatsBase
+from schemas.service_work_stats import ServiceStats, ServiceStatusStatsBase
 
 router = APIRouter()
 
@@ -213,4 +218,57 @@ async def get_stats(
     return await get_stats_for_organization(
         organization_id=organization_id,
         session=session
+    )
+
+
+@router.get(
+    '/all_service_works_completed',
+    name='Получение статистики по всем завершенным работам.',
+)
+async def get_service_works_stats(
+    start_day: date,
+    end_day: date,
+    completed_only: bool = True,
+    organization_id: Annotated[int, Organization.id] = Query(...),
+    session: AsyncSession = Depends(get_async_session),
+):
+    """
+    Получение статистики по подразделению за указанный период для отчета в СМТ.
+
+    :param start_day: Начальная дата (с 0:00)
+    :type start_day: date
+    :param end_day: Дата окончания (до 23:59)
+    :type end_day: date
+    :param completed_only: Только завершенные в КИС (`True` по умолчанию)
+    :type completed_only: bool
+    :param organization_id: Идентификатор Подразделения
+    """
+    start_time, end_time = time(0, 0, 0), time(23, 59, 59)
+    start_dt = datetime.combine(start_day, start_time)
+    end_dt = datetime.combine(end_day, end_time)
+
+    result = await get_completed_service_works_stats(
+        start_day=start_dt,
+        end_day=end_dt,
+        organization_id=organization_id,
+        completed_only=completed_only,
+        session=session
+    )
+    # Все элементы из списка моделей SQLAlchemy валидируем pydantic-схемой:
+    new_result = (
+        [ServiceStats.model_validate(el).model_dump() for el in result]
+    )
+    # И загоняем в (отсортированную и очищенную таблицу) pandas:
+    pandas_table = (
+        pd.DataFrame(new_result)
+        .sort_values(by=['service_name', 'car_grz'])
+        .drop(columns=[
+            'id', 'station_id', 'last_service_reading', 'daily_distance'
+        ])
+    )
+
+    return StreamingResponse(
+        convert_pandas_table_to_xlsx(pandas_table),
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={'Content-Disposition': 'attachment; filename="service_works_report"'}
     )
