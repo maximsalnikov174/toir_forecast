@@ -13,11 +13,11 @@
         </div>
         <div class="color-info">
           <div class="color-box purple"></div>
-          <span>УРЛА</span>
+          <span>УРГА</span>
         </div>
         <div class="color-info">
           <div class="color-box orange"></div>
-          <span>УРГА</span>
+          <span>УРЛА</span>
         </div>
       </q-card-section>
     </q-card>

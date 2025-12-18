@@ -1,14 +1,14 @@
 <template>
   <div
     class="service-status-card"
-    @mouseover="hover = true"
-    @mouseleave="hover = false"
+    @mouseover="handleMouseOver"
+    @mouseleave="handleMouseLeave"
     @click="handleCardClick"
     @drop.prevent="handleDrop"
-    @dragover.prevent="dragOver = true"
+    @dragover.prevent="handleDragOver"
     @dragenter.prevent="handleDragEnter"
     @dragleave="handleDragLeave"
-    :class="{ 'drag-over': dragOver }"
+    :class="{ 'drag-over': dragOver, 'file-hover': fileHover }"
   >
     <!-- Верхняя полоска -->
     <div
@@ -25,19 +25,32 @@
     ></div>
 
     <div class="status-indicator" :class="indicatorClass"></div>
-    <div class="characteristic-title">{{ Divergence }} км</div>
+    <div class="characteristic-title">{{ displayDivergence }}</div>
     <div class="other-text">{{ displayDate }}</div>
     <div v-if="zvr_create_date" class="zvr-create-date">{{ zvr_create_date }}</div>
     <div v-if="DBSWCAN" class="additional-text">{{ DBSWCAN }} </div>
 
-    <!-- Иконка документа для role_id = 4 -->
+    <!-- Анимация загрузки при наведении с файлами -->
+    <div
+      v-if="fileHover && isRole4"
+      class="file-hover-animation"
+      :class="{ 'animating': isAnimating, 'completed': animationCompleted }"
+    >
+      <div class="animation-progress" :style="{ width: animationProgress + '%' }"></div>
+      <div class="animation-text">
+        {{ animationText }}
+      </div>
+    </div>
+
+    <!-- Иконка документа для role_id = 4 и role_id = 5 -->
     <div
       v-if="shouldShowDocumentIcon"
       class="document-icon-corner"
-      @click.stop="handleDocumentIconClick"
+      :class="{ 'no-click': authStore.user?.role_id === ROLES.Operator }"
+      @click.stop="authStore.user?.role_id !== ROLES.Operator ? handleDocumentIconClick() : null"
     >
       📄
-      <span v-if="total_docs_count > 0" class="doc-count-badge">{{ total_docs_count }}</span>
+      <span v-if="showDocCountBadge" class="doc-count-badge">{{ unprocessedDocsCount }}</span>
     </div>
 
     <!-- Оверлей для основной карточки -->
@@ -56,7 +69,7 @@
       <div class="plus-icon">+</div>
     </div>
 
-    <!-- Оверлей для документа (для station_id === 99) -->
+    <!-- Оверлей для документа (для role_id ===5 ) -->
     <div
       v-if="shouldShowDocumentHover"
       class="document-hover-overlay"
@@ -76,12 +89,29 @@
       </div>
     </div>
 
+    <!-- Индикатор загрузки файлов -->
+    <div
+      v-if="isUploading"
+      class="upload-overlay"
+    >
+      <div class="upload-content">
+        <q-spinner
+          color="primary"
+          size="3em"
+        />
+        <div class="upload-text">Загрузка файлов...</div>
+        <div class="upload-progress" v-if="uploadProgress > 0">
+          {{ uploadProgress }}%
+        </div>
+      </div>
+    </div>
+
     <ModalWindow
       v-model:show="showModal"
       :serviceWorkId="serviceWorkId"
       @close="closeModal"
       @submitted="$emit('submitted')"
-      :onSubmitSuccess="handleApply"
+
     />
 
     <WindowCompletion
@@ -89,24 +119,24 @@
       :serviceWorkId="serviceWorkId"
       @close="closeCompletionModal"
       @submitted="$emit('submitted')"
-      :onSubmitSuccess="handleApply"
+
       :onSubmitSuccessMaster="onSubmitSuccessMaster"
     />
 
-    <!-- Модальное окно для отображения таблицы доставки -->
+    <!-- Модальное окно для отображения таблица доставки -->
     <DeliveryModal
       v-model="showDeliveryModal"
       :delivery-data="deliveryData"
       @close="closeDeliveryModal"
       @refresh-data="handleRefreshData"
-      :bar-code="barCodeValue"
+      @submit-success="onSubmitSuccessMaster"
       :zvr_number="zvr_number"
     />
   </div>
 </template>
 
 <script setup>
-import { computed, ref } from 'vue';
+import { computed, ref, onUnmounted, onMounted } from 'vue';
 import { useQuasar } from 'quasar';
 import { useFilterStore } from 'src/components/Functions/FilterStoreAcceptButton';
 import { useAuthStore } from 'src/stores/useAuthStore';
@@ -115,6 +145,7 @@ import ModalWindow from '../ModalWindow.vue';
 import WindowCompletion from '../WindowCompletion.vue';
 import DeliveryModal from '../DeliveryModal.vue';
 import { deliveryService } from '../../Functions/deliveryService';
+import { ROLES } from '../../../constants';
 
 const hover = ref(false);
 const dragOver = ref(false);
@@ -125,16 +156,28 @@ const showDeliveryModal = ref(false);
 const { selectedDivId } = useFilterStore();
 const authStore = useAuthStore();
 const $q = useQuasar();
-const { uploadFile } = useFileUploadService();
+const { uploadFiles } = useFileUploadService();
 const deliveryData = ref({});
 const loading = ref(false);
+
+// Состояния для анимации загрузки
+const fileHover = ref(false);
+const isAnimating = ref(false);
+const animationCompleted = ref(false);
+const animationProgress = ref(0);
+const animationInterval = ref(null);
+const animationDuration = 500; // 0.5 секунды для анимации
+
+// Добавляем состояние для отслеживания загрузки файлов
+const isUploading = ref(false);
+const uploadProgress = ref(0);
 
 const handleRefreshData = () => {
   loadDeliveryData();
 };
 
 const isRole4 = computed(() => {
-  return authStore.user?.role_id === 4 || authStore.user?.role_id === 2 ;
+  return authStore.user?.role_id === ROLES.Master || authStore.user?.role_id === ROLES.Edits_his_workshop || authStore.user?.role_id === ROLES.Operator ;
 });
 
 const showNotify = (options) => {
@@ -195,17 +238,126 @@ const props = defineProps({
     type: [String, Number],
     default: null
   },
+  total_docs_processed_count: {
+    type: [String, Number],
+    default: 0
+  },
+  base_interval:{
+    type: [String, Number],
+    default: 'Н/Д'
+  },
 });
 
 const emit = defineEmits(['file-dropped', 'submitted', 'document-click', 'refresh-delivery-data']);
 
+// Текст для анимации
+const animationText = computed(() => {
+  if (animationCompleted.value) return 'Готово!';
+  if (isAnimating.value) return 'Загрузка...';
+  return 'Перетащите для загрузки';
+});
+
+// Добавляем вычисляемое свойство для отображения Divergence
+const displayDivergence = computed(() => {
+  const baseIntervalValue = Number(props.base_interval);
+
+  // Определяем единицу измерения на основе base_interval
+  const unit = (!isNaN(baseIntervalValue) && baseIntervalValue <= 2000) ? 'мч' : 'км';
+
+  return `${props.Divergence} ${unit}`;
+});
+
+// Очистка интервала при размонтировании компонента
+onUnmounted(() => {
+  stopAnimation();
+});
+
+const handleMouseOver = () => {
+  // Не активируем ховер если идет загрузка
+  if (!isUploading.value) {
+    hover.value = true;
+  }
+};
+
+const handleMouseLeave = () => {
+  // Сбрасываем только если нет активной загрузки файлов
+  if (!isUploading.value) {
+    resetAllStates();
+  }
+};
+
+const startAnimation = () => {
+  if (!isRole4.value) return;
+
+  stopAnimation();
+
+  isAnimating.value = true;
+  animationCompleted.value = false;
+  animationProgress.value = 0;
+
+  const startTime = Date.now();
+
+  animationInterval.value = setInterval(() => {
+    const elapsed = Date.now() - startTime;
+    const progress = Math.min(100, (elapsed / animationDuration) * 100);
+
+    animationProgress.value = progress;
+
+    if (progress >= 100) {
+      animationCompleted.value = true;
+      stopAnimation();
+
+      // Показываем уведомление о готовности к загрузке
+      showNotify({
+        type: 'positive',
+        message: 'Готово к загрузке! Отпустите файлы',
+        timeout: 1000
+      });
+    }
+  }, 16); // ~60 FPS
+};
+
+const stopAnimation = () => {
+  if (animationInterval.value) {
+    clearInterval(animationInterval.value);
+    animationInterval.value = null;
+  }
+  isAnimating.value = false;
+};
+
+// Функция для полного сброса всех состояний
+const resetAllStates = () => {
+  hover.value = false;
+  dragOver.value = false;
+  dragCounter.value = 0;
+  fileHover.value = false;
+  stopAnimation();
+  animationProgress.value = 0;
+  animationCompleted.value = false;
+  isAnimating.value = false;
+};
+
 // Добавляем вычисляемое свойство для отображения иконки документа
 const shouldShowDocumentIcon = computed(() => {
-  return isRole4.value &&
+  const isAllowedRole = authStore.user?.role_id === ROLES.Master || authStore.user?.role_id === ROLES.Operator || authStore.user?.role_id === ROLES.Distributor_controller || authStore.user?.role_id === ROLES.Read_only || authStore.user?.role_id === ROLES.Edits_his_workshop;
+  return isAllowedRole &&
          props.total_docs_count !== null &&
          props.total_docs_count !== undefined &&
          props.total_docs_count !== '' &&
-         props.total_docs_count > 0;
+         props.total_docs_count > 0 &&
+         !isUploading.value; // Не показывать во время загрузки
+});
+
+// Вычисляем количество необработанных документов (разницу)
+const unprocessedDocsCount = computed(() => {
+  const total = Number(props.total_docs_count) || 0;
+  const processed = Number(props.total_docs_processed_count) || 0;
+  return Math.max(0, total - processed); // Гарантируем неотрицательное значение
+});
+
+// Показывать бейдж только если есть необработанные документы
+const showDocCountBadge = computed(() => {
+  return unprocessedDocsCount.value > 0;
 });
 
 const topBarClass = computed(() => {
@@ -221,19 +373,25 @@ const topBarClass = computed(() => {
 const serviceWorkId = ref(props.id);
 
 const shouldShowDocumentHover = computed(() => {
-  return hover.value && authStore.user?.role_id === 5;
+  if (isUploading.value) return false;
+  return hover.value && authStore.user?.role_id === ROLES.Operator;
 });
 
 const shouldShowPlusIcon = computed(() => {
+  if (isUploading.value) return false;
+  if (authStore.user?.role_id === ROLES.Read_only) return false; // Не показывать для role_id = 1
+
   return hover.value &&
          (authStore.user?.is_superuser || authStore.user?.users_organization.id === selectedDivId.value) &&
          (props.zvr_number === null || props.zvr_number === '');
 });
 
 const shouldShowHover = computed(() => {
-  if (!authStore.isAuthenticated) return false;
+  if (!authStore.isAuthenticated || isUploading.value) return false;
+  if (authStore.user?.role_id === ROLES.Read_only) return false; // Не показывать для role_id = 1
+
   return hover.value &&
-         (authStore.user?.is_superuser || authStore.user?.users_organization.station_id !== null || authStore.user?.role_id === 6) &&
+         (authStore.user?.is_superuser || authStore.user?.users_organization.station_id !== null || authStore.user?.role_id === ROLES.Distributor_controller) &&
          !props.service_work_completed;
 });
 
@@ -290,30 +448,81 @@ const handleDragEnter = (e) => {
   e.preventDefault();
   dragCounter.value++;
   dragOver.value = true;
+  fileHover.value = true;
+
+  // Запускаем анимацию только если она еще не запущена
+  if (!isAnimating.value && !animationCompleted.value) {
+    startAnimation();
+  }
 };
 
 const handleDragLeave = (e) => {
   if (!isRole4.value) return;
   e.preventDefault();
   dragCounter.value--;
-  if (dragCounter.value === 0) {
+
+  // Сбрасываем состояния только когда все drag события завершены
+  if (dragCounter.value <= 0) {
+    dragCounter.value = 0;
     dragOver.value = false;
+    fileHover.value = false;
+
+    // Если анимация не завершена, сбрасываем ее
+    if (!animationCompleted.value) {
+      stopAnimation();
+      animationProgress.value = 0;
+    }
   }
+};
+
+// Добавляем обработчик для глобального dragleave
+const handleGlobalDragLeave = (e) => {
+  // Проверяем, что курсор покидает окно браузера
+  if (e.clientY <= 0 || e.clientX <= 0 ||
+      e.clientX >= window.innerWidth || e.clientY >= window.innerHeight) {
+    resetAllStates();
+  }
+};
+
+const handleDragOver = (e) => {
+  if (!isRole4.value) return;
+  e.preventDefault();
+  dragOver.value = true;
 };
 
 const handleDrop = async (event) => {
   if (!isRole4.value) return;
-  dragOver.value = false;
-  dragCounter.value = 0;
-  const files = event.dataTransfer.files;
-  if (files.length === 0) return;
+
+  const files = Array.from(event.dataTransfer.files);
+  if (files.length === 0) {
+    resetAllStates();
+    return;
+  }
+
+  // Если анимация не завершена, прерываем операцию
+  if (!animationCompleted.value) {
+    showNotify({
+      type: 'warning',
+      message: 'Завершите процесс загрузки, удерживая файлы над карточкой',
+      timeout: 1000
+    });
+    resetAllStates();
+    return; // Прерываем выполнение
+  }
+
+  // Устанавливаем состояние загрузки
+  isUploading.value = true;
+  uploadProgress.value = 0;
 
   try {
-    const result = await uploadFile(files[0], props.id);
+    // Используем uploadFiles вместо uploadFile для множественной загрузки
+    const result = await uploadFiles(files, props.id, (progress) => {
+      uploadProgress.value = Math.round(progress * 100);
+    });
 
     if (result.success) {
       emit('file-dropped', {
-        file: files[0],
+        files: files,
         cardId: props.id,
         response: result.data
       });
@@ -331,7 +540,7 @@ const handleDrop = async (event) => {
 
     } else {
       emit('file-dropped-error', {
-        file: files[0],
+        files: files,
         cardId: props.id,
         error: result.originalError
       });
@@ -345,16 +554,21 @@ const handleDrop = async (event) => {
 
   } catch (error) {
     emit('file-dropped-error', {
-      file: files[0],
+      files: files,
       cardId: props.id,
       error: error
     });
 
     showNotify({
       type: 'negative',
-      message: 'Неожиданная ошибка при загрузке файла',
+      message: 'Неожиданная ошибка при загрузке файлов',
       timeout: 3000
     });
+  } finally {
+    // Сбрасываем состояние загрузки
+    isUploading.value = false;
+    uploadProgress.value = 0;
+    resetAllStates();
   }
 };
 
@@ -364,7 +578,7 @@ const openModal = () => {
 
 const closeModal = () => {
   showModal.value = false;
-  hover.value = false;
+  resetAllStates();
 };
 
 const openCompletionModal = () => {
@@ -373,7 +587,7 @@ const openCompletionModal = () => {
 
 const closeCompletionModal = () => {
   showCompletionModal.value = false;
-  hover.value = false;
+  resetAllStates();
 };
 
 const formattedDate = computed(() => {
@@ -404,6 +618,15 @@ const showTopBar = computed(() => {
 const showBottomBar = computed(() => {
   return props.service_work_completed !== null;
 });
+
+onMounted(() => {
+  window.addEventListener('dragleave', handleGlobalDragLeave);
+});
+
+onUnmounted(() => {
+  window.removeEventListener('dragleave', handleGlobalDragLeave);
+});
+
 </script>
 
 <style scoped>
@@ -432,6 +655,12 @@ const showBottomBar = computed(() => {
   flex-shrink: 0;
   cursor: pointer;
   transition: all 0.2s ease;
+  overflow: hidden;
+}
+
+.service-status-card.file-hover {
+  border-color: #6a0dad;
+  box-shadow: 0 0 10px rgba(106, 13, 173, 0.5);
 }
 
 .station-purple {
@@ -504,6 +733,61 @@ const showBottomBar = computed(() => {
   color: #000000;
 }
 
+/* Анимация загрузки при наведении с файлами */
+.file-hover-animation {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(106, 13, 173, 0.1);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 15;
+  transition: all 0.3s ease;
+}
+
+.file-hover-animation.animating {
+  background: rgba(106, 13, 173, 0.2);
+}
+
+.file-hover-animation.completed {
+  background: rgba(0, 128, 0, 0.2);
+}
+
+.animation-progress {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  height: 5px;
+  background-color: #000000;
+  transition: width 0.1s linear;
+  border-radius: 0 0 8px 8px;
+}
+
+.file-hover-animation.completed .animation-progress {
+  background: #000000;
+}
+
+.animation-text {
+  font-size: 10px;
+  font-weight: 500;
+  color: #6a0dad;
+  text-align: center;
+  padding: 4px 8px;
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 12px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  max-width: 100%;
+  z-index: 1;
+}
+
+.file-hover-animation.completed .animation-text {
+  color: #4caf50;
+}
+
 /* Стили для иконки документа в правом нижнем углу */
 .document-icon-corner {
   position: absolute;
@@ -517,6 +801,11 @@ const showBottomBar = computed(() => {
 
 .document-icon-corner:hover {
   transform: scale(1.1);
+}
+
+.document-icon-corner.no-click {
+  cursor: default !important;
+  pointer-events: none;
 }
 
 .doc-count-badge {
@@ -660,5 +949,43 @@ const showBottomBar = computed(() => {
   font-size: 12px;
   font-weight: bold;
   color: #ffffff;
+}
+
+/* Стили для индикатора загрузки */
+.upload-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(255, 255, 255, 0.9);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 20;
+}
+
+.upload-content {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.upload-text {
+  font-size: 12px;
+  font-weight: 500;
+  color: #333;
+}
+
+.upload-progress {
+  font-size: 11px;
+  font-weight: bold;
+  color: #1976d2;
+  background-color: rgba(25, 118, 210, 0.1);
+  padding: 2px 6px;
+  border-radius: 10px;
 }
 </style>

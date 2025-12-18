@@ -168,6 +168,7 @@ import JsBarcode from 'jsbarcode'
 import { useDeliveryActions } from 'src/components/Functions/useDeliveryActions'
 import { storeToRefs } from 'pinia'
 import { useAuthStore } from 'src/stores/useAuthStore'
+import { ROLES } from '../../constants'
 
 const $q = useQuasar()
 const showModal = ref(false)
@@ -178,7 +179,7 @@ const barcodeCanvas = ref(null)
 const copiedCells = ref(new Set())
 const currentDeliveryIndex = ref(0)
 
-const emit = defineEmits(['close', 'update:modelValue', 'entered', 'refreshData'])
+const emit = defineEmits(['close', 'update:modelValue', 'entered', 'refreshData', 'submitSuccess'])
 
 const props = defineProps({
   modelValue: {
@@ -204,7 +205,7 @@ const { user } = storeToRefs(authStore)
 
 // Проверка роли пользователя (только просмотр для role_id = 4)
 const isViewOnly = computed(() => {
-  return user.value?.role_id === 4 || user.value?.role_id === 2
+  return user.value?.role_id === ROLES.Read_only || user.value?.role_id === ROLES.Edits_his_workshop || user.value?.role_id === ROLES.Distributor_controller || user.value?.role_id === ROLES.Read_only
 })
 
 const {
@@ -221,7 +222,7 @@ const isDeliveryBlocked = computed(() => {
 
 // Проверка, требуется ли перемещение (для role_id = 4)
 const showTransferWarning = computed(() => {
-  return user.value?.role_id === 5 && currentDelivery.value.transfer === true
+  return user.value?.role_id === ROLES.Operator && currentDelivery.value.transfer === true
 })
 
 // Вычисляемое свойство для массива доставок (обновлено для нового формата)
@@ -354,43 +355,44 @@ const getCellValue = (rowIndex, cellIndex) => {
   }
 }
 
-// Копирование текста в буфер обмена
+// Функция копирования с использованием существующих элементов
 const copyToClipboard = (text) => {
   if (!text || isDeliveryBlocked.value || isViewOnly.value) return
 
-  const textArea = document.createElement('textarea')
-  textArea.value = text
-  textArea.style.position = 'fixed'
-  textArea.style.top = '0'
-  textArea.style.left = '0'
-  textArea.style.opacity = '0'
-
-  document.body.appendChild(textArea)
-  textArea.focus()
-  textArea.select()
-
   try {
-    if (navigator.clipboard && window.isSecureContext) {
-      navigator.clipboard.writeText(text).catch(fallbackCopy)
+    // Используем существующий элемент модального окна как контейнер
+    const modal = document.querySelector('.delivery-modal')
+    if (!modal) throw new Error('Modal not found')
+
+    // Создаем временный инпут внутри модального окна
+    const tempInput = document.createElement('input')
+    tempInput.value = text
+    tempInput.style.cssText = 'position: fixed; top: 0; left: 0; opacity: 0; pointer-events: none;'
+
+    modal.appendChild(tempInput)
+    tempInput.select()
+    tempInput.setSelectionRange(0, 99999)
+
+    const successful = document.execCommand('copy')
+    modal.removeChild(tempInput)
+
+    if (successful) {
+      $q.notify({
+        message: 'Значение скопировано в буфер обмена',
+        color: 'positive',
+        position: 'top',
+        timeout: 1000
+      })
     } else {
-      fallbackCopy()
+      throw new Error('Copy command unsuccessful')
     }
-  } catch {
-    fallbackCopy()
-  } finally {
-    document.body.removeChild(textArea)
-  }
-}
-
-// Fallback метод копирования
-const fallbackCopy = () => {
-  try {
-    document.execCommand('copy')
-  } catch {
-    showNotify({
-      type: 'negative',
-      message: 'Не удалось скопировать текст',
-      timeout: 3000,
+  } catch (err) {
+    console.error('Не удалось скопировать значение:', err)
+    $q.notify({
+      message: 'Ошибка при копировании',
+      color: 'negative',
+      position: 'top',
+      timeout: 1000
     })
   }
 }
@@ -417,6 +419,7 @@ const handleMarkAsEntered = async () => {
   if (success) {
     emit('entered', currentDelivery.value)
     emit('refreshData')
+    emit('submitSuccess') // Добавьте это
   }
 }
 
