@@ -1,5 +1,5 @@
 # aiosqlite==0.21.0
-# aiogram==3.21.0
+aiogram==3.21.0
 aiohttp==3.12.15
 asyncpg==0.30.0
 alembic==1.15.2
@@ -23,6 +23,7 @@ makefun==1.16.0
 Mako==1.3.10
 MarkupSafe==3.0.2
 minio==7.2.16
+openpyxl==3.1.5
 passlib==1.7.4
 pdfplumber==0.11.7
 pycparser==2.22
