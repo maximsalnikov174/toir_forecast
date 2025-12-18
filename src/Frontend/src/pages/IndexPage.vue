@@ -27,8 +27,6 @@
 
     <LoginRegisterDialog
       ref="authDialog"
-      @login="handleLogin"
-      @register="handleRegister"
       @close="handleDialogClose"
     />
 
@@ -50,7 +48,15 @@
     <div class="data-container">
       <!-- Заголовок с именами сервисов -->
       <div class="services-header sticky-header">
-        <div class="cars-header-placeholder"></div>
+        <div class="cars-header-placeholder">
+          <LetterSearch
+            :cars="cars"
+            :active-letters="activeLetters"
+            :active-digits="activeDigits"
+            @update:activeLetters="activeLetters = $event"
+            @update:activeDigits="activeDigits = $event"
+          />
+        </div>
         <div class="service-names-row">
           <ServiceNamesCard
             v-for="service in services"
@@ -62,7 +68,7 @@
 
       <!-- Основные данные - машины и статусы -->
       <div class="data-rows">
-        <div v-for="(car, rowIndex) in cars" :key="car.personal_id" class="data-row">
+        <div v-for="(car,) in filteredCars" :key="car.personal_id" class="data-row">
           <CarCard
             :grz="car.grz"
             :model="car.car_model?.name || ''"
@@ -73,7 +79,7 @@
             @status-added="handleStatusAdded"
           />
           <div class="status-cards">
-            <template v-for="(item, itemIndex) in tableData[rowIndex]" :key="itemIndex">
+            <template v-for="(item, itemIndex) in getTableDataForCar(car)" :key="itemIndex">
               <ServiceStatusCard
                 v-if="item"
                 :Divergence="item.divergence"
@@ -88,6 +94,8 @@
                 @submitted="handleApply"
                 :onSubmitSuccessMaster="loadMasterData"
                 :total_docs_count="item.total_docs_count"
+                :total_docs_processed_count="item.total_docs_processed_count"
+                :base_interval="item.base_interval"
               />
               <div v-else class="empty-status-card"></div>
             </template>
@@ -113,6 +121,8 @@ import { useAuthStore } from 'src/stores/useAuthStore'
 import { getCurrentDateInDB } from 'src/components/Functions/CurrentDateInDB'
 import ColorsOfRepairShops from '../components/Cards/ColorsOfRepairShops.vue'
 import { masterApi } from 'src/components/Functions/masterApi.js'
+import LetterSearch from '../components/Cards/Reading/LetterSearch.vue'
+import { ROLES } from '../constants'
 
 const loading = ref(false)
 const showScrollButton = ref(false)
@@ -124,9 +134,44 @@ const authStore = useAuthStore()
 const authDialog = ref(null)
 const currentDate = ref('Загрузка даты...')
 const toAcceptRef = ref(null)
+const activeLetters = ref([])
+const activeDigits = ref([])
+
+// Функция для получения данных таблицы для конкретной машины
+const getTableDataForCar = (car) => {
+  const index = cars.value.findIndex(c => c.personal_id === car.personal_id)
+  return index !== -1 ? tableData.value[index] : []
+}
+
+// Вычисляем отфильтрованные машины
+const filteredCars = computed(() => {
+  if (activeLetters.value.length === 0 && activeDigits.value.length === 0) {
+    return cars.value
+  }
+
+  return cars.value.filter(car => {
+    const grzWithoutSpaces = car.grz.replace(/\s+/g, '')
+    const firstChar = grzWithoutSpaces.charAt(0)
+
+    // Проверяем букву
+    const isLetterMatch = activeLetters.value.length === 0 ||
+                         (firstChar && /[А-ЯA-Z]/.test(firstChar) &&
+                          activeLetters.value.includes(firstChar.toUpperCase()))
+
+    // Проверяем цифру (ищем первую цифру в GRZ)
+    let isDigitMatch = activeDigits.value.length === 0
+    if (!isDigitMatch) {
+      const firstDigit = grzWithoutSpaces.match(/\d/)?.[0]
+      isDigitMatch = firstDigit && activeDigits.value.includes(firstDigit)
+    }
+
+    return isLetterMatch && isDigitMatch
+  })
+})
 
 const shouldShowDivisionControls = computed(() => {
   if (!authStore.isAuth) return true
+  if (authStore.user?.role_id === ROLES.Read_only) return true;
   if (!authStore.user?.users_organization) return true
   return authStore.user.users_organization.station_id === null
 })
@@ -134,6 +179,7 @@ const shouldShowDivisionControls = computed(() => {
 const isMasterUser = computed(() => {
   return (
     authStore.isAuth &&
+    authStore.user?.role_id !== ROLES.Read_only &&
     authStore.user?.users_organization &&
     authStore.user.users_organization.station_id !== null
   )
@@ -214,22 +260,7 @@ const loadMasterData = async () => {
   }
 }
 
-// Следим за изменениями авторизации и station_id
-watch(
-  () => [authStore.isAuth, authStore.user?.users_organization?.station_id],
-  ([isAuth, stationId]) => {
-    if (isAuth && stationId !== null && stationId !== undefined) {
-      console.log('Пользователь авторизован как мастер, station_id:', stationId)
-      loadMasterData()
-    } else if (!isAuth) {
-      // Очищаем данные при выходе
-      tableData.value = []
-      services.value = []
-      cars.value = []
-    }
-  },
-  { immediate: true, deep: true },
-)
+
 
 // Также следим за изменениями пользователя
 watch(
@@ -406,10 +437,11 @@ onUnmounted(() => {
   margin-bottom: 10px;
 }
 
+/* Добавляем новые стили для поиска по буквам */
 .cars-header-placeholder {
-  width: 212px;
-  margin-right: 20px;
-  flex-shrink: 0;
+  width: 242px;
+  display: flex;
+  flex-direction: column;
 }
 
 .service-names-row {
@@ -418,7 +450,7 @@ onUnmounted(() => {
   overflow-x: auto;
   flex: 1;
   position: relative;
-  margin-left: 10px;
+
 }
 
 .data-rows {
