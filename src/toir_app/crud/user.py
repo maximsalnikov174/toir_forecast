@@ -1,8 +1,8 @@
-# from typing import Optional
+from typing import Optional
 
-# from sqlalchemy import select
-# from sqlalchemy.orm import selectinload
-# from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select
+from sqlalchemy.orm import selectinload
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from crud.base import DAOBase
 from models import User
@@ -26,6 +26,23 @@ class UserDAO(DAOBase[User]):
     #     )
     #     result = await session.scalar(stmt)
     #     return result
+
+    async def get_by_tg_account(
+            self,
+            tg_account: int,
+            session: AsyncSession,
+    ) -> Optional[User]:
+        """Получение юзера по tg_id с подгрузкой инфы о подразделении."""
+        stmt = (
+            select(self.model)
+            .where(self.model.tg_id == tg_account)
+            .options(
+                selectinload(self.model.users_organization)
+            )
+            .limit(1)
+        )
+        result = await session.scalar(stmt)
+        return result
 
 
 user_dao = UserDAO(model=User)

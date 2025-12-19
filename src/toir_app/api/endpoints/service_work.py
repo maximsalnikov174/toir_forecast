@@ -188,7 +188,7 @@ async def drop_completed_real_service_work(
 
 
 @router.patch(
-    '/zvr_drop',
+    '/drop_zvr',
     response_model=ServiceWorkWithZVRNumber,
     dependencies=[Depends(current_superuser)],
     name=(

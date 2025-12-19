@@ -1,8 +1,8 @@
 from datetime import datetime as dt
 from typing import Annotated, Any, Optional, Union
 
-from pydantic import (BaseModel, computed_field, Field, field_serializer,
-                      field_validator, ValidationInfo)
+from pydantic import (BaseModel, ConfigDict, computed_field, Field,
+                      field_serializer, field_validator, ValidationInfo)
 
 from constants import (
     COMPLETED_DAYS_AGO,
@@ -301,11 +301,13 @@ class AddZvrSchema(BaseModel):
 class ServiceWorkEntrypointForMasterSchema(BaseModel):
     """Схема с данными по работе для ... ."""
 
+    model_config = ConfigDict(from_attributes=True)
+
     id: Annotated[int, ServiceWork.id] = (
         Field(..., title='ID сервисной работы')
     )
     station_id: Optional[Annotated[int, Station.id]]
-    zvr_number: str = Field(
+    zvr_number: Optional[str] = Field(
         ..., min_length=LEN_ZVR_BASE, max_length=LEN_ZVR_TOTAL,
     )
     service_name: ServiceNameBase = Field(

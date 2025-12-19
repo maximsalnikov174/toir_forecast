@@ -74,7 +74,7 @@ class UnitOfBOMRead(BOMDocsCreate):
     organization: OrganizationWithIDAndName
     user: UserFullnameRead
     components: list[UnitOfBOM]
-    transfer: Optional[bool] = None
+    transfer: Optional[bool] = None  # нужно перемещение
     user_id: int = Field(..., exclude=True)  # исключаем (лишнее)
     from_organization: int = Field(..., exclude=True)  # исключаем (лишнее)
 

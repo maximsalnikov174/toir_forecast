@@ -1,8 +1,8 @@
 from datetime import datetime as dt
 from typing import Annotated, Dict
 
-from sqlalchemy import select
-from sqlalchemy.orm import joinedload
+from sqlalchemy import select, and_
+from sqlalchemy.orm import joinedload, selectinload
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from constants import (
@@ -15,8 +15,10 @@ from crud.service_work import (
 )
 from logger.logger import logger
 from models import (
+    Car,
     Organization,
     ServiceStatusStats,
+    ServiceWork,
     ServiceWorkState,
     Status,
 )
@@ -82,3 +84,38 @@ async def get_stats_for_organization(
             joinedload(ServiceStatusStats.bad_request_slice)
         )
     )
+
+
+async def get_completed_service_works_stats(
+    organization_id: Annotated[int, Organization.id],
+    start_day: dt,
+    end_day: dt,
+    completed_only: bool,
+    session: AsyncSession,
+):
+    """Получение из БД статистики за отрезок времени."""
+    stmt = (
+        select(ServiceWork)
+        .join(ServiceWork.car)
+        .where(
+            # Закрытые в заданном отрезке времени:
+            and_(
+                ServiceWork.service_work_completed >= start_day,
+                ServiceWork.service_work_completed < end_day
+            ),
+            Car.organization_id == organization_id,
+            # Чтобы не отображались ТС, ушедшие в архив (списано-продано):
+            Car.in_archive.is_(False)
+        )
+        .options(
+            selectinload(ServiceWork.car),
+            selectinload(ServiceWork.next_service),
+            selectinload(ServiceWork.station)
+        )
+    )
+
+    # Если было указано, что нужны ТОЛЬКО работы, завершенные в КИС:
+    if completed_only:
+        stmt = stmt.where(ServiceWork.in_archive.is_(True))
+
+    return (await session.scalars(stmt)).all()

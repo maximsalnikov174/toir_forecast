@@ -1,3 +1,5 @@
+import json
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi_users.authentication import AuthenticationBackend
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -24,16 +26,16 @@ router.include_router(
 
 
 @router.get(
-    'user/secret/get_token_for_use_in_telegram/{user_tg_account}',
+    '/user/secret/get_token_for_use_in_telegram/{user_tg_account}',
     tags=['telegram']
 )
-async def get_token_for_use_in_tg(
-    user_tg_account: str,
+async def get_user_info_and_token_for_use_in_tg(
+    user_tg_account: int,
     session: AsyncSession = Depends(get_async_session),
     auth_backend: AuthenticationBackend = Depends(lambda: auth_backend)
 ):
-    """Получение токена пользователя для тг-запросов."""
-    user = await user_dao.get_by_attribute('tg_id', user_tg_account, session)
+    """Получение инфы о пользователе и его токена для tg-запросов."""
+    user = await user_dao.get_by_tg_account(user_tg_account, session)
 
     if not user:
         raise HTTPException(
@@ -51,8 +53,12 @@ async def get_token_for_use_in_tg(
             detail='Пользователь не валидирован администратором.',
         )
 
-    return await auth_backend.login(auth_backend.get_strategy(), user)
+    token_data = await auth_backend.login(auth_backend.get_strategy(), user)
 
+    return {
+        'token': json.loads(token_data.body),
+        'user': user,
+    }
 
 # Регистрационный роутер предоставляет доступ к эндпоинту:
 # /register (для регистрации нового пользователя)

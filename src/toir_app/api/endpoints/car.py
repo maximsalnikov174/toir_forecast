@@ -6,18 +6,22 @@ from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.db import get_async_session
-from core.user import current_user
+from core.user import current_user, current_superuser
 from crud.car import (
     add_special_status_to_car, get_car_by_full_grz,
+    dao_car,
     get_car_history,
     get_cars_with_request_and_special_status,
 )
 from crud.service_status import dao_service_status
 from crud.service_work import get_last_request_reading_by_car
 from models import Car, User
-from schemas.car import CarWithCarModelAndOrganizationIDs
+from schemas.car import CarStartParse, CarWithCarModelAndOrganizationIDs
 from schemas.common import CarExpandWithIndicators
-from schemas.service_work import ServiceWorkWithInArchive
+from schemas.service_work import (
+    ServiceWorkEntrypointForMasterSchema,
+    ServiceWorkWithInArchive,
+)
 
 router = APIRouter()
 
@@ -103,6 +107,120 @@ async def get_car_in_db_by_grz(
     car: Car = await get_car_by_full_grz(grz, session)
     car.indicators = await get_last_request_reading_by_car(car.id, session)
     return car
+
+
+@router.patch(
+    '/add_tg_uuid_to_all_active_cars',
+    name='Добавление uuid к ТС (доступ только у суперпользователя))',
+    description=(
+        'Единоразово - добавляет уникальные UUID ко всем активным ТС.'
+    ),
+)
+async def add_tg_uuid_to_all_active_cars(
+    user: User = Depends(current_superuser),
+    session: AsyncSession = Depends(get_async_session),
+):
+    if user:
+        return await dao_car.add_uuid_to_active_cars(session=session)
+
+
+@router.get(
+    '/{car_id}',
+    response_model=CarStartParse,
+    name='Поиск машины по ID и возврат информации о ней (доступно всем).',
+    response_model_exclude_none=True,
+)
+async def get_car_in_db_by_id(
+    car_id: int,
+    session: AsyncSession = Depends(get_async_session),
+):
+    car: Car = await dao_car.get(obj_id=car_id, session=session)
+    # car.indicators = await get_last_request_reading_by_car(car.id, session)
+    return car
+
+
+@router.get(
+    '/by_tg_uuid/{car_uuid}',
+    response_model=CarStartParse,
+    name='Поиск машины по UUID и возврат информации о ней (доступно всем).',
+    response_model_exclude_none=True,
+)
+async def get_car_in_db_by_attr(
+    car_uuid: str,
+    session: AsyncSession = Depends(get_async_session)
+):
+    car: Car = await dao_car.get_by_attribute('tg_uuid', car_uuid, session)
+    return car
+
+
+@router.get(
+    '/{car_attr}/service_work',
+    response_model=list[ServiceWorkEntrypointForMasterSchema],
+    status_code=HTTPStatus.OK,
+    name='Получение списка сервисных работ для ТС.',
+)
+async def get_car_service_work(
+    car_attr: str,
+    station_id: Optional[int] = None,
+    session: AsyncSession = Depends(get_async_session)
+):
+    """Получение списка сервисных работ для ТС."""
+    result = await dao_car.get_service_works(
+        car_code=car_attr,
+        station_id=station_id,
+        session=session
+    )
+    return result
+
+
+@router.get(
+    '/{car_attr}/show_nearest_service_works',
+    status_code=HTTPStatus.OK,
+    name='Получение описания ближайших сервисных работ для ТС.',
+)
+async def get_nearest_service_works(
+    car_attr: str,
+    session: AsyncSession = Depends(get_async_session)
+) -> str:
+    """Получение описания ближайших сервисных работ для ТС.
+
+    ARGS:
+        - car_attr: уникальный car_id_for_telegram
+    """
+    result = await dao_car.search_nearest_event(
+        obj_uuid=car_attr,
+        session=session
+    )
+
+    if not len(result):
+        return 'Повезло, все работы запланированы!'
+
+    service_work_list: list[str] = []
+    for element in result:
+        divergence = (
+            element.base_interval
+            - element.request_reading
+            + element.last_service_reading
+        )
+        service_work_list.append(
+            f'{element.next_service.name} '
+            f'[{element.calculated_status.value.lower()}]'
+        )
+
+    if len(service_work_list) == 1:
+        text_a, text_b, text_c = 'ая', 'а', 'ой'
+    else:
+        text_a, text_b, text_c = 'ие', 'ы', 'ых'
+
+    text_d = 'через' if divergence > 0 else f'просрочен{text_b} на'
+
+    union_service_work_list = '\n'.join(service_work_list)
+
+    return (
+        f'Ближайш{text_a} работ{text_b}, для котор{text_c} ЗВР ещё не создан:'
+        f'\n{"-" * 30}\n{union_service_work_list}'
+        f'\n{"-" * 30}\n{text_d} {abs(divergence)} км'
+    )
 
 
 @router.patch(
