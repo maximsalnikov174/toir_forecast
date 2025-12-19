@@ -243,6 +243,7 @@ async def get_service_works_stats(
     :type completed_only: bool
     :param organization_id: Идентификатор Подразделения
     """
+    # Задаём временные границы от и до:
     start_time, end_time = time(0, 0, 0), time(23, 59, 59)
     start_dt = datetime.combine(start_day, start_time)
     end_dt = datetime.combine(end_day, end_time)
@@ -261,11 +262,24 @@ async def get_service_works_stats(
     # И загоняем в (отсортированную и очищенную таблицу) pandas:
     pandas_table = (
         pd.DataFrame(new_result)
-        .sort_values(by=['service_name', 'car_grz'])
+        .sort_values(by=['service_name', 'service_work_completed'])
         .drop(columns=[
             'id', 'station_id', 'last_service_reading', 'daily_distance'
         ])
     )
+
+    # Переименовываем столбцы:
+    pandas_table = pandas_table.rename(columns={
+        'service_name': 'Вид работ',
+        'car_grz': 'ГРЗ',
+        'zvr_number': '№ ЗВР',
+        'base_interval': 'Базовый интервал, км',
+        'request_reading': 'На пробеге, км',
+        'service_work_completed': 'Дата закрытия',
+        'in_archive': 'В архиве',
+        'request_status': 'Расчётный статус',
+        'divergence': 'Отклонение, км'
+    })
 
     return StreamingResponse(
         convert_pandas_table_to_xlsx(pandas_table),
