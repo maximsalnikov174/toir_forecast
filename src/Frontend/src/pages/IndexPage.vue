@@ -8,6 +8,9 @@
         <button class="manual-button" @click="colorsDialog.open()">
           <span class="material-icons">menu_book</span>
         </button>
+        <button class="manual-button" @click="documentDialog.open()">
+          <span class="material-icons">description</span>
+        </button>
       </div>
       <div class="user-controls">
         <div class="user-name-placeholder">
@@ -24,6 +27,7 @@
     </div>
 
     <ColorsOfRepairShops ref="colorsDialog" />
+    <DocumentRequest ref="documentDialog"/>
 
     <LoginRegisterDialog
       ref="authDialog"
@@ -123,6 +127,7 @@ import ColorsOfRepairShops from '../components/Cards/ColorsOfRepairShops.vue'
 import { masterApi } from 'src/components/Functions/masterApi.js'
 import LetterSearch from '../components/Cards/Reading/LetterSearch.vue'
 import { ROLES } from '../constants'
+import DocumentRequest from '../components/Cards/DocumentRequest.vue'
 
 const loading = ref(false)
 const showScrollButton = ref(false)
@@ -136,6 +141,7 @@ const currentDate = ref('Загрузка даты...')
 const toAcceptRef = ref(null)
 const activeLetters = ref([])
 const activeDigits = ref([])
+const documentDialog = ref(null)
 
 // Функция для получения данных таблицы для конкретной машины
 const getTableDataForCar = (car) => {
