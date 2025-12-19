@@ -82,12 +82,11 @@
 
       <!-- Кнопки действий -->
       <q-card-actions align="right">
-        <q-btn flat label="Сбросить" color="grey" @click="resetFilters" />
+        <q-btn flat label="Сбросить выбранное" color="grey" @click="resetFilters" />
         <q-space />
-        <q-btn flat label="Отмена" color="primary" @click="closeDialog" />
         <!-- Добавляем кнопку для скачивания -->
-        <q-btn flat label="Скачать Excel" color="positive" @click="downloadFile" />
-        <q-btn flat label="Применить" color="primary" @click="applyFilters" />
+        <q-btn flat label="Скачать Отчет" color="positive" @click="downloadFile" />
+
       </q-card-actions>
     </q-card>
   </q-dialog>
@@ -124,7 +123,9 @@ const downloadFile = async () => {
     emit('loading', true)
 
     // Собираем параметры запроса
-    const params = {}
+    const params = {
+      completed_only: completed_only.value
+    }
 
     if (organization_id.value) {
       params.organization_id = organization_id.value
@@ -138,9 +139,7 @@ const downloadFile = async () => {
       params.end_day = end_day.value
     }
 
-    if (completed_only.value) {
-      params.completed_only = completed_only.value
-    }
+
 
     console.log('Скачивание файла с параметрами:', params)
 
@@ -185,62 +184,6 @@ const downloadFile = async () => {
   } catch (error) {
     console.error('Ошибка при скачивании файла:', error)
     emit('error', error.message || 'Ошибка скачивания файла')
-  } finally {
-    emit('loading', false)
-  }
-}
-
-// Функция для применения фильтров (получение JSON данных)
-const applyFilters = async () => {
-  try {
-    emit('loading', true)
-
-    // Собираем параметры запроса
-    const params = {}
-
-    if (organization_id.value) {
-      params.organization_id = organization_id.value
-    }
-
-    if (start_day.value) {
-      params.start_day = start_day.value
-    }
-
-    if (end_day.value) {
-      params.end_day = end_day.value
-    }
-
-    if (completed_only.value) {
-      params.completed_only = completed_only.value
-    }
-
-    console.log('Отправка запроса с параметрами:', params)
-
-    // Используем axios для запроса JSON данных
-    const response = await api.get('/stats/all_service_works_completed', {
-      params: params,
-      headers: {
-        'Accept': 'application/json',
-      }
-    })
-
-    const contentType = response.headers['content-type']
-
-    if (contentType && contentType.includes('application/json')) {
-      // Если это JSON - эмитим данные
-      console.log('Получены JSON данные:', response.data)
-      emit('filters-applied', response.data)
-    } else {
-      // Если это файл - скачиваем его
-      await downloadFile()
-    }
-
-    // Закрываем диалог
-    showDialog.value = false
-
-  } catch (error) {
-    console.error('Ошибка при отправке запроса:', error)
-    emit('error', error.message || 'Ошибка при загрузке данных')
   } finally {
     emit('loading', false)
   }
