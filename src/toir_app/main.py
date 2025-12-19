@@ -26,6 +26,7 @@ if settings.cors_on_frontend:
         allow_credentials=True,
         allow_methods=["*"],  # Разрешаем все методы
         allow_headers=["*"],  # Разрешаем все заголовки
+        expose_headers=["Content-Disposition"]
     )
 
 
