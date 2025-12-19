@@ -20,3 +20,4 @@ import { DivisionFuctionSelect } from '../../Functions/SelectDivision.js'
 const { selectedDivId, divisions } = DivisionFuctionSelect()
 console.log(selectedDivId)
 </script>
+
