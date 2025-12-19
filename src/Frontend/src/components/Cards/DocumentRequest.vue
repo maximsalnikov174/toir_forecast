@@ -85,6 +85,8 @@
         <q-btn flat label="Сбросить" color="grey" @click="resetFilters" />
         <q-space />
         <q-btn flat label="Отмена" color="primary" @click="closeDialog" />
+        <!-- Добавляем кнопку для скачивания -->
+        <q-btn flat label="Скачать Excel" color="positive" @click="downloadFile" />
         <q-btn flat label="Применить" color="primary" @click="applyFilters" />
       </q-card-actions>
     </q-card>
@@ -94,6 +96,8 @@
 <script setup>
 import { ref, defineEmits } from 'vue'
 import { DivisionFuctionSelect } from '../Functions/SelectDivision.js'
+// Импортируем api из вашего файла
+import { api } from 'boot/axios'
 
 const emit = defineEmits(['filters-applied', 'loading', 'error'])
 
@@ -114,6 +118,79 @@ const closeDialog = () => {
   showDialog.value = false
 }
 
+// Функция для скачивания файла
+const downloadFile = async () => {
+  try {
+    emit('loading', true)
+
+    // Собираем параметры запроса
+    const params = {}
+
+    if (organization_id.value) {
+      params.organization_id = organization_id.value
+    }
+
+    if (start_day.value) {
+      params.start_day = start_day.value
+    }
+
+    if (end_day.value) {
+      params.end_day = end_day.value
+    }
+
+    if (completed_only.value) {
+      params.completed_only = completed_only.value
+    }
+
+    console.log('Скачивание файла с параметрами:', params)
+
+    // Используем axios для запроса с responseType: 'blob'
+    const response = await api.get('/stats/all_service_works_completed', {
+      params: params,
+      responseType: 'blob', // Важно: указываем что ждем бинарные данные
+      headers: {
+        'Accept': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      }
+    })
+
+    // Получаем имя файла из заголовков
+    const contentDisposition = response.headers['content-disposition']
+    let filename = 'service_works_report.xlsx'
+
+    if (contentDisposition) {
+      const filenameMatch = contentDisposition.match(/filename="(.+)"/)
+      if (filenameMatch && filenameMatch[1]) {
+        filename = filenameMatch[1]
+        // Добавляем расширение если его нет
+        if (!filename.endsWith('.xlsx')) {
+          filename += '.xlsx'
+        }
+      }
+    }
+
+    // Создаем ссылку для скачивания
+    const url = window.URL.createObjectURL(new Blob([response.data]))
+    const a = document.createElement('a')
+    a.href = url
+    a.download = filename
+    document.body.appendChild(a)
+    a.click()
+
+    // Очистка
+    window.URL.revokeObjectURL(url)
+    document.body.removeChild(a)
+
+    console.log('Файл успешно скачан:', filename)
+
+  } catch (error) {
+    console.error('Ошибка при скачивании файла:', error)
+    emit('error', error.message || 'Ошибка скачивания файла')
+  } finally {
+    emit('loading', false)
+  }
+}
+
+// Функция для применения фильтров (получение JSON данных)
 const applyFilters = async () => {
   try {
     emit('loading', true)
@@ -139,31 +216,31 @@ const applyFilters = async () => {
 
     console.log('Отправка запроса с параметрами:', params)
 
-    // Отправляем GET запрос
-    const response = await fetch(`/stats/all_service_works_completed?${new URLSearchParams(params)}`, {
-      method: 'GET',
+    // Используем axios для запроса JSON данных
+    const response = await api.get('/stats/all_service_works_completed', {
+      params: params,
       headers: {
-        'Content-Type': 'application/json',
+        'Accept': 'application/json',
       }
     })
 
-    if (!response.ok) {
-      throw new Error(`Ошибка HTTP: ${response.status}`)
+    const contentType = response.headers['content-type']
+
+    if (contentType && contentType.includes('application/json')) {
+      // Если это JSON - эмитим данные
+      console.log('Получены JSON данные:', response.data)
+      emit('filters-applied', response.data)
+    } else {
+      // Если это файл - скачиваем его
+      await downloadFile()
     }
-
-    const data = await response.json()
-
-    console.log('Получены данные:', data)
-
-    // Эмитим событие с полученными данными
-    emit('filters-applied', data)
 
     // Закрываем диалог
     showDialog.value = false
 
   } catch (error) {
     console.error('Ошибка при отправке запроса:', error)
-    emit('error', error.message)
+    emit('error', error.message || 'Ошибка при загрузке данных')
   } finally {
     emit('loading', false)
   }
