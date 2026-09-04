@@ -3,7 +3,7 @@ from pathlib import Path
 ENCODING_DEFAULT = 'utf-8'
 
 # Стандартное количество элементов в строке rmt-321:
-TOTAL_VALUES_IN_RAW_RMT_321 = 22
+TOTAL_VALUES_IN_RAW_RMT_321 = 23
 
 # Процент вхождения в выборку (у нас утверждено 10%):
 EXCESS_VALUE = 10
