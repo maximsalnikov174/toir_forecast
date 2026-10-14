@@ -31,6 +31,7 @@ class UsersServiceName(str, Enum):
     TO_GAZ = 'ТО ГБО'
     ENGINE = 'Замена масла ДВС'
     GEARBOX = 'Замена масла КПП'
+    TRANSFER_CASE = 'Замена масла раздаточной коробки'
     ANTIFREEZE = 'Замена антифриза'
     HYDRO = 'Замена гидромасла'
     DRIVE_AXLE = 'Замена масла ведущего моста'
@@ -49,14 +50,16 @@ class UsersServiceName(str, Enum):
 convert_service_name: ServiceNameMapping = {
     UsersServiceName.ANTIFREEZE.value: [
         'ЗамАнтифриза',
-        'ЗамОхлаждающейЖидкости'
+        'ЗамОхлаждающейЖидкости',
+        'ЗаменаОЖ'
     ],
     UsersServiceName.HYDRO.value: [
         'ЗамГидроМасла'
     ],
     UsersServiceName.DRIVE_AXLE.value: [
         'ЗамМаслаВедущегоМоста',
-        'ЗамМаслаВедущегоМоста'
+        'ЗамМаслаВедущегоМоста',
+        'ЗамМаслаВедМост'
     ],
     UsersServiceName.ENGINE.value: [
         'ЗамМаслаДВС',
@@ -69,12 +72,16 @@ convert_service_name: ServiceNameMapping = {
         'ЗамМаслаТрансмиссии',
         'ЗамМаслаКППZF'
     ],
+    UsersServiceName.TRANSFER_CASE.value: [
+        'ЗамМаслаРК'
+    ],
     UsersServiceName.STEERING_WHEEL.value: [
         'ЗамМаслаРедукторРУ',
         'ЗамМаслаРУ'
     ],
     UsersServiceName.BRAKE_FLUID.value: [
-        'ЗамТормознойЖидкости'
+        'ЗамТормознойЖидкости',
+        'ЗаменаТЖ'
     ],
     UsersServiceName.ON_BOARD_TRANSMISSION.value: [
         'ЗамМаслаБортовойПередачи',
