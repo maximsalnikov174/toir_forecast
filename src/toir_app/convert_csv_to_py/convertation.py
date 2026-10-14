@@ -69,7 +69,8 @@ convert_service_name: ServiceNameMapping = {
         'ЗамМаслаКППZF'
     ],
     UsersServiceName.STEERING_WHEEL.value: [
-        'ЗамМаслаРедукторРУ'
+        'ЗамМаслаРедукторРУ',
+        'ЗамМаслаРу'
     ],
     UsersServiceName.BRAKE_FLUID.value: [
         'ЗамТормознойЖидкости'
